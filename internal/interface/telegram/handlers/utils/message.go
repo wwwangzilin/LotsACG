@@ -35,8 +35,16 @@ func ReplyMessage(ctx *telegohandler.Context, message telego.Message, text strin
 }
 
 func FindSourceURLInMessage(serv *service.Service, message *telego.Message) string {
-	if message == nil {
+	urls := FindSourceURLsInMessage(serv, message)
+	if len(urls) == 0 {
 		return ""
+	}
+	return urls[0]
+}
+
+func FindSourceURLsInMessage(serv *service.Service, message *telego.Message) []string {
+	if message == nil {
+		return nil
 	}
 	var sb strings.Builder
 	sb.WriteString(message.Text)
@@ -54,7 +62,7 @@ func FindSourceURLInMessage(serv *service.Service, message *telego.Message) stri
 			sb.WriteString(" ")
 		}
 	}
-	return serv.FindSourceURL(sb.String())
+	return serv.FindSourceURLs(sb.String())
 }
 
 var tagCharsReplacer = strings.NewReplacer(

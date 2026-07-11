@@ -133,64 +133,100 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		utils.ReplyMessage(ctx, message, "请提供作品链接, 或回复一条消息")
 		return nil
 	}
-	var sourceURL string
+
+	sourceURLs := make([]string, 0, len(args))
 	if message.ReplyToMessage != nil {
-		sourceURL = utils.FindSourceURLInMessage(serv, message.ReplyToMessage)
-		if sourceURL == "" {
-			if len(args) == 0 {
-				utils.ReplyMessage(ctx, message, "不支持的链接")
-				return nil
-			}
+		sourceURLs = append(sourceURLs, utils.FindSourceURLsInMessage(serv, message.ReplyToMessage)...)
+	}
+	for _, arg := range args {
+		if sourceURL := serv.FindSourceURL(arg); sourceURL != "" {
+			sourceURLs = append(sourceURLs, sourceURL)
 		}
 	}
-	if len(args) > 0 {
-		sourceURL = serv.FindSourceURL(args[0])
+	if len(sourceURLs) == 0 {
+		sourceURLs = append(sourceURLs, utils.FindSourceURLsInMessage(serv, &message)...)
 	}
-	if sourceURL == "" {
+	if len(sourceURLs) == 0 {
 		utils.ReplyMessage(ctx, message, "不支持的链接")
 		return nil
 	}
-	awEnt, _ := serv.GetArtworkByURL(ctx, sourceURL)
-	if awEnt != nil {
-		utils.ReplyMessage(ctx, message, "作品已存在")
-		return nil
+
+	seen := make(map[string]struct{}, len(sourceURLs))
+	uniqueSourceURLs := make([]string, 0, len(sourceURLs))
+	for _, sourceURL := range sourceURLs {
+		if _, ok := seen[sourceURL]; ok {
+			continue
+		}
+		seen[sourceURL] = struct{}{}
+		uniqueSourceURLs = append(uniqueSourceURLs, sourceURL)
 	}
-	msg, err := utils.ReplyMessage(ctx, message, "正在发布...")
-	if err == nil && msg != nil {
-		defer ctx.Bot().DeleteMessage(ctx, telegoutil.Delete(msg.Chat.ChatID(), msg.MessageID))
+
+	msg, err := utils.ReplyMessage(ctx, message, fmt.Sprintf("正在排队发布 %d 条作品...", len(uniqueSourceURLs)))
+	if err != nil || msg == nil {
+		msg = nil
 	}
-	cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
-	if err != nil {
-		log.Errorf("failed to get or fetch cached artwork: %s", err)
-		utils.ReplyMessage(ctx, message, "获取作品信息失败: "+err.Error())
-		return nil
-	}
-	if cachedArtwork.Status != shared.ArtworkStatusCached {
-		utils.ReplyMessage(ctx, message, "该作品已发布或正在发布中")
-		return nil
-	}
-	artwork := cachedArtwork.Artwork.Data()
 
 	meta, err := requireMeta(ctx)
 	if err != nil {
 		return err
 	}
-	if meta.ChannelAvailable() {
-		if err := utils.PostAndCreateArtwork(ctx, ctx.Bot(), serv, meta, artwork, message.GetChat().ChatID(), meta.ChannelChatID(), message.MessageID); err != nil {
-			utils.ReplyMessage(ctx, message, "发布失败: "+err.Error())
-			return nil
+	if !meta.ChannelAvailable() {
+		return nil
+	}
+
+	successCount := 0
+	skipCount := 0
+	failCount := 0
+	results := make([]string, 0, len(uniqueSourceURLs))
+	for idx, sourceURL := range uniqueSourceURLs {
+		progressText := fmt.Sprintf("正在发布 %d/%d: %s", idx+1, len(uniqueSourceURLs), sourceURL)
+		if msg != nil {
+			ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, progressText))
 		}
-		awEnt, err := serv.GetArtworkByURL(ctx, sourceURL)
+
+		awEnt, _ := serv.GetArtworkByURL(ctx, sourceURL)
+		if awEnt != nil {
+			skipCount++
+			results = append(results, fmt.Sprintf("%d/%d 已存在: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			continue
+		}
+
+		cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
 		if err != nil {
-			return oops.Wrapf(err, "failed to get created artwork by url")
+			log.Errorf("failed to get or fetch cached artwork: %s", err)
+			failCount++
+			results = append(results, fmt.Sprintf("%d/%d 获取作品信息失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			continue
 		}
-		ctx.Bot().EditMessageText(ctx,
-			telegoutil.EditMessageText(msg.Chat.ChatID(),
-				message.MessageID,
-				fmt.Sprintf("发布成功: %s / %s", awEnt.Title, awEnt.GetSourceURL())).
-				WithReplyMarkup(
-					telegoutil.InlineKeyboard(utils.GetPostedArtworkInlineKeyboardButton(awEnt, meta)),
-				))
+		if cachedArtwork.Status != shared.ArtworkStatusCached {
+			skipCount++
+			results = append(results, fmt.Sprintf("%d/%d 已发布或正在发布中: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			continue
+		}
+		artwork := cachedArtwork.Artwork.Data()
+		if err := utils.PostAndCreateArtwork(ctx, ctx.Bot(), serv, meta, artwork, message.GetChat().ChatID(), meta.ChannelChatID(), message.MessageID); err != nil {
+			failCount++
+			results = append(results, fmt.Sprintf("%d/%d 发布失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			continue
+		}
+		createdArtwork, err := serv.GetArtworkByURL(ctx, sourceURL)
+		if err != nil {
+			failCount++
+			results = append(results, fmt.Sprintf("%d/%d 发布后查找作品失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			continue
+		}
+		successCount++
+		results = append(results, fmt.Sprintf("%d/%d 发布成功: %s / %s", idx+1, len(uniqueSourceURLs), createdArtwork.Title, createdArtwork.GetSourceURL()))
+	}
+
+	finalText := fmt.Sprintf("发布完成: 成功 %d, 跳过 %d, 失败 %d", successCount, skipCount, failCount)
+	if len(results) > 0 {
+		finalText += "\n" + strings.Join(results, "\n")
+	}
+	if msg != nil {
+		ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, finalText))
+	} else {
+		utils.ReplyMessage(ctx, message, finalText)
 	}
 	return nil
 }
