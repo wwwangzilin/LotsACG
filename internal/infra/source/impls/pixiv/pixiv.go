@@ -17,8 +17,9 @@ import (
 )
 
 type Pixiv struct {
-	reqClient *req.Client
-	cfg       config.SourcePixivConfig
+	reqClients []*req.Client
+	cfg        config.SourcePixivConfig
+	clientIdx  int
 }
 
 func Init() {
@@ -29,22 +30,33 @@ func Init() {
 
 	source.Register(shared.SourceTypePixiv, func() source.ArtworkSource {
 		cfg := config.Get().Source.Pixiv
-		cookies := make([]*http.Cookie, 0)
-		for _, cookie := range cfg.Cookies {
-			cookies = append(cookies, &http.Cookie{
-				Name:  cookie.Name,
-				Value: cookie.Value,
-			})
+		clients := make([]*req.Client, 0, len(cfg.Accounts)+1)
+		if len(cfg.Accounts) > 0 {
+			for _, account := range cfg.Accounts {
+				cookies := make([]*http.Cookie, 0, len(account.Cookies))
+				for _, cookie := range account.Cookies {
+					cookies = append(cookies, &http.Cookie{Name: cookie.Name, Value: cookie.Value})
+				}
+				c := req.C().ImpersonateChrome().SetCommonCookies(cookies...)
+				c = c.SetLogger(log.Default()).EnableDebugLog().SetCommonRetryCount(3)
+				if config.Get().Source.Proxy != "" {
+					c.SetProxyURL(config.Get().Source.Proxy)
+				}
+				clients = append(clients, c)
+			}
+		} else {
+			cookies := make([]*http.Cookie, 0, len(cfg.Cookies))
+			for _, cookie := range cfg.Cookies {
+				cookies = append(cookies, &http.Cookie{Name: cookie.Name, Value: cookie.Value})
+			}
+			c := req.C().ImpersonateChrome().SetCommonCookies(cookies...)
+			c = c.SetLogger(log.Default()).EnableDebugLog().SetCommonRetryCount(3)
+			if config.Get().Source.Proxy != "" {
+				c.SetProxyURL(config.Get().Source.Proxy)
+			}
+			clients = append(clients, c)
 		}
-		c := req.C().ImpersonateChrome().SetCommonCookies(cookies...)
-		c = c.SetLogger(log.Default()).EnableDebugLog().SetCommonRetryCount(3)
-		if config.Get().Source.Proxy != "" {
-			c.SetProxyURL(config.Get().Source.Proxy)
-		}
-		return &Pixiv{
-			cfg:       cfg,
-			reqClient: c,
-		}
+		return &Pixiv{cfg: cfg, reqClients: clients}
 	})
 }
 
@@ -65,14 +77,14 @@ func (p *Pixiv) FetchNewArtworks(ctx context.Context, limit int) ([]*dto.Fetched
 }
 
 func (p *Pixiv) GetArtworkInfo(ctx context.Context, sourceURL string) (*dto.FetchedArtwork, error) {
-	ajaxResp, err := reqAjaxResp(ctx, sourceURL, p.reqClient)
+	ajaxResp, err := reqAjaxResp(ctx, sourceURL, p.nextClient())
 	if err != nil {
 		return nil, err
 	}
 	if ajaxResp.Err {
 		return nil, oops.Wrapf(err, "pixiv ajax response error: %s", ajaxResp.Message)
 	}
-	return ajaxResp.ToArtwork(ctx, p.reqClient, p.cfg.ImgProxy)
+	return ajaxResp.ToArtwork(ctx, p.nextClient(), p.cfg.ImgProxy)
 }
 
 func (p *Pixiv) MatchesSourceURL(text string) (string, bool) {
@@ -81,6 +93,18 @@ func (p *Pixiv) MatchesSourceURL(text string) (string, bool) {
 		return "", false
 	}
 	return "https://www.pixiv.net/artworks/" + pid, true
+}
+
+func (p *Pixiv) nextClient() *req.Client {
+	if len(p.reqClients) == 0 {
+		return nil
+	}
+	if len(p.reqClients) == 1 {
+		return p.reqClients[0]
+	}
+	client := p.reqClients[p.clientIdx]
+	p.clientIdx = (p.clientIdx + 1) % len(p.reqClients)
+	return client
 }
 
 func (p *Pixiv) PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string {

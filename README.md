@@ -150,10 +150,30 @@ token = "123456:ABCDEF"
 chat_id = -1003333333333
 
 [source.pixiv]
+# 兼容旧写法：单账号可直接使用 cookies 数组
 [[source.pixiv.cookies]]
 name = "PHPSESSID"
 value = ""
 [[source.pixiv.cookies]]
+name = "yuid_b"
+value = ""
+
+# 新增：多账号轮询抓取，按顺序轮换使用不同账号
+[[source.pixiv.accounts]]
+name = "账号A"
+[[source.pixiv.accounts.cookies]]
+name = "PHPSESSID"
+value = ""
+[[source.pixiv.accounts.cookies]]
+name = "yuid_b"
+value = ""
+
+[[source.pixiv.accounts]]
+name = "账号B"
+[[source.pixiv.accounts.cookies]]
+name = "PHPSESSID"
+value = ""
+[[source.pixiv.accounts.cookies]]
 name = "yuid_b"
 value = ""
 
@@ -173,9 +193,11 @@ file = "logs/manyacg.log"
 ```
 
 说明：
+
 - `telegram.chat_id` 作为主发布频道，普通作品默认发到这里。
 - `telegram.extra_target` 的第一个有效配置会被当作 R18 分流频道；R18 作品会自动发到该频道。
 - 如果你只需要单频道，也可以只配置 `telegram.chat_id`，不需要 `extra_target`。
+- Pixiv 支持多账号轮询抓取；如果配置了 `source.pixiv.accounts`，会按顺序轮换使用不同账号。
 
 赋予二进制文件执行权限并运行即可:
 
@@ -229,4 +251,4 @@ dsn = "file:manyacg_migrate.db" # 连接字符串
 ./manyacg db migrate
 ```
 
-数据迁移完成后, 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节.
+数据迁移完成后, 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节。

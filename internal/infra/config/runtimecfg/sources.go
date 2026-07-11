@@ -12,10 +12,16 @@ type SourceConfig struct {
 }
 
 type SourcePixivConfig struct {
-	ImgProxy string         `toml:"img_proxy" mapstructure:"img_proxy" json:"img_proxy" yaml:"img_proxy"`
-	RssURLs  []string       `toml:"rss_urls" mapstructure:"rss_urls" json:"rss_urls" yaml:"rss_urls"`
-	Cookies  []CookieConfig `toml:"cookies" mapstructure:"cookies" json:"cookies" yaml:"cookies"`
-	Disable  bool           `toml:"disable" mapstructure:"disable" json:"disable" yaml:"disable"`
+	ImgProxy string             `toml:"img_proxy" mapstructure:"img_proxy" json:"img_proxy" yaml:"img_proxy"`
+	RssURLs  []string           `toml:"rss_urls" mapstructure:"rss_urls" json:"rss_urls" yaml:"rss_urls"`
+	Cookies  []CookieConfig     `toml:"cookies" mapstructure:"cookies" json:"cookies" yaml:"cookies"`
+	Accounts []PixivAccountConfig `toml:"accounts" mapstructure:"accounts" json:"accounts" yaml:"accounts"`
+	Disable  bool               `toml:"disable" mapstructure:"disable" json:"disable" yaml:"disable"`
+}
+
+type PixivAccountConfig struct {
+	Name    string         `toml:"name" mapstructure:"name" json:"name" yaml:"name"`
+	Cookies []CookieConfig `toml:"cookies" mapstructure:"cookies" json:"cookies" yaml:"cookies"`
 }
 
 type SourceTwitterConfig struct {
