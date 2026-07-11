@@ -254,7 +254,14 @@ func doPostAndCreateArtwork(
 
 	editReplyMarkupText("正在发布到频道...")
 
-	results, err := SendArtworkMediaGroup(ctx, bot, serv, meta, toChatID, artwork)
+	targetChatID := toChatID
+	if targetChatID.ID == 0 && targetChatID.Username == "" {
+		targetChatID = meta.ResolvePostChatID(artwork)
+	}
+	if targetChatID.ID == 0 && targetChatID.Username == "" {
+		targetChatID = toChatID
+	}
+	results, err := SendArtworkMediaGroup(ctx, bot, serv, meta, targetChatID, artwork)
 	if err != nil {
 		return oops.Wrapf(err, "failed to send artwork media group")
 	}
@@ -265,7 +272,7 @@ func doPostAndCreateArtwork(
 	// 这里不用 UpdateCachedArtworkFileID , 因为还需要更新 message 信息
 	for _, msg := range results {
 		tginfo := shared.TelegramInfo{}
-		tginfo.SetMessage(meta.ChannelChatID().ID, msg.Message.MessageID, msg.Message.MediaGroupID)
+		tginfo.SetMessage(targetChatID.ID, msg.Message.MessageID, msg.Message.MediaGroupID)
 		switch msg.Type {
 		case MediaResultTypePhoto:
 			tginfo.SetFileID(meta.BotID(), shared.TelegramMediaTypePhoto, msg.FileID)
@@ -414,8 +421,8 @@ func doPostAndCreateArtwork(
 	}
 	caption := ArtworkHTMLCaption(ent)
 	_, err = bot.EditMessageCaption(ctx, telegoutil.
-		EditMessageCaption(toChatID,
-			ent.FirstMedia().GetTelegramInfo().MessageID(meta.ChannelChatID().ID),
+		EditMessageCaption(targetChatID,
+			ent.FirstMedia().GetTelegramInfo().MessageID(targetChatID.ID),
 			caption).
 		WithParseMode(telego.ModeHTML))
 	if err != nil {

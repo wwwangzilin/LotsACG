@@ -85,10 +85,10 @@ Windows:
 
 ```toml
 [telegram]
-bot_token="token"
+bot_token = "token"
 admins = [123456789] # 你的 Telegram 用户 ID
 username = "@moreacg" # 频道用户名(如有)
-chat_id = -1001234567890 # 频道 ID, 与 username 二选一
+chat_id = -1001234567890 # 主频道 ID, 与 username 二选一
 
 [source.pixiv]
 # 建议配置 pixiv cookies, 可以提高作品的爬取成功率
@@ -107,6 +107,75 @@ enable = true
 token = "用于发送原图的 Bot 的 Token" # 可以与 telegram.bot_token 相同
 chat_id = -1001234567890 # 用于存储原图的频道 ID
 ```
+
+#### 完整配置案例
+
+下面是一个更完整的示例，包含主频道、R18 分流频道、数据库、搜索和 Pixiv 配置：
+
+```toml
+[telegram]
+bot_token = "123456:ABCDEF"
+api_url = ""
+username = "@manyacg_bot"
+admins = [123456789]
+caption_template = ""
+chat_id = -1001111111111 # 主频道（普通作品）
+
+# 额外目标频道会被作为 R18 分流频道使用。
+# 当作品是 R18，或者包含 R-18 / R18 / R-18G / R18G 标签时，
+# 会自动把作品发布到这里，而非主频道。
+[[telegram.extra_target]]
+title = "R18频道"
+chat_id = -1002222222222
+
+[database]
+# 可选：sqlite / postgres / mysql
+# 这里只给出 sqlite 示例
+kind = "sqlite"
+dsn = "manyacg.db"
+
+[search]
+enable = false
+# 如果启用 MeiliSearch，可配置如下：
+# host = "http://127.0.0.1:7700"
+# api_key = ""
+# index = "manyacg"
+
+[storage]
+original_type = "telegram"
+
+[storage.telegram]
+enable = true
+token = "123456:ABCDEF"
+chat_id = -1003333333333
+
+[source.pixiv]
+[[source.pixiv.cookies]]
+name = "PHPSESSID"
+value = ""
+[[source.pixiv.cookies]]
+name = "yuid_b"
+value = ""
+
+[source.twitter]
+# 可选：配置后可提高推特内容抓取成功率
+# cookies = ""
+
+[source.danbooru]
+# 可选：配置后可提高 Danbooru 内容抓取成功率
+# username = ""
+# password = ""
+
+[log]
+level = "info"
+file_level = "info"
+file = "logs/manyacg.log"
+```
+
+说明：
+- `telegram.chat_id` 作为主发布频道，普通作品默认发到这里。
+- `telegram.extra_target` 的第一个有效配置会被当作 R18 分流频道；R18 作品会自动发到该频道。
+- 如果你只需要单频道，也可以只配置 `telegram.chat_id`，不需要 `extra_target`。
 
 赋予二进制文件执行权限并运行即可:
 

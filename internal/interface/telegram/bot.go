@@ -172,6 +172,14 @@ func Init(ctx context.Context, serv *service.Service, cfg runtimecfg.TelegramCon
 	if cfg.GroupID != 0 {
 		metaopts = append(metaopts, metautil.WithGroupChatID(groupChatID))
 	}
+	if len(cfg.ExtraTarget) > 0 {
+		for _, extraTarget := range cfg.ExtraTarget {
+			if extraTarget.ChatID != 0 {
+				metaopts = append(metaopts, metautil.WithR18ChannelChatID(telegoutil.ID(extraTarget.ChatID)))
+				break
+			}
+		}
+	}
 	metaopts = append(metaopts, metautil.WithBotID(int64(botId)))
 	meta := metautil.NewMetaData(channelChatID, botUsername, metaopts...)
 

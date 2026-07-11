@@ -5,21 +5,27 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/krau/ManyACG/internal/shared"
 	"github.com/mymmrac/telego"
 )
 
 type MetaData struct {
-	channelChatID telego.ChatID
-	groupChatID   telego.ChatID
-	botUsername   string
-	siteUrl       string
-	botId         int64
+	channelChatID    telego.ChatID
+	r18ChannelChatID telego.ChatID
+	groupChatID      telego.ChatID
+	botUsername      string
+	siteUrl          string
+	botId            int64
 	// should not set manually
 	channelAvailable bool
 }
 
 func (m *MetaData) ChannelChatID() telego.ChatID {
 	return m.channelChatID
+}
+
+func (m *MetaData) R18ChannelChatID() telego.ChatID {
+	return m.r18ChannelChatID
 }
 
 func (m *MetaData) BotUsername() string {
@@ -53,6 +59,12 @@ func WithSiteURL(url string) Option {
 func WithGroupChatID(id telego.ChatID) Option {
 	return func(m *MetaData) {
 		m.groupChatID = id
+	}
+}
+
+func WithR18ChannelChatID(id telego.ChatID) Option {
+	return func(m *MetaData) {
+		m.r18ChannelChatID = id
 	}
 }
 
@@ -91,6 +103,27 @@ func MustFromContext(ctx context.Context) *MetaData {
 
 func WithContext(ctx context.Context, meta *MetaData) context.Context {
 	return context.WithValue(ctx, contextKey, meta)
+}
+
+func (m *MetaData) ResolvePostChatID(artwork shared.ArtworkLike) telego.ChatID {
+	if artwork == nil {
+		return m.channelChatID
+	}
+	if artwork.GetR18() {
+		if m.r18ChannelChatID.ID != 0 || m.r18ChannelChatID.Username != "" {
+			return m.r18ChannelChatID
+		}
+		return m.channelChatID
+	}
+	for _, tag := range artwork.GetTags() {
+		if strings.EqualFold(tag, "R-18") || strings.EqualFold(tag, "R18") || strings.EqualFold(tag, "R-18G") || strings.EqualFold(tag, "R18G") {
+			if m.r18ChannelChatID.ID != 0 || m.r18ChannelChatID.Username != "" {
+				return m.r18ChannelChatID
+			}
+			break
+		}
+	}
+	return m.channelChatID
 }
 
 func (m *MetaData) BotDeepLink(cmd string, params ...string) string {
