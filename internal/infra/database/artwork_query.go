@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/shared"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

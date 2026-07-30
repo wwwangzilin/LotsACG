@@ -3,8 +3,8 @@ package errs
 import (
 	"errors"
 
-	"github.com/krau/ManyACG/internal/infra/search"
-	"github.com/krau/ManyACG/internal/infra/tagging"
+	"github.com/krau/LotsACG/internal/infra/search"
+	"github.com/krau/LotsACG/internal/infra/tagging"
 	"gorm.io/gorm"
 )
 

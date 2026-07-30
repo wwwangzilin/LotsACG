@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/log"
-	"github.com/krau/ManyACG/pkg/strutil"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/strutil"
 	"github.com/samber/oops"
 	"github.com/unvgo/ouid"
 

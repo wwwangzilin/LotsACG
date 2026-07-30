@@ -4,9 +4,9 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/reutil"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/reutil"
 )
 
 var (

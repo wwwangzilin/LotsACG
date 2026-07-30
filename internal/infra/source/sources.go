@@ -3,8 +3,8 @@ package source
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/shared"
 )
 
 type ArtworkSource interface {

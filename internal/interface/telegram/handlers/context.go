@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/krau/ManyACG/internal/interface/telegram/metautil"
-	"github.com/krau/ManyACG/internal/service"
+	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
+	"github.com/krau/LotsACG/internal/service"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/samber/oops"
 )

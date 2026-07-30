@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/redis/rueidis"
 	"github.com/samber/oops"
 	"go.etcd.io/bbolt"

@@ -7,12 +7,12 @@ import (
 
 	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/ManyACG/internal/common/httpclient"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/tagging"
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/repo"
-	"github.com/krau/ManyACG/internal/shared/errs"
+	"github.com/krau/LotsACG/internal/common/httpclient"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/tagging"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/repo"
+	"github.com/krau/LotsACG/internal/shared/errs"
 	"github.com/unvgo/ouid"
 )
 

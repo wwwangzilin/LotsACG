@@ -10,11 +10,11 @@ import (
 
 	"github.com/imroc/req/v3"
 
-	config "github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/source"
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/strutil"
+	config "github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/source"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/strutil"
 )
 
 type Kemono struct {

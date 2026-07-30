@@ -3,9 +3,9 @@ package infra
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/database"
-	"github.com/krau/ManyACG/internal/infra/kvstor"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/database"
+	"github.com/krau/LotsACG/internal/infra/kvstor"
 	"github.com/samber/oops"
 )
 

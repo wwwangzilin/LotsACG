@@ -15,8 +15,8 @@ dist/
 *.log
 imgcache/
 test.json
-manyacg
-manyacg.exe
+lotsacg
+lotsacg.exe
 data/
-ManyACG
-ManyACG.exe
+LotsACG
+LotsACG.exe

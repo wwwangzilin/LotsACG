@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/interface/rest/utils"
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/interface/rest/utils"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/internal/shared"
 )
 
 type ResponseArtworkItem struct {

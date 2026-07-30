@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/corona10/goimagehash"
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

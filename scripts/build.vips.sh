@@ -6,9 +6,9 @@ gitCommit=$(git log --pretty=format:"%h" -1)
 version=$(git describe --abbrev=0 --tags)
 
 versionFlags="-w -s \
--X 'github.com/krau/ManyACG/common.BuildTime=$builtAt' \
--X 'github.com/krau/ManyACG/common.Commit=$gitCommit' \
--X 'github.com/krau/ManyACG/common.Version=$version'"
+-X 'github.com/krau/LotsACG/common.BuildTime=$builtAt' \
+-X 'github.com/krau/LotsACG/common.Commit=$gitCommit' \
+-X 'github.com/krau/LotsACG/common.Version=$version'"
 
 vipsFlags=$(pkg-config --static --libs vips)
 
@@ -16,4 +16,4 @@ vipsFlags=$(pkg-config --static --libs vips)
 CGO_ENABLED=1 go build \
     -tags vips,nodynamic,netgo \
     -ldflags "$versionFlags -linkmode external -extldflags \"-static $vipsFlags\"" \
-    -o manyacg
+    -o lotsacg

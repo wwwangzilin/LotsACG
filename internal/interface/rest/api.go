@@ -14,11 +14,11 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/interface/rest/common"
-	"github.com/krau/ManyACG/internal/interface/rest/handlers"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/internal/shared/errs"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/interface/rest/common"
+	"github.com/krau/LotsACG/internal/interface/rest/handlers"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/internal/shared/errs"
 
 	"github.com/samber/oops"
 )

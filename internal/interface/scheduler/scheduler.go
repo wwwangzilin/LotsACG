@@ -7,13 +7,13 @@ import (
 	"math"
 	"time"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/model/converter"
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/internal/shared/errs"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/model/converter"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/internal/shared/errs"
+	"github.com/krau/LotsACG/pkg/log"
 )
 
 // Poster 应该完成所有创建工作, 包括文件存储等

@@ -7,13 +7,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/krau/ManyACG/internal/infra/tagging"
-	"github.com/krau/ManyACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/ManyACG/internal/interface/telegram/metautil"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/pkg/mediatool"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/tagging"
+	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/pkg/mediatool"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -105,7 +105,7 @@ func getDBSearchResultText(ctx context.Context, serv *service.Service, meta *met
 			text.WriteString(fmt.Sprintf("<a href=\"%s\">频道消息</a>\n", meta.ChannelMessageURL(picture.TelegramInfo.Data().MessageID(meta.ChannelChatID().ID))))
 		}
 		if meta.SiteURL() != "" {
-			text.WriteString(fmt.Sprintf("<a href=\"%s\">ManyACG</a>\n\n", meta.SiteURL()+"/artwork/"+picture.ArtworkID.Hex()))
+			text.WriteString(fmt.Sprintf("<a href=\"%s\">LotsACG</a>\n\n", meta.SiteURL()+"/artwork/"+picture.ArtworkID.Hex()))
 		}
 	}
 	return text.String(), true, nil

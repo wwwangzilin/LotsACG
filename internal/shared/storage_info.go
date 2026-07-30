@@ -3,7 +3,7 @@ package shared
 import (
 	"fmt"
 
-	"github.com/krau/ManyACG/pkg/strutil"
+	"github.com/krau/LotsACG/pkg/strutil"
 )
 
 type StorageInfo struct {

@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/ManyACG/internal/interface/rest/common"
-	"github.com/krau/ManyACG/internal/service"
+	"github.com/krau/LotsACG/internal/interface/rest/common"
+	"github.com/krau/LotsACG/internal/service"
 )
 
 type RequestRandomTags struct {

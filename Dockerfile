@@ -17,17 +17,17 @@ RUN builtAt=${BUILT_AT:-$(date +'%F %T %z')} && \
     version=${VERSION:-$(git describe --abbrev=0 --tags)} && \
     ldflags="\
     -w -s \
-    -X 'github.com/krau/ManyACG/internal/common/version.BuildTime=$builtAt' \
-    -X 'github.com/krau/ManyACG/internal/common/version.Commit=$gitCommit' \
-    -X 'github.com/krau/ManyACG/internal/common/version.Version=$version'\
+    -X 'github.com/krau/LotsACG/internal/common/version.BuildTime=$builtAt' \
+    -X 'github.com/krau/LotsACG/internal/common/version.Commit=$gitCommit' \
+    -X 'github.com/krau/LotsACG/internal/common/version.Version=$version'\
     " && \
-    CGO_ENABLED=0 go build -tags nodynamic -ldflags "$ldflags" -o manyacg
+    CGO_ENABLED=0 go build -tags nodynamic -ldflags "$ldflags" -o lotsacg
 
 FROM alpine:latest
-WORKDIR /opt/manyacg/
+WORKDIR /opt/lotsacg/
 
 RUN apk add --no-cache bash ca-certificates ffmpeg && update-ca-certificates
 
-COPY --from=builder /app/manyacg .
+COPY --from=builder /app/lotsacg .
 
-ENTRYPOINT ["./manyacg"]
+ENTRYPOINT ["./lotsacg"]

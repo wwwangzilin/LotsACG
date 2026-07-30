@@ -1,8 +1,8 @@
 <div align="center">
   
-# ManyACG
+# LotsACG
 
-![ManyACG_banner](https://github.com/user-attachments/assets/1d2d7835-18c1-4a50-9cb9-c14ae69659be)
+![LotsACG_banner](https://github.com/user-attachments/assets/1d2d7835-18c1-4a50-9cb9-c14ae69659be)
 
 Collect, Download, Organize and Share your Favorite Anime Pictures.
 
@@ -10,21 +10,21 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
   
 ---
 
-这里是 ManyACG 的后端代码.
+这里是 LotsACG 的后端代码.
 
-ManyACG 是为收集与整理二次元插画作品而生的项目, 目前主要通过 Telegram Bot 完成数据交互.
+LotsACG 是为收集与整理二次元插画作品而生的项目, 目前主要通过 Telegram Bot 完成数据交互.
 
-在充当 Telegram 插画频道的爬虫与管理 Bot 的同时, ManyACG 还能使用已存入数据库的作品构建一个自己的二次元图片分享网站.
+在充当 Telegram 插画频道的爬虫与管理 Bot 的同时, LotsACG 还能使用已存入数据库的作品构建一个自己的二次元图片分享网站.
 
-> 前端代码 -> [ManyACG/web](https://github.com/ManyACG/web)
+> 前端代码 -> [LotsACG/web](https://github.com/LotsACG/web)
 
-![manyacg-web](https://github.com/user-attachments/assets/670a6092-1406-4f51-ab2b-49a6d9be286f)
+![lotsacg-web](https://github.com/user-attachments/assets/670a6092-1406-4f51-ab2b-49a6d9be286f)
 
 ## Demo
 
 - Bot - [@KirakaBot](https://t.me/kirakabot)
 - 频道 - [@MoreACG](https://t.me/MoreACG)
-- 网站 - [ManyACG](https://manyacg.top)
+- 网站 - [LotsACG](https://lotsacg.top)
 
 ## 特性
 
@@ -52,7 +52,7 @@ ManyACG 是为收集与整理二次元插画作品而生的项目, 目前主要�
 
 ### 安装FFmpeg(可选)
 
-ManyACG 需要使用 FFmpeg 来从动图序列合成视频, 请在自己的系统上安装, 以下是一些系统的安装示例:
+LotsACG 需要使用 FFmpeg 来从动图序列合成视频, 请在自己的系统上安装, 以下是一些系统的安装示例:
 
 Ubuntu/Debian:
 
@@ -73,15 +73,15 @@ Windows:
 1. 在 [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) 下载 [ffmpeg-release-full.7z](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z)
 2. 解压并将 `bin` 目录添加到环境变量 `PATH`
 
-### 从二进制文件部署 ManyACG
+### 从二进制文件部署 LotsACG
 
-在 [release](https://github.com/krau/ManyACG/releases) 页面下载与自己系统和架构对应的文件, 解压.
+在 [release](https://github.com/krau/LotsACG/releases) 页面下载与自己系统和架构对应的文件, 解压.
 
 在与解压出的二进制文件的相同目录下创建 `config.toml` 文件, 修改各项配置.
 
 #### 最简配置
 
-如果你只需要将 ManyACG 作为一个 Telegram 频道的自动发图与管理 Bot 使用, 使用以下简单的配置即可:
+如果你只需要将 LotsACG 作为一个 Telegram 频道的自动发图与管理 Bot 使用, 使用以下简单的配置即可:
 
 ```toml
 [telegram]
@@ -116,7 +116,7 @@ chat_id = -1001234567890 # 用于存储原图的频道 ID
 [telegram]
 bot_token = "123456:ABCDEF"
 api_url = ""
-username = "@manyacg_bot"
+username = "@lotsacg_bot"
 admins = [123456789]
 caption_template = ""
 chat_id = -1001111111111 # 主频道（普通作品）
@@ -132,14 +132,14 @@ chat_id = -1002222222222
 # 可选：sqlite / postgres / mysql
 # 这里只给出 sqlite 示例
 kind = "sqlite"
-dsn = "manyacg.db"
+dsn = "lotsacg.db"
 
 [search]
 enable = false
 # 如果启用 MeiliSearch，可配置如下：
 # host = "http://127.0.0.1:7700"
 # api_key = ""
-# index = "manyacg"
+# index = "lotsacg"
 
 [storage]
 original_type = "telegram"
@@ -189,7 +189,7 @@ value = ""
 [log]
 level = "info"
 file_level = "info"
-file = "logs/manyacg.log"
+file = "logs/lotsacg.log"
 ```
 
 说明：
@@ -202,25 +202,25 @@ file = "logs/manyacg.log"
 赋予二进制文件执行权限并运行即可:
 
 ```bash
-chmod +x manyacg
-./manyacg
+chmod +x lotsacg
+./lotsacg
 ```
 
 #### 安装为服务
 
 适用于 Linux 系统, 以 systemd 为例:
 
-`/etc/systemd/system/manyacg.service`
+`/etc/systemd/system/lotsacg.service`
 
 ```ini
 [Unit]
-Description=ManyACG
+Description=LotsACG
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/path/to/manyacg
-ExecStart=/path/to/manyacg/manyacg
+WorkingDirectory=/path/to/lotsacg
+ExecStart=/path/to/lotsacg/lotsacg
 Restart=always
 
 [Install]
@@ -228,27 +228,27 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-systemctl enable --now manyacg
+systemctl enable --now lotsacg
 ```
 
 ---
 
 ## 从 v0 迁移
 
-如果你之前使用的是 v0 版本的 ManyACG, 请下载最新的 v0.x 版本 release, 并修改配置文件, 添加迁移目标数据库配置:
+如果你之前使用的是 v0 版本的 LotsACG, 请下载最新的 v0.x 版本 release, 并修改配置文件, 添加迁移目标数据库配置:
 
 ```toml
 [migrate]
 target = "sqlite" # pgsql/mysql/sqlite
-dsn = "file:manyacg_migrate.db" # 连接字符串
+dsn = "file:lotsacg_migrate.db" # 连接字符串
 # 示例: pgsql dsn
-# dsn = "host=localhost user=postgres password=yourpassword dbname=manyacg port=5432 sslmode=disable"
+# dsn = "host=localhost user=postgres password=yourpassword dbname=lotsacg port=5432 sslmode=disable"
 ```
 
 然后运行
 
 ```bash
-./manyacg db migrate
+./lotsacg db migrate
 ```
 
 数据迁移完成后, 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节。

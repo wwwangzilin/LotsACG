@@ -11,10 +11,10 @@ import (
 	"runtime"
 
 	"github.com/gen2brain/avif"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/pkg/log"
-	"github.com/krau/ManyACG/pkg/osutil"
-	"github.com/krau/ManyACG/pkg/strutil"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/osutil"
+	"github.com/krau/LotsACG/pkg/strutil"
 )
 
 var (

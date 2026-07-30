@@ -83,14 +83,14 @@ func loadConfig() Config {
 
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("/etc/manyacg/")
+	viper.AddConfigPath("/etc/lotsacg/")
 	viper.SetConfigType("toml")
-	viper.SetEnvPrefix("manyacg")
+	viper.SetEnvPrefix("lotsacg")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	defaults := map[string]any{
-		"log.file_path":  "logs/manyacg.log",
+		"log.file_path":  "logs/lotsacg.log",
 		"log.backup_num": 7,
 
 		"wsrv.url": "https://wsrv.nl",
@@ -101,9 +101,9 @@ func loadConfig() Config {
 		"telegram.retry.start_delay":   3,
 		"telegram.retry.max_delay":     600,
 
-		"rest.site.title":        "ManyACG - Kawaii is all you need",
+		"rest.site.title":        "LotsACG - Kawaii is all you need",
 		"rest.site.desc":         "ACG Image Collector and Gallery Server",
-		"rest.site.name":         "ManyACG",
+		"rest.site.name":         "LotsACG",
 		"rest.cache.default_ttl": 600, // 10 minutes
 
 		"storage.telegram.api_url":             "https://api.telegram.org",
@@ -118,19 +118,19 @@ func loadConfig() Config {
 		"storage.cache_dir":                    "./imgcache",
 		"storage.cache_ttl":                    60 * 60 * 4, // in seconds
 
-		"source.pixiv.img_proxy":           "pximg.manyacg.top",
+		"source.pixiv.img_proxy":           "pximg.lotsacg.top",
 		"source.twitter.fx_twitter_domain": "fxtwitter.com",
 
 		"database.type": "sqlite",
-		"database.dsn":  `file:manyacg.db?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_txlock=deferred`,
+		"database.dsn":  `file:lotsacg.db?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_txlock=deferred`,
 
 		"kvdb.type":             "bbolt",
 		"kvdb.path":             "data/kvdb.bbolt",
-		"kvdb.bucket":           "manyacg",
-		"kvdb.ttl_bucket":       "manyacg_ttl",
+		"kvdb.bucket":           "lotsacg",
+		"kvdb.ttl_bucket":       "lotsacg_ttl",
 		"kvdb.ttl_batch_limit":  1024,
 		"kvdb.ttl_sweep_period": 60, // in seconds
-		"kvdb.redis.prefix":     "manyacg:",
+		"kvdb.redis.prefix":     "lotsacg:",
 	}
 
 	for key, value := range defaults {

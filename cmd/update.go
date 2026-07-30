@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/krau/ManyACG/internal/common/version"
+	"github.com/krau/LotsACG/internal/common/version"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +13,7 @@ import (
 var updateCmd = &cobra.Command{
 	Use:     "update",
 	Aliases: []string{"up", "upgrade"},
-	Short:   "Upgrade ManyACG",
+	Short:   "Upgrade LotsACG",
 	Run: func(cmd *cobra.Command, args []string) {
 		Update()
 	},
@@ -25,7 +25,7 @@ func init() {
 
 func Update() {
 	v := semver.MustParse(strings.TrimPrefix(version.Version, "v"))
-	release, found, err := selfupdate.DetectLatest("krau/ManyACG")
+	release, found, err := selfupdate.DetectLatest("krau/LotsACG")
 	if err != nil {
 		log.Println("Error occurred while detecting version:", err)
 		return
@@ -47,7 +47,7 @@ func Update() {
 		log.Printf("New major version %s detected. Please check the release note and upgrade manually if necessary.\n", release.Version)
 		return
 	}
-	latest, err := selfupdate.UpdateSelf(v, "krau/ManyACG")
+	latest, err := selfupdate.UpdateSelf(v, "krau/LotsACG")
 	if err != nil {
 		log.Println("Binary update failed:", err)
 		return

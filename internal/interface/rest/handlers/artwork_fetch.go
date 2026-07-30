@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/ManyACG/internal/infra/kvstor"
-	"github.com/krau/ManyACG/internal/interface/rest/common"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/kvstor"
+	"github.com/krau/LotsACG/internal/interface/rest/common"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/unvgo/ouid"
 )
 

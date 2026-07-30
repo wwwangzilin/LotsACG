@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/krau/ManyACG/internal/interface/telegram/handlers/utils"
+	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"

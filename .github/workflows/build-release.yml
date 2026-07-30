@@ -77,8 +77,8 @@ jobs:
             BUILD_ARTIFACTS_FOLDER=$(dirname "$out")
           fi
           mkdir -p "$BUILD_ARTIFACTS_FOLDER"
-          cp ./output/manyacg "$BUILD_ARTIFACTS_FOLDER/manyacg"
-          chmod +x "$BUILD_ARTIFACTS_FOLDER/manyacg"
+          cp ./output/lotsacg "$BUILD_ARTIFACTS_FOLDER/lotsacg"
+          chmod +x "$BUILD_ARTIFACTS_FOLDER/lotsacg"
           EOF
           chmod +x build.sh
 
@@ -88,7 +88,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: linux
           goarch: amd64
-          binary_name: manyacg
+          binary_name: lotsacg
           build_command: ./build.sh
 
   cross-compile:
@@ -115,7 +115,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           ldflags: >-
             -s -w
-            -X "github.com/krau/ManyACG/internal/common/version.Version=${{ env.VERSION }}"
-            -X "github.com/krau/ManyACG/internal/common/version.BuildTime=${{ env.BUILD_TIME }}"
-            -X "github.com/krau/ManyACG/internal/common/version.Commit=${{ env.COMMIT }}"
-          binary_name: manyacg
+            -X "github.com/krau/LotsACG/internal/common/version.Version=${{ env.VERSION }}"
+            -X "github.com/krau/LotsACG/internal/common/version.BuildTime=${{ env.BUILD_TIME }}"
+            -X "github.com/krau/LotsACG/internal/common/version.Commit=${{ env.COMMIT }}"
+          binary_name: lotsacg

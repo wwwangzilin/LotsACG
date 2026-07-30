@@ -55,7 +55,7 @@ func New(host, token string, timeout time.Duration) (*taggerClient, error) {
 		SetCommonBearerAuthToken(token).
 		SetBaseURL(host).
 		SetTimeout(timeout * time.Second).
-		SetUserAgent("ManyACG")
+		SetUserAgent("LotsACG")
 	tagerC := &taggerClient{
 		Client:  client,
 		host:    host,

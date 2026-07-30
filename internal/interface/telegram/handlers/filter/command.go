@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/krau/ManyACG/internal/interface/telegram/metautil"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 )

@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )

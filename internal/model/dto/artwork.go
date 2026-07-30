@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 )
 

@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/entity"
 )
 
 type DeletedRecord interface {

@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/shared"
 )
 
 // FetchedArtwork 只会传递给 service 层, 其他层获取到的应该是 CachedArtwork 或 Artwork 实体.

@@ -8,10 +8,10 @@ import (
 	"syscall"
 
 	"github.com/goccy/go-json"
-	"github.com/krau/ManyACG/internal/app"
-	"github.com/krau/ManyACG/internal/common/version"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/app"
+	"github.com/krau/LotsACG/internal/common/version"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/unvgo/ouid"
 )
 
@@ -24,7 +24,7 @@ const banner = `
                            |___/                                        
 
 Build time: %s  Version: %s  Commit: %s
-Github: https://github.com/krau/ManyACG
+Github: https://github.com/krau/LotsACG
 Kawaii is All You Need! ᕕ(◠ڼ◠)ᕗ
 
 `

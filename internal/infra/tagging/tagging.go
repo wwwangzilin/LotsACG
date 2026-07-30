@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/tagging/konatagger"
-	"github.com/krau/ManyACG/internal/infra/tagging/mocktagger"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/tagging/konatagger"
+	"github.com/krau/LotsACG/internal/infra/tagging/mocktagger"
+	"github.com/krau/LotsACG/pkg/log"
 )
 
 type PredictResult struct {

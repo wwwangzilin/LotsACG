@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	config "github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/storage"
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/osutil"
+	config "github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/storage"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/osutil"
 )
 
 type Local struct {

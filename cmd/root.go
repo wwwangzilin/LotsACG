@@ -8,8 +8,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "manyacg",
-	Short: "manyacg",
+	Use:   "lotsacg",
+	Short: "lotsacg",
 	Run: func(cmd *cobra.Command, args []string) {
 		Run()
 	},

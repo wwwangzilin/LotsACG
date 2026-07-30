@@ -3,8 +3,8 @@ package telegram
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/ManyACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/krau/LotsACG/internal/model/entity"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/shared"
 )
 
 type Storage interface {

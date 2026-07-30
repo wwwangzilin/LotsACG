@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/krau/ManyACG/internal/shared/errs"
+	"github.com/krau/LotsACG/internal/shared/errs"
 	"github.com/vmihailenco/msgpack/v5"
 	"go.etcd.io/bbolt"
 )

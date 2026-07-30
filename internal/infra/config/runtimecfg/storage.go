@@ -23,8 +23,8 @@ type StorageRuleConfig struct {
 		Replace: 依次进行替换
 		example:
 		  match: {match_type: "webdav", match_prefix: "/onedrive"}
-		  replace: {rewrite_storage: "local", trim_prefix: "/onedrive", join_prefix: "/local/manyacg"}
-		此规则被应用后, storage 在获取 webdav 存储驱动下的以 /onedrive 开头的图片时, 会去寻找 local 存储驱动下的以 /local/manyacg 开头的图片(路径前缀被替换)
+		  replace: {rewrite_storage: "local", trim_prefix: "/onedrive", join_prefix: "/local/lotsacg"}
+		此规则被应用后, storage 在获取 webdav 存储驱动下的以 /onedrive 开头的图片时, 会去寻找 local 存储驱动下的以 /local/lotsacg 开头的图片(路径前缀被替换)
 	*/
 
 	// Match

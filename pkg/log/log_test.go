@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/log"
 )
 
 func readLastLine(t *testing.T, filePath string) string {

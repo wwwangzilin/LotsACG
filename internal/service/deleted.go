@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/entity"
 )
 
 func (s *Service) CheckDeletedByURL(ctx context.Context, sourceURL string) bool {

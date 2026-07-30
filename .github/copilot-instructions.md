@@ -1,10 +1,10 @@
-# ManyACG Copilot Instructions
+# LotsACG Copilot Instructions
 
 These notes guide AI coding agents working on this repo. Focus on existing patterns; do not introduce new architectures unless requested.
 
 ## Big Picture
-- **Purpose**: Backend for ManyACG – collect, download, organize and serve anime illustrations, mainly driven by a Telegram bot and optional REST API.
-- **Entry / CLI**: `main.go` → `cmd/root.go` → `cmd/run.go` (`manyacg` binary). Runtime wiring (config, infra, services, interfaces) is done in `cmd/run.go`.
+- **Purpose**: Backend for LotsACG – collect, download, organize and serve anime illustrations, mainly driven by a Telegram bot and optional REST API.
+- **Entry / CLI**: `main.go` → `cmd/root.go` → `cmd/run.go` (`lotsacg` binary). Runtime wiring (config, infra, services, interfaces) is done in `cmd/run.go`.
 - **Layering**:
   - `internal/infra`: low-level infrastructure (config, database, kvdb, search, storage backends, tagging, sources).
   - `internal/model`: domain layer – `entity` (GORM models), `dto` (API/search/Telegram shapes), `command` (write commands), `query` (read filters) and `converter` (entity/DTO mapping).
@@ -45,7 +45,7 @@ These notes guide AI coding agents working on this repo. Focus on existing patte
 
 ## Workflows & Commands
 - **Build / Run**:
-  - Local run: `go run ./cmd` (or simply build `manyacg` via `go build -o manyacg .` and run).
+  - Local run: `go run ./cmd` (or simply build `lotsacg` via `go build -o lotsacg .` and run).
   - Docker: use the provided `Dockerfile` / scripts under `scripts/` when adjusting container behaviour.
 - **Config for Dev**: Minimal `config.toml` as shown in `README.md` (Telegram, storage, Pixiv cookies, DB `dsn`, search config). Avoid hard-coding secrets in code; keep them in config.
 - **Tests**: Existing tests live mainly under `pkg/*` and `internal/*`. When modifying a package with tests, extend those patterns instead of adding parallel test helpers elsewhere.

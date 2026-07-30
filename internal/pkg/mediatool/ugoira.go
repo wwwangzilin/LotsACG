@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/krau/ffmpeg-go"
 )
 
@@ -21,7 +21,7 @@ func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath stri
 	if !ffmpegAvailable {
 		return "", fmt.Errorf("ffmpeg is not available")
 	}
-	tmpDir, err := os.MkdirTemp(filepath.Dir(outputPath), "manyacg-ugoira-*")
+	tmpDir, err := os.MkdirTemp(filepath.Dir(outputPath), "lotsacg-ugoira-*")
 	if err != nil {
 		return "", fmt.Errorf("create temp dir: %w", err)
 	}

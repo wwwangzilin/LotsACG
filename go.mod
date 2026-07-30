@@ -1,4 +1,4 @@
-module github.com/krau/ManyACG
+module github.com/krau/LotsACG
 
 go 1.25.7
 

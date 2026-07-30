@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/krau/ManyACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/entity"
 	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )

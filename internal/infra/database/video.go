@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

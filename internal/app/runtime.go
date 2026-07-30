@@ -5,22 +5,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/krau/ManyACG/internal/infra"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/database"
-	"github.com/krau/ManyACG/internal/infra/eventbus"
-	"github.com/krau/ManyACG/internal/infra/search"
-	"github.com/krau/ManyACG/internal/infra/source"
-	"github.com/krau/ManyACG/internal/infra/storage"
-	"github.com/krau/ManyACG/internal/infra/tagging"
-	"github.com/krau/ManyACG/internal/interface/rest"
-	restcommon "github.com/krau/ManyACG/internal/interface/rest/common"
-	"github.com/krau/ManyACG/internal/interface/scheduler"
-	"github.com/krau/ManyACG/internal/interface/telegram"
-	"github.com/krau/ManyACG/internal/repo"
-	"github.com/krau/ManyACG/internal/service"
-	"github.com/krau/ManyACG/pkg/log"
-	"github.com/krau/ManyACG/pkg/osutil"
+	"github.com/krau/LotsACG/internal/infra"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/database"
+	"github.com/krau/LotsACG/internal/infra/eventbus"
+	"github.com/krau/LotsACG/internal/infra/search"
+	"github.com/krau/LotsACG/internal/infra/source"
+	"github.com/krau/LotsACG/internal/infra/storage"
+	"github.com/krau/LotsACG/internal/infra/tagging"
+	"github.com/krau/LotsACG/internal/interface/rest"
+	restcommon "github.com/krau/LotsACG/internal/interface/rest/common"
+	"github.com/krau/LotsACG/internal/interface/scheduler"
+	"github.com/krau/LotsACG/internal/interface/telegram"
+	"github.com/krau/LotsACG/internal/repo"
+	"github.com/krau/LotsACG/internal/service"
+	"github.com/krau/LotsACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/osutil"
 )
 
 type Runtime struct {
@@ -146,7 +146,7 @@ func Run(ctx context.Context, cfg runtimecfg.Config, stop func()) error {
 		return err
 	}
 
-	log.Info("ManyACG is running !")
+	log.Info("LotsACG is running !")
 	defer log.Info("Exited.")
 
 	<-ctx.Done()

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/krau/ManyACG/internal/shared/errs"
+	"github.com/krau/LotsACG/internal/shared/errs"
 	"github.com/redis/rueidis"
 	"github.com/vmihailenco/msgpack/v5"
 )

@@ -5,13 +5,13 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/database"
-	"github.com/krau/ManyACG/internal/infra/search/meilisearch"
-	"github.com/krau/ManyACG/internal/infra/search/mocksearch"
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/database"
+	"github.com/krau/LotsACG/internal/infra/search/meilisearch"
+	"github.com/krau/LotsACG/internal/infra/search/mocksearch"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/pkg/log"
 )
 
 type Searcher interface {

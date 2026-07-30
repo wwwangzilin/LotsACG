@@ -4,11 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/krau/ManyACG/internal/model/converter"
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/model/entity"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/model/converter"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 )
 

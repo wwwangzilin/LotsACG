@@ -62,15 +62,15 @@ cd build
 meson compile
 meson install
 
-cd /ManyACG
+cd /LotsACG
 
 builtAt="$(date +'%F %T %z')"
 gitCommit=$(git log --pretty=format:"%h" -1)
 version=$(git describe --abbrev=0 --tags)
 
-versionFlags="-X 'github.com/krau/ManyACG/common.BuildTime=$builtAt' \
--X 'github.com/krau/ManyACG/common.Commit=$gitCommit' \
--X 'github.com/krau/ManyACG/common.Version=$version'"
+versionFlags="-X 'github.com/krau/LotsACG/common.BuildTime=$builtAt' \
+-X 'github.com/krau/LotsACG/common.Commit=$gitCommit' \
+-X 'github.com/krau/LotsACG/common.Version=$version'"
 
 vipsFlags=$(pkg-config --static --libs vips)
 
@@ -78,4 +78,4 @@ vipsFlags=$(pkg-config --static --libs vips)
 CGO_ENABLED=1 go build \
     -tags nodynamic,netgo \
     -ldflags "-s -w $versionFlags -linkmode external -extldflags \"-static $vipsFlags\"" \
-    -o manyacg
+    -o lotsacg

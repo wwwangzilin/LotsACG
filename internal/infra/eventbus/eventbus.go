@@ -2,7 +2,7 @@ package eventbus
 
 import (
 	"github.com/duke-git/lancet/v2/eventbus"
-	"github.com/krau/ManyACG/internal/repo"
+	"github.com/krau/LotsACG/internal/repo"
 )
 
 type EventBus[P any] struct {

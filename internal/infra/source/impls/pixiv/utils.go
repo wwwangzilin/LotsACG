@@ -9,10 +9,10 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/imroc/req/v3"
-	"github.com/krau/ManyACG/internal/infra/kvstor"
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/pkg/log"
-	"github.com/krau/ManyACG/pkg/reutil"
+	"github.com/krau/LotsACG/internal/infra/kvstor"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/reutil"
 	"github.com/samber/oops"
 )
 

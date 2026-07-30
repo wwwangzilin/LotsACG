@@ -46,21 +46,21 @@ RUN wget https://github.com/libvips/libvips/releases/download/v8.17.2/vips-8.17.
     cd build && meson compile && meson install
 
 # ------- Go -------
-WORKDIR /ManyACG
+WORKDIR /LotsACG
 COPY . .
 
 # nodynamic 是给 avif 用的, 开启后会使用 wasm
 RUN builtAt="$(date +'%F %T %z')" && \
     gitCommit=$(git log --pretty=format:"%h" -1) && \
     version=$(git describe --abbrev=0 --tags) && \
-    versionFlags="-X 'github.com/krau/ManyACG/common.BuildTime=$builtAt' \
-    -X 'github.com/krau/ManyACG/common.Commit=$gitCommit' \
-    -X 'github.com/krau/ManyACG/common.Version=$version'" && \
+    versionFlags="-X 'github.com/krau/LotsACG/common.BuildTime=$builtAt' \
+    -X 'github.com/krau/LotsACG/common.Commit=$gitCommit' \
+    -X 'github.com/krau/LotsACG/common.Version=$version'" && \
     vipsFlags="$(pkg-config --static --libs vips)" && \
     go build -tags nodynamic,netgo \
     -ldflags "-s -w $versionFlags -linkmode external -extldflags \"-static $vipsFlags\"" \
-    -o manyacg
+    -o lotsacg
 
 # ------- Final Image -------
 FROM scratch AS exporter
-COPY --from=builder /ManyACG/manyacg /manyacg
+COPY --from=builder /LotsACG/lotsacg /lotsacg

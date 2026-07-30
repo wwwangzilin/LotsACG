@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/mymmrac/telego"
 	"github.com/vmihailenco/msgpack/v5"
 )

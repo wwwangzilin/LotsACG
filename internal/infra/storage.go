@@ -3,10 +3,10 @@ package infra
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/infra/storage"
-	"github.com/krau/ManyACG/internal/infra/storage/local"
-	"github.com/krau/ManyACG/internal/infra/storage/telegram"
-	"github.com/krau/ManyACG/internal/infra/storage/webdav"
+	"github.com/krau/LotsACG/internal/infra/storage"
+	"github.com/krau/LotsACG/internal/infra/storage/local"
+	"github.com/krau/LotsACG/internal/infra/storage/telegram"
+	"github.com/krau/LotsACG/internal/infra/storage/webdav"
 )
 
 func initStorage(ctx context.Context) error {

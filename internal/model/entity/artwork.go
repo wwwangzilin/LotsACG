@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )

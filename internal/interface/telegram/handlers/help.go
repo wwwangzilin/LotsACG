@@ -3,8 +3,8 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/krau/ManyACG/internal/common/version"
-	"github.com/krau/ManyACG/internal/interface/telegram/handlers/utils"
+	"github.com/krau/LotsACG/internal/common/version"
+	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
 
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
@@ -52,7 +52,7 @@ Inline 查询(在任意聊天框中@本bot)支持同样的参数格式.
 /reindex - 重新索引作品
 `
 	}
-	helpText += fmt.Sprintf("\n版本: %s, 构建日期 %s, 提交 %s\nhttps://github.com/krau/ManyACG", version.Version, version.BuildTime, version.Commit[:7])
+	helpText += fmt.Sprintf("\n版本: %s, 构建日期 %s, 提交 %s\nhttps://github.com/krau/LotsACG", version.Version, version.BuildTime, version.Commit[:7])
 	utils.ReplyMessage(ctx, message, helpText)
 	return nil
 }

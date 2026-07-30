@@ -7,9 +7,9 @@ import (
 
 	"github.com/duke-git/lancet/v2/fileutil"
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/interface/rest/common"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/interface/rest/common"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/oschwald/geoip2-golang"
 )
 

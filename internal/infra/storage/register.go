@@ -6,8 +6,8 @@ import (
 	"maps"
 	"sync"
 
-	"github.com/krau/ManyACG/internal/shared"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/shared"
+	"github.com/krau/LotsACG/pkg/log"
 )
 
 type Factory func() Storage

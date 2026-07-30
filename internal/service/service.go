@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/krau/ManyACG/internal/infra/config/runtimecfg"
-	"github.com/krau/ManyACG/internal/infra/search"
-	"github.com/krau/ManyACG/internal/infra/source"
-	"github.com/krau/ManyACG/internal/infra/storage"
-	"github.com/krau/ManyACG/internal/infra/tagging"
-	"github.com/krau/ManyACG/internal/repo"
-	"github.com/krau/ManyACG/internal/shared"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/krau/LotsACG/internal/infra/search"
+	"github.com/krau/LotsACG/internal/infra/source"
+	"github.com/krau/LotsACG/internal/infra/storage"
+	"github.com/krau/LotsACG/internal/infra/tagging"
+	"github.com/krau/LotsACG/internal/repo"
+	"github.com/krau/LotsACG/internal/shared"
 )
 
 type Service struct {

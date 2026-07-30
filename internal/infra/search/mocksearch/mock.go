@@ -3,10 +3,10 @@ package mocksearch
 import (
 	"context"
 
-	"github.com/krau/ManyACG/internal/model/dto"
-	"github.com/krau/ManyACG/internal/model/query"
-	"github.com/krau/ManyACG/internal/repo"
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/internal/model/dto"
+	"github.com/krau/LotsACG/internal/model/query"
+	"github.com/krau/LotsACG/internal/repo"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/unvgo/ouid"
 )
 

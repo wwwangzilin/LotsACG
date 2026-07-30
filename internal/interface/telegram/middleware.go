@@ -3,7 +3,7 @@ package telegram
 import (
 	"strings"
 
-	"github.com/krau/ManyACG/pkg/log"
+	"github.com/krau/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 )
