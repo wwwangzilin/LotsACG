@@ -145,6 +145,9 @@ func CompressImgForTelegram(input []byte) ([]byte, error) {
 
 func CompressImgForTelegramFromFile(filePath string) (*osutil.TempFile, error) {
 	outputPath := filepath.Join(runtimecfg.Get().Storage.CacheDir, "compress", fmt.Sprintf("tg_%s_%d.jpg", strutil.MD5Hash(filePath), rand.Int()))
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return nil, fmt.Errorf("failed to create compress directory: %w", err)
+	}
 	if _, ok := vipsFormat["jpeg"]; ok {
 		err := compressImageForTelegramByVIPSFromFile(filePath, outputPath)
 		if err != nil {
