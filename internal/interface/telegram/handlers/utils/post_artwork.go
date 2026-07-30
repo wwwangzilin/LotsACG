@@ -140,14 +140,14 @@ func doPostAndCreateArtwork(
 			var ext string
 			ext, err = strutil.GetFileExtFromURL(pic.Original)
 			if err != nil {
-				mtype, err := mimetype.DetectFile(file.Name())
+				mtype, err := mimetype.DetectFile(cachedFile.Name())
 				if err != nil {
 					return oops.Wrapf(err, "failed to detect mime type for picture %d", i)
 				}
 				ext = mtype.Extension()
 			}
 			filename := fmt.Sprintf("%s%s", strutil.MD5Hash(pic.Original), ext)
-			info, err := serv.StorageSaveAllSize(ctx, file.Name(), fmt.Sprintf("/%s/%s", artwork.SourceType, artwork.Artist.UID), filename)
+			info, err := serv.StorageSaveAllSize(ctx, cachedFile.Name(), fmt.Sprintf("/%s/%s", artwork.SourceType, artwork.Artist.UID), filename)
 			if err != nil {
 				return oops.Wrapf(err, "failed to save picture %d", i)
 			}
