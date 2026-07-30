@@ -303,15 +303,16 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 		awEnt, err := serv.GetArtworkByURL(ctx, sourceURL)
 		if err == nil && awEnt != nil {
 			// Artwork already created - just send to channel
-			results, err := utils.SendArtworkMediaGroup(ctx, tgCtx.Bot(), serv, meta, meta.ChannelChatID(), awEnt)
+			targetChatID := meta.ResolvePostChatID(awEnt)
+			results, err := utils.SendArtworkMediaGroup(ctx, tgCtx.Bot(), serv, meta, targetChatID, awEnt)
 			if err != nil {
 				continue
 			}
 			if len(results) > 0 {
 				caption := utils.ArtworkHTMLCaption(awEnt)
 				_, err = tgCtx.Bot().EditMessageCaption(ctx, telegoutil.
-					EditMessageCaption(meta.ChannelChatID(),
-						awEnt.FirstMedia().GetTelegramInfo().MessageID(meta.ChannelChatID().ID),
+					EditMessageCaption(targetChatID,
+						awEnt.FirstMedia().GetTelegramInfo().MessageID(targetChatID.ID),
 						caption).
 					WithParseMode(telego.ModeHTML))
 				if err != nil {
