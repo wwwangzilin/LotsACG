@@ -8,6 +8,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/krau/LotsACG/internal/common/httpclient"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
 	"github.com/krau/LotsACG/internal/model/command"
 	"github.com/krau/LotsACG/internal/model/entity"
@@ -100,6 +101,13 @@ func doPostAndCreateArtwork(
 					return oops.Wrapf(err, "failed to get phash of picture %d", i)
 				}
 				pic.Phash = phash
+			}
+			if pic.Orb == "" {
+				orb, err := mediatool.GetImageORBFeatures(img)
+				if err != nil {
+					return oops.Wrapf(err, "failed to get orb features of picture %d", i)
+				}
+				pic.Orb = orb
 			}
 			if pic.Width == 0 || pic.Height == 0 {
 				w, h, err := mediatool.GetImgSize(img)
@@ -330,6 +338,7 @@ func doPostAndCreateArtwork(
 					Width:        pic.Width,
 					Height:       pic.Height,
 					Phash:        pic.Phash,
+					Orb:          pic.Orb,
 					ThumbHash:    pic.ThumbHash,
 					TelegramInfo: pic.TelegramInfo,
 					StorageInfo:  pic.StorageInfo,
@@ -366,20 +375,38 @@ func doPostAndCreateArtwork(
 		return oops.Wrapf(err, "failed to get artwork by url for duplicate picture check")
 	}
 	for i, pic := range newEnt.Pictures {
-		similars, err := serv.QueryPicturesByPhash(ctx, query.PicturesPhash{Input: pic.Phash, Distance: 10, Limit: 20})
-		if err != nil {
-			log.Error("failed to query pictures by phash", "phash", pic.Phash, "err", err)
-			editReplyMarkupText(fmt.Sprintf("检测第%d张图片重复失败, 作品已发布", i+1))
-			continue
+		var similars []*entity.Picture
+		if pic.Phash != "" {
+			phashSims, err := serv.QueryPicturesByPhash(ctx, query.PicturesPhash{Input: pic.Phash, Distance: 10, Limit: 20})
+			if err != nil {
+				log.Error("failed to query pictures by phash", "phash", pic.Phash, "err", err)
+				editReplyMarkupText(fmt.Sprintf("检测第%d张图片重复失败, 作品已发布", i+1))
+				continue
+			}
+			similars = append(similars, phashSims...)
+		}
+		if pic.Orb != "" {
+			orbCfg := runtimecfg.Get().Search
+			orbSims, err := serv.QueryPicturesByORB(ctx, query.PicturesORB{Input: pic.Orb, MinMatches: orbCfg.OrbMinMatches, MinScore: orbCfg.OrbMinScore, Limit: 20})
+			if err != nil {
+				log.Error("failed to query pictures by orb", "orb", pic.Orb, "err", err)
+			} else {
+				similars = append(similars, orbSims...)
+			}
 		}
 		if len(similars) == 0 {
 			continue
 		}
+		seen := make(map[ouid.OUID]struct{}, len(similars))
 		sims := make([]*entity.Picture, 0, len(similars))
 		for _, sim := range similars {
 			if sim.ArtworkID == ent.ID {
 				continue
 			}
+			if _, ok := seen[sim.ID]; ok {
+				continue
+			}
+			seen[sim.ID] = struct{}{}
 			sims = append(sims, sim)
 		}
 		if len(sims) == 0 {

@@ -14,6 +14,7 @@ type Picture interface {
 	DeletePictureByID(ctx context.Context, id ouid.OUID) error
 	UpdatePictureTelegramInfoByID(ctx context.Context, id ouid.OUID, tgInfo *shared.TelegramInfo) (*entity.Picture, error)
 	QueryPicturesByPhash(ctx context.Context, que query.PicturesPhash) ([]*entity.Picture, error)
+	QueryPicturesByORB(ctx context.Context, que query.PicturesORB) ([]*entity.Picture, error)
 	RandomPictures(ctx context.Context, limit int) ([]*entity.Picture, error)
 	SavePicture(ctx context.Context, pic *entity.Picture) error
 }

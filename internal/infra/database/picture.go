@@ -93,6 +93,42 @@ func (d *DB) QueryPicturesByPhash(ctx context.Context, que query.PicturesPhash) 
 	return result, nil
 }
 
+func (d *DB) QueryPicturesByORB(ctx context.Context, que query.PicturesORB) ([]*entity.Picture, error) {
+	rows, err := d.db.WithContext(ctx).Model(&entity.Picture{}).
+		Where("orb IS NOT NULL AND orb <> ''").Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []*entity.Picture
+	for rows.Next() {
+		var pic entity.Picture
+		if err := d.db.ScanRows(rows, &pic); err != nil {
+			return nil, err
+		}
+		if pic.Orb == "" {
+			continue
+		}
+		matches, score, err := mediatool.MatchORBFeatures(que.Input, pic.Orb, que.MinMatches, que.MinScore)
+		if err != nil {
+			continue
+		}
+		if matches >= que.MinMatches && score >= que.MinScore {
+			aw, err := d.GetArtworkByID(ctx, pic.ArtworkID)
+			if err != nil {
+				continue
+			}
+			pic.Artwork = aw
+			result = append(result, &pic)
+			if que.Limit > 0 && len(result) >= que.Limit {
+				break
+			}
+		}
+	}
+	return result, nil
+}
+
 func (d *DB) UpdatePictureTelegramInfoByID(ctx context.Context, id ouid.OUID, tgInfo *shared.TelegramInfo) (*entity.Picture, error) {
 	pic, err := d.GetPictureByID(ctx, id)
 	if err != nil {

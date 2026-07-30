@@ -31,6 +31,7 @@ type ArtworkPictureCreation struct {
 	Thumbnail    string
 	Original     string
 	Phash        string
+	Orb          string
 	ThumbHash    string
 	Index        uint
 	Width        uint

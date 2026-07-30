@@ -106,6 +106,7 @@ func (s *Service) CreateArtwork(ctx context.Context, cmd *command.ArtworkCreatio
 				Width:        pic.Width,
 				Height:       pic.Height,
 				Phash:        pic.Phash,
+				Orb:          pic.Orb,
 				ThumbHash:    pic.ThumbHash,
 				TelegramInfo: datatypes.NewJSONType(pic.TelegramInfo),
 				StorageInfo:  datatypes.NewJSONType(pic.StorageInfo),

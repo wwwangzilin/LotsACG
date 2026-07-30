@@ -21,6 +21,7 @@ type Picture struct {
 	Thumbnail string `gorm:"type:text" json:"thumbnail"`
 	Original  string `gorm:"type:text;index" json:"original"`
 	Phash     string `gorm:"type:text;index" json:"phash"` // phash
+	Orb       string `gorm:"type:text;index" json:"orb"`     // orb features
 	ThumbHash string `gorm:"type:text" json:"thumb_hash"`  // thumbhash
 
 	OrderIndex uint      `gorm:"column:order_index;not null;default:0;index:idx_picture_artwork_index,priority:1" json:"index"`

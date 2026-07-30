@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/duke-git/lancet/v2/slice"
+	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/krau/LotsACG/internal/model/entity"
 	"github.com/krau/LotsACG/internal/model/query"
 	"github.com/krau/LotsACG/internal/repo"
@@ -31,6 +32,16 @@ func (s *Service) UpdatePictureTelegramInfo(ctx context.Context, id ouid.OUID, t
 
 func (s *Service) QueryPicturesByPhash(ctx context.Context, que query.PicturesPhash) ([]*entity.Picture, error) {
 	return s.repos.Picture().QueryPicturesByPhash(ctx, que)
+}
+
+func (s *Service) QueryPicturesByORB(ctx context.Context, que query.PicturesORB) ([]*entity.Picture, error) {
+	if que.MinMatches <= 0 {
+		que.MinMatches = runtimecfg.Get().Search.OrbMinMatches
+	}
+	if que.MinScore <= 0 {
+		que.MinScore = runtimecfg.Get().Search.OrbMinScore
+	}
+	return s.repos.Picture().QueryPicturesByORB(ctx, que)
 }
 
 // 删除单张图片, 如果删除后对应的 artwork 中没有图片, 则也删除 artwork
