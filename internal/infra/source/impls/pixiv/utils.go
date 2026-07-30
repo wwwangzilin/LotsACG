@@ -96,10 +96,66 @@ func reqUgoiraMeta(ctx context.Context, sourceURL string, client *req.Client) (*
 }
 
 func (p *Pixiv) fetchNewArtworksForRSSURL(ctx context.Context, rssURL string, limit int) ([]*dto.FetchedArtwork, error) {
-	resp, err := p.reqClient.R().SetContext(ctx).Get(rssURL)
-	if err != nil {
-		return nil, err
+	var lastErr error
+	for i := 0; i < len(p.reqClients); i++ {
+		client := p.nextClient()
+		resp, err := client.R().SetContext(ctx).Get(rssURL)
+		if err != nil {
+			lastErr = err
+			log.Warnf("pixiv rss request failed with account %d: %v", i+1, err)
+			continue
+		}
+		body := resp.String()
+		rsssum := sha256.Sum256([]byte(body))
+		fingerprint := hex.EncodeToString(rsssum[:])
+		cacheKey := pixivRSSCacheKey(rssURL)
+
+		if cacheEntry, err := kvstor.Get[pixivRSSCacheEntry](ctx, cacheKey); err == nil {
+			if cacheEntry.Signature == fingerprint {
+				if limit > 0 && len(cacheEntry.Artworks) > limit {
+					return cacheEntry.Artworks[:limit], nil
+				}
+				return cacheEntry.Artworks, nil
+			}
+		}
+
+		var pixivRss *PixivRss
+		if err := xml.NewDecoder(strings.NewReader(body)).Decode(&pixivRss); err != nil {
+			lastErr = err
+			log.Warnf("pixiv rss decode failed with account %d: %v", i+1, err)
+			continue
+		}
+
+		artworks := make([]*dto.FetchedArtwork, 0)
+		for idx, item := range pixivRss.Channel.Items {
+			if idx >= limit {
+				break
+			}
+			ajaxResp, err := reqAjaxResp(ctx, item.Link, client)
+			if err != nil {
+				log.Warnf("pixiv rss item request failed with account %d for %s: %v", i+1, item.Link, err)
+				continue
+			}
+			artwork, err := ajaxResp.ToArtwork(ctx, client, p.cfg.ImgProxy)
+			if err != nil {
+				log.Warnf("pixiv rss item conversion failed with account %d for %s: %v", i+1, item.Link, err)
+				continue
+			}
+			artworks = append(artworks, artwork)
+		}
+
+		if len(artworks) > 0 || len(pixivRss.Channel.Items) == 0 {
+			entry := pixivRSSCacheEntry{Signature: fingerprint, Artworks: artworks}
+			if err := kvstor.Set(ctx, cacheKey, entry); err != nil {
+				log.Warn("pixiv rss cache store failed", "url", rssURL, "err", err)
+			}
+		}
+		return artworks, nil
 	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, oops.New("no pixiv accounts available")
 
 	body := resp.String()
 	rsssum := sha256.Sum256([]byte(body))

@@ -197,7 +197,7 @@ file = "logs/manyacg.log"
 - `telegram.chat_id` 作为主发布频道，普通作品默认发到这里。
 - `telegram.extra_target` 的第一个有效配置会被当作 R18 分流频道；R18 作品会自动发到该频道。
 - 如果你只需要单频道，也可以只配置 `telegram.chat_id`，不需要 `extra_target`。
-- Pixiv 支持多账号轮询抓取；如果配置了 `source.pixiv.accounts`，会按顺序轮换使用不同账号。
+- Pixiv 支持多账号轮询抓取；如果配置了 `source.pixiv.accounts`，会按顺序轮换使用不同账号，并在当前账号请求失败时自动跳过到下一个账号重试。
 
 赋予二进制文件执行权限并运行即可:
 

@@ -77,14 +77,32 @@ func (p *Pixiv) FetchNewArtworks(ctx context.Context, limit int) ([]*dto.Fetched
 }
 
 func (p *Pixiv) GetArtworkInfo(ctx context.Context, sourceURL string) (*dto.FetchedArtwork, error) {
-	ajaxResp, err := reqAjaxResp(ctx, sourceURL, p.nextClient())
-	if err != nil {
-		return nil, err
+	var lastErr error
+	for i := 0; i < len(p.reqClients); i++ {
+		client := p.nextClient()
+		ajaxResp, err := reqAjaxResp(ctx, sourceURL, client)
+		if err != nil {
+			lastErr = err
+			log.Warnf("pixiv artwork info request failed with account %d: %v", i+1, err)
+			continue
+		}
+		if ajaxResp.Err {
+			lastErr = oops.Errorf("pixiv ajax response error: %s", ajaxResp.Message)
+			log.Warnf("pixiv artwork info request returned error with account %d: %s", i+1, ajaxResp.Message)
+			continue
+		}
+		artwork, err := ajaxResp.ToArtwork(ctx, client, p.cfg.ImgProxy)
+		if err != nil {
+			lastErr = err
+			log.Warnf("pixiv artwork conversion failed with account %d: %v", i+1, err)
+			continue
+		}
+		return artwork, nil
 	}
-	if ajaxResp.Err {
-		return nil, oops.Wrapf(err, "pixiv ajax response error: %s", ajaxResp.Message)
+	if lastErr != nil {
+		return nil, lastErr
 	}
-	return ajaxResp.ToArtwork(ctx, p.nextClient(), p.cfg.ImgProxy)
+	return nil, oops.New("no pixiv accounts available")
 }
 
 func (p *Pixiv) MatchesSourceURL(text string) (string, bool) {
@@ -105,6 +123,14 @@ func (p *Pixiv) nextClient() *req.Client {
 	client := p.reqClients[p.clientIdx]
 	p.clientIdx = (p.clientIdx + 1) % len(p.reqClients)
 	return client
+}
+
+func (p *Pixiv) resetClientIndex() {
+	if len(p.reqClients) == 0 {
+		p.clientIdx = 0
+		return
+	}
+	p.clientIdx = 0
 }
 
 func (p *Pixiv) PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string {
