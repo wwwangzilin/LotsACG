@@ -171,6 +171,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		return err
 	}
 	if !meta.ChannelAvailable() {
+		utils.ReplyMessage(ctx, message, "频道未配置, 无法发布")
 		return nil
 	}
 

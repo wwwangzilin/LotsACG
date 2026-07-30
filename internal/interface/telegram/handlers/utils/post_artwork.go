@@ -45,16 +45,19 @@ func doPostAndCreateArtwork(
 	useEdit := (messageID != 0)
 
 	editReplyMarkupText := func(text string) {
-		if !showProgress {
+		if !showProgress || !useEdit {
 			return
 		}
-		// 不编辑原消息, 直接发新消息避免 "message can't be edited" 错误
-		go func() {
-			_, err := bot.SendMessage(ctx, telegoutil.Message(fromChatID, text).WithParseMode(telego.ModeHTML))
-			if err != nil {
-				log.Debug("failed to send progress message", "err", err)
-			}
-		}()
+		_, err := bot.EditMessageReplyMarkup(ctx, telegoutil.EditMessageReplyMarkup(
+			fromChatID,
+			messageID,
+			telegoutil.InlineKeyboard([]telego.InlineKeyboardButton{
+				telegoutil.InlineKeyboardButton(text).WithCallbackData("noop"),
+			}),
+		))
+		if err != nil {
+			log.Warn("failed to edit reply markup", "err", err)
+		}
 	}
 	// replyWaitMsg 回复 messageID 的消息
 	replyWaitMsg := func(text string) {
