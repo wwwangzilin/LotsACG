@@ -23,7 +23,7 @@ func Help(ctx *telegohandler.Context, message telego.Message) error {
 /files - 获取作品原图
 /hybrid - 混合搜索作品
 /similar - 搜索相似作品
-/recommend - 私聊中推荐作品并收藏/一键推送
+/recommend - 私聊中智能推荐作品(基于你喜欢/不喜欢的标签偏好)
 `
 	helpText += `
 随机图片相关功能中支持使用以下格式的参数:

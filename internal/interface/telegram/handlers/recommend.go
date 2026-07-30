@@ -8,6 +8,7 @@ import (
 	"github.com/krau/LotsACG/internal/infra/kvstor"
 	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
+	"github.com/krau/LotsACG/internal/model/entity"
 	"github.com/krau/LotsACG/internal/model/query"
 	"github.com/krau/LotsACG/internal/service"
 	"github.com/krau/LotsACG/internal/shared"
@@ -64,13 +65,22 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 
 	switch action {
 	case "recommend_like":
+		_ = updatePreferenceFromSession(ctx, serv, query.From.ID, session, true)
 		if session.CurrentSourceURL != "" {
 			session.addLike(session.CurrentSourceURL)
 			_ = saveRecommendationSession(ctx, query.From.ID, session)
 		}
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已加入收藏", CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已加入收藏，已记住你的偏好", CacheTime: 10})
+		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
+	case "recommend_dislike":
+		_ = updatePreferenceFromSession(ctx, serv, query.From.ID, session, false)
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已记录，会减少这类推荐", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_next":
+		if session.CurrentSourceURL != "" {
+			session.addSeen(session.CurrentSourceURL)
+			_ = saveRecommendationSession(ctx, query.From.ID, session)
+		}
 		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "为你换一个推荐", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_push":
@@ -123,12 +133,55 @@ func (s *recommendationSession) addLike(sourceURL string) {
 	s.LikedSourceURLs = append(s.LikedSourceURLs, sourceURL)
 }
 
+func (s *recommendationSession) addSeen(sourceURL string) {
+	if sourceURL == "" {
+		return
+	}
+	for _, item := range s.SeenSourceURLs {
+		if item == sourceURL {
+			return
+		}
+	}
+	s.SeenSourceURLs = append(s.SeenSourceURLs, sourceURL)
+	if len(s.SeenSourceURLs) > 20 {
+		s.SeenSourceURLs = s.SeenSourceURLs[len(s.SeenSourceURLs)-20:]
+	}
+}
+
+// updatePreferenceFromSession updates the user's preference profile from the current artwork.
+// isLike=true boosts tags, isLike=false penalizes tags.
+func updatePreferenceFromSession(ctx context.Context, serv *service.Service, userID int64, session *recommendationSession, isLike bool) error {
+	if session.CurrentSourceURL == "" {
+		return nil
+	}
+	awEnt, err := serv.GetArtworkByURL(ctx, session.CurrentSourceURL)
+	if err != nil {
+		// Artwork may not be persisted yet (cached only). Try cached.
+		return nil
+	}
+	tags := extractTagNames(awEnt.Tags)
+	if isLike {
+		return service.UpdatePreferenceFromLike(ctx, userID, tags)
+	}
+	return service.UpdatePreferenceFromDislike(ctx, userID, tags)
+}
+
+func extractTagNames(tags []*entity.Tag) []string {
+	names := make([]string, 0, len(tags))
+	for _, t := range tags {
+		if t != nil && t.Name != "" {
+			names = append(names, t.Name)
+		}
+	}
+	return names
+}
+
 func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatID telego.ChatID, userID int64, serv *service.Service, meta *metautil.MetaData, replyToMessageID int) error {
 	session, err := loadRecommendationSession(ctx, userID)
 	if err != nil {
 		session = &recommendationSession{}
 	}
-	artwork, err := pickRecommendationArtwork(ctx, serv, session)
+	artwork, err := pickScoredRecommendation(ctx, serv, userID, session)
 	if err != nil {
 		return oops.Wrapf(err, "failed to pick recommendation artwork")
 	}
@@ -136,15 +189,17 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "暂时没有可推荐的作品").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
-	session.CurrentSourceURL = artwork.SourceURL
+	session.CurrentSourceURL = artwork.GetSourceURL()
 	if err := saveRecommendationSession(ctx, userID, session); err != nil {
 		return oops.Wrapf(err, "failed to save recommendation session")
 	}
-	if len(artwork.Pictures) == 0 {
+
+	awEntity, ok := artwork.(*entity.Artwork)
+	if !ok || len(awEntity.Pictures) == 0 {
 		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "这篇作品暂时没有图片可展示").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
-	picture := artwork.Pictures[0]
+	picture := awEntity.Pictures[0]
 	file, err := utils.GetPicturePhotoInputFile(ctx, serv, meta, picture)
 	if err != nil {
 		return oops.Wrapf(err, "failed to get photo input file")
@@ -157,63 +212,84 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		WithReplyMarkup(telegoutil.InlineKeyboard(
 			telegoutil.InlineKeyboardRow(
 				telegoutil.InlineKeyboardButton("👍 喜欢").WithCallbackData("recommend_like"),
-				telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
+				telegoutil.InlineKeyboardButton("👎 不喜欢").WithCallbackData("recommend_dislike"),
 			),
 			telegoutil.InlineKeyboardRow(
+				telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
 				telegoutil.InlineKeyboardButton("📤 推送已喜欢").WithCallbackData("recommend_push"),
 			),
 		))
 	if replyToMessageID != 0 {
 		photo = photo.WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID})
 	}
-	if artwork.R18 {
+	if artwork.GetR18() {
 		photo = photo.WithHasSpoiler()
 	}
 	_, err = tgCtx.Bot().SendPhoto(ctx, photo)
 	return err
 }
 
-func pickRecommendationArtwork(ctx context.Context, serv *service.Service, session *recommendationSession) (shared.ArtworkLike, error) {
-	// Keep the implementation simple and resilient by trying a few random picks.
-	for i := 0; i < 5; i++ {
-		artworks, err := serv.QueryArtworks(ctx, query.ArtworksDB{
-			ArtworksFilter: query.ArtworksFilter{
-				HasPicture: true,
-			},
-			Paginate: query.Paginate{Offset: 0, Limit: 1},
-			Random:   true,
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(artworks) == 0 {
-			continue
-		}
-		artwork := artworks[0]
-		if isSeenSourceURL(session, artwork.SourceURL) {
-			continue
-		}
-		if session != nil {
-			session.SeenSourceURLs = append(session.SeenSourceURLs, artwork.SourceURL)
-			if len(session.SeenSourceURLs) > 10 {
-				session.SeenSourceURLs = session.SeenSourceURLs[len(session.SeenSourceURLs)-10:]
-			}
-		}
-		return artwork, nil
+// pickScoredRecommendation fetches a batch of random artworks and scores them
+// against the user's preference profile, returning the highest-scoring unseen one.
+func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID int64, session *recommendationSession) (shared.ArtworkLike, error) {
+	pref, err := service.GetUserPreference(ctx, userID)
+	if err != nil {
+		return nil, oops.Wrapf(err, "failed to get user preference")
 	}
-	return nil, nil
-}
+	// Determine batch size: if user has preferences, fetch more candidates for better scoring.
+	batchSize := 20
+	if len(pref.PositiveWeights) == 0 && len(pref.NegativeWeights) == 0 {
+		// Cold start: no preference data yet, just try random picks
+		batchSize = 5
+	}
 
-func isSeenSourceURL(session *recommendationSession, sourceURL string) bool {
-	if session == nil || sourceURL == "" {
-		return false
+	aw, err := serv.QueryArtworks(ctx, query.ArtworksDB{
+		ArtworksFilter: query.ArtworksFilter{
+			HasPicture: true,
+		},
+		Paginate: query.Paginate{
+			Offset: 0,
+			Limit:  batchSize,
+		},
+		Random: true,
+	})
+	if err != nil {
+		return nil, oops.Wrapf(err, "failed to query artworks")
 	}
-	for _, seen := range session.SeenSourceURLs {
-		if seen == sourceURL {
-			return true
+	if len(aw) == 0 {
+		return nil, nil
+	}
+
+	seenURLs := session.SeenSourceURLs
+	seen := make(map[string]struct{}, len(seenURLs)+len(session.LikedSourceURLs))
+	for _, u := range seenURLs {
+		seen[u] = struct{}{}
+	}
+	for _, u := range session.LikedSourceURLs {
+		seen[u] = struct{}{}
+	}
+
+	artworkLikes := make([]shared.ArtworkLike, 0, len(aw))
+	for _, a := range aw {
+		if _, ok := seen[a.SourceURL]; ok {
+			continue
 		}
+		artworkLikes = append(artworkLikes, a)
 	}
-	return false
+	if len(artworkLikes) == 0 {
+		return nil, nil
+	}
+
+	best := service.PickBestRecommendation(artworkLikes, nil, pref)
+	if best == nil && len(artworkLikes) > 0 {
+		best = artworkLikes[0]
+	}
+
+	if best != nil {
+		session.addSeen(best.GetSourceURL())
+		_ = saveRecommendationSession(ctx, userID, session)
+	}
+	return best, nil
 }
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {
