@@ -207,7 +207,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		artwork := cachedArtwork.Artwork.Data()
 		if err := utils.PostAndCreateArtwork(ctx, ctx.Bot(), serv, meta, artwork, message.GetChat().ChatID(), meta.ChannelChatID(), message.MessageID); err != nil {
 			failCount++
-			results = append(results, fmt.Sprintf("%d/%d 发布失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			results = append(results, fmt.Sprintf("%d/%d 发布失败: %s\n  原因: %v", idx+1, len(uniqueSourceURLs), sourceURL, err))
 			continue
 		}
 		createdArtwork, err := serv.GetArtworkByURL(ctx, sourceURL)
