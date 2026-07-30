@@ -294,7 +294,7 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {
 	if meta.ChannelAvailable() == false {
-		return 0, oops.New("棰戦亾鏈厤缃?)
+		return 0, oops.New("频道未配置")
 	}
 	count := 0
 	for _, sourceURL := range sourceURLs {
