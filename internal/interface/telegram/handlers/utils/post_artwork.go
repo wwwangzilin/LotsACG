@@ -101,6 +101,18 @@ func doPostAndCreateArtwork(
 				log.Warnf("download picture %d attempt %d failed: %v", i, retry+1, dlErr)
 			}
 			if dlErr != nil {
+				// 代理可能已变更, 尝试重新拉取作品信息刷新 URL
+				log.Warn("refreshing cached artwork due to download failure")
+				if fresh, err := serv.FetchArtworkInfo(ctx, artwork.SourceURL); err == nil && fresh != nil {
+					if i < len(fresh.Pictures) {
+						pic.Original = fresh.Pictures[i].Original
+						pic.Thumbnail = fresh.Pictures[i].Thumbnail
+						// 用新 URL 再试一次
+						cachedFile, dlErr = httpclient.DownloadWithCache(ctx, pic.Original, nil)
+					}
+				}
+			}
+			if dlErr != nil {
 				return oops.Wrapf(dlErr, "failed to download picture %d", i)
 			}
 			defer cachedFile.Close()
