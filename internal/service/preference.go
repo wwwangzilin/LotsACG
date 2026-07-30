@@ -194,15 +194,17 @@ func RankArtworksByPreference[T any](
 	Item  T
 	Score float64
 } {
-	type scored struct {
+	scoredItems := make([]struct {
 		Item  T
 		Score float64
-	}
-	scoredItems := make([]scored, 0, len(items))
+	}, 0, len(items))
 	for _, item := range items {
 		tags := getTags(item)
 		score := CalculateMatchScore(tags, pref)
-		scoredItems = append(scoredItems, scored{Item: item, Score: score})
+		scoredItems = append(scoredItems, struct {
+			Item  T
+			Score float64
+		}{Item: item, Score: score})
 	}
 
 	// Apply small random noise for variety (shuffle factor)
