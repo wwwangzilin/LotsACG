@@ -37,6 +37,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(GetArtworkInfoCommand, telegohandler.CommandEqual("info"))
 	mg.HandleMessage(HybridSearchArtworks, telegohandler.CommandEqual("hybrid"))
 	mg.HandleMessage(SearchSimilarArtworks, telegohandler.CommandEqual("similar"))
+	mg.HandleMessage(Recommend, telegohandler.CommandEqual("recommend"))
 	mg.HandleMessage(TaggingPicture, telegohandler.CommandEqual("tagging"))
 
 	// Admin commands
@@ -54,6 +55,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(ReindexArtworks, telegohandler.CommandEqual("reindex"))
 
 	hg.HandleCallbackQuery(PostArtworkCallbackQuery, telegohandler.CallbackDataContains("post_artwork"))
+	hg.HandleCallbackQuery(RecommendCallbackQuery, telegohandler.CallbackDataPrefix("recommend_"))
 	hg.HandleCallbackQuery(SearchPictureCallbackQuery, telegohandler.CallbackDataPrefix("search_picture"))
 	hg.HandleCallbackQuery(EditArtworkR18, telegohandler.CallbackDataPrefix("edit_artwork r18"))
 	hg.HandleCallbackQuery(DeleteArtworkCallbackQuery, telegohandler.CallbackDataPrefix("delete_artwork"))
