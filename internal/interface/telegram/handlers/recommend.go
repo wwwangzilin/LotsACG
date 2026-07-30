@@ -196,7 +196,7 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 
 	awEntity, ok := artwork.(*entity.Artwork)
 	if !ok || len(awEntity.Pictures) == 0 {
-		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "杩欑瘒浣滃搧鏆傛椂娌℃湁鍥剧墖鍙睍绀?).WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
+		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "这篇作品暂时没有图片可展示").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
 	picture := awEntity.Pictures[0]
@@ -205,18 +205,18 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		return oops.Wrapf(err, "failed to get photo input file")
 	}
 	defer file.Close()
-	caption := fmt.Sprintf("%s\n\n宸叉敹钘?%d 涓綔鍝?, utils.ArtworkHTMLCaption(artwork), len(session.LikedSourceURLs))
+	caption := fmt.Sprintf("%s\n\n已收藏 %d 个作品", utils.ArtworkHTMLCaption(artwork), len(session.LikedSourceURLs))
 	photo := telegoutil.Photo(chatID, file.Value).
 		WithCaption(caption).
 		WithParseMode(telego.ModeHTML).
 		WithReplyMarkup(telegoutil.InlineKeyboard(
 			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("馃憤 鍠滄").WithCallbackData("recommend_like"),
-				telegoutil.InlineKeyboardButton("馃憥 涓嶅枩娆?).WithCallbackData("recommend_dislike"),
+				telegoutil.InlineKeyboardButton("👍 喜欢").WithCallbackData("recommend_like"),
+				telegoutil.InlineKeyboardButton("👎 不喜欢").WithCallbackData("recommend_dislike"),
 			),
 			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("鈴笍 涓嬩竴涓?).WithCallbackData("recommend_next"),
-				telegoutil.InlineKeyboardButton("馃摛 鎺ㄩ€佸凡鍠滄").WithCallbackData("recommend_push"),
+				telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
+				telegoutil.InlineKeyboardButton("📤 推送已喜欢").WithCallbackData("recommend_push"),
 			),
 		))
 	if replyToMessageID != 0 {
