@@ -26,7 +26,7 @@ type recommendationSession struct {
 
 func Recommend(ctx *telegohandler.Context, message telego.Message) error {
 	if message.Chat.Type != telego.ChatTypePrivate {
-		utils.ReplyMessage(ctx, message, "杩欎釜鍔熻兘浠呮敮鎸佸湪绉佽亰涓娇鐢?)
+		utils.ReplyMessage(ctx, message, "这个功能仅支持在私聊中使用")
 		return nil
 	}
 	serv, err := requireService(ctx)
@@ -50,7 +50,7 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 		return err
 	}
 	if query.Message == nil || query.Message.GetChat().Type != telego.ChatTypePrivate {
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "璇峰湪绉佽亰涓娇鐢?, ShowAlert: true, CacheTime: 60})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "请在私聊中使用", ShowAlert: true, CacheTime: 60})
 		return nil
 	}
 
@@ -70,35 +70,35 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 			session.addLike(session.CurrentSourceURL)
 			_ = saveRecommendationSession(ctx, query.From.ID, session)
 		}
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "宸插姞鍏ユ敹钘忥紝宸茶浣忎綘鐨勫亸濂?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已加入收藏，已记住你的偏好", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_dislike":
 		_ = updatePreferenceFromSession(ctx, serv, query.From.ID, session, false)
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "宸茶褰曪紝浼氬噺灏戣繖绫绘帹鑽?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已记录，会减少这类推荐", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_next":
 		if session.CurrentSourceURL != "" {
 			session.addSeen(session.CurrentSourceURL)
 			_ = saveRecommendationSession(ctx, query.From.ID, session)
 		}
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "涓轰綘鎹竴涓帹鑽?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "为你换一个推荐", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_push":
 		if len(session.LikedSourceURLs) == 0 {
-			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "杩樻病鏈夋敹钘忎换浣曚綔鍝?, ShowAlert: true, CacheTime: 30})
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "还没有收藏任何作品", ShowAlert: true, CacheTime: 30})
 			return nil
 		}
 		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), query.Message.GetMessageID(), session.LikedSourceURLs)
 		if err != nil {
-			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "鎺ㄩ€佸け璐? " + err.Error(), ShowAlert: true, CacheTime: 30})
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失败: " + err.Error(), ShowAlert: true, CacheTime: 30})
 			return nil
 		}
 		session.LikedSourceURLs = nil
 		_ = saveRecommendationSession(ctx, query.From.ID, session)
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: fmt.Sprintf("宸叉帹閫?%d 涓綔鍝佸埌棰戦亾", count), CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: fmt.Sprintf("已推送 %d 个作品到频道", count), CacheTime: 10})
 		return nil
 	default:
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "鏃犳晥鎿嶄綔", CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "无效操作", CacheTime: 10})
 		return nil
 	}
 }
