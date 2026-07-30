@@ -26,7 +26,7 @@ type recommendationSession struct {
 
 func Recommend(ctx *telegohandler.Context, message telego.Message) error {
 	if message.Chat.Type != telego.ChatTypePrivate {
-		utils.ReplyMessage(ctx, message, "这个功能仅支持在私聊中使�?)
+		utils.ReplyMessage(ctx, message, "杩欎釜鍔熻兘浠呮敮鎸佸湪绉佽亰涓娇鐢?)
 		return nil
 	}
 	serv, err := requireService(ctx)
@@ -50,7 +50,7 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 		return err
 	}
 	if query.Message == nil || query.Message.GetChat().Type != telego.ChatTypePrivate {
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "请在私聊中使�?, ShowAlert: true, CacheTime: 60})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "璇峰湪绉佽亰涓娇鐢?, ShowAlert: true, CacheTime: 60})
 		return nil
 	}
 
@@ -70,35 +70,35 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 			session.addLike(session.CurrentSourceURL)
 			_ = saveRecommendationSession(ctx, query.From.ID, session)
 		}
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已加入收藏，已记住你的偏�?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "宸插姞鍏ユ敹钘忥紝宸茶浣忎綘鐨勫亸濂?, CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_dislike":
 		_ = updatePreferenceFromSession(ctx, serv, query.From.ID, session, false)
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已记录，会减少这类推�?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "宸茶褰曪紝浼氬噺灏戣繖绫绘帹鑽?, CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_next":
 		if session.CurrentSourceURL != "" {
 			session.addSeen(session.CurrentSourceURL)
 			_ = saveRecommendationSession(ctx, query.From.ID, session)
 		}
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "为你换一个推�?, CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "涓轰綘鎹竴涓帹鑽?, CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
 	case "recommend_push":
 		if len(session.LikedSourceURLs) == 0 {
-			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "还没有收藏任何作�?, ShowAlert: true, CacheTime: 30})
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "杩樻病鏈夋敹钘忎换浣曚綔鍝?, ShowAlert: true, CacheTime: 30})
 			return nil
 		}
 		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), query.Message.GetMessageID(), session.LikedSourceURLs)
 		if err != nil {
-			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失�? " + err.Error(), ShowAlert: true, CacheTime: 30})
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "鎺ㄩ€佸け璐? " + err.Error(), ShowAlert: true, CacheTime: 30})
 			return nil
 		}
 		session.LikedSourceURLs = nil
 		_ = saveRecommendationSession(ctx, query.From.ID, session)
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: fmt.Sprintf("已推�?%d 个作品到频道", count), CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: fmt.Sprintf("宸叉帹閫?%d 涓綔鍝佸埌棰戦亾", count), CacheTime: 10})
 		return nil
 	default:
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "无效操作", CacheTime: 10})
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "鏃犳晥鎿嶄綔", CacheTime: 10})
 		return nil
 	}
 }
@@ -186,7 +186,7 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		return oops.Wrapf(err, "failed to pick recommendation artwork")
 	}
 	if artwork == nil {
-		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "暂时没有可推荐的作品").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
+		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "鏆傛椂娌℃湁鍙帹鑽愮殑浣滃搧").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
 	session.CurrentSourceURL = artwork.GetSourceURL()
@@ -196,7 +196,7 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 
 	awEntity, ok := artwork.(*entity.Artwork)
 	if !ok || len(awEntity.Pictures) == 0 {
-		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "这篇作品暂时没有图片可展�?).WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
+		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "杩欑瘒浣滃搧鏆傛椂娌℃湁鍥剧墖鍙睍绀?).WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
 	picture := awEntity.Pictures[0]
@@ -205,18 +205,18 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		return oops.Wrapf(err, "failed to get photo input file")
 	}
 	defer file.Close()
-	caption := fmt.Sprintf("%s\n\n已收�?%d 个作�?, utils.ArtworkHTMLCaption(artwork), len(session.LikedSourceURLs))
+	caption := fmt.Sprintf("%s\n\n宸叉敹钘?%d 涓綔鍝?, utils.ArtworkHTMLCaption(artwork), len(session.LikedSourceURLs))
 	photo := telegoutil.Photo(chatID, file.Value).
 		WithCaption(caption).
 		WithParseMode(telego.ModeHTML).
 		WithReplyMarkup(telegoutil.InlineKeyboard(
 			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("👍 喜欢").WithCallbackData("recommend_like"),
-				telegoutil.InlineKeyboardButton("👎 不喜�?).WithCallbackData("recommend_dislike"),
+				telegoutil.InlineKeyboardButton("馃憤 鍠滄").WithCallbackData("recommend_like"),
+				telegoutil.InlineKeyboardButton("馃憥 涓嶅枩娆?).WithCallbackData("recommend_dislike"),
 			),
 			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("⏭️ 下一�?).WithCallbackData("recommend_next"),
-				telegoutil.InlineKeyboardButton("📤 推送已喜欢").WithCallbackData("recommend_push"),
+				telegoutil.InlineKeyboardButton("鈴笍 涓嬩竴涓?).WithCallbackData("recommend_next"),
+				telegoutil.InlineKeyboardButton("馃摛 鎺ㄩ€佸凡鍠滄").WithCallbackData("recommend_push"),
 			),
 		))
 	if replyToMessageID != 0 {
@@ -294,7 +294,7 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {
 	if meta.ChannelAvailable() == false {
-		return 0, oops.New("频道未配�?)
+		return 0, oops.New("棰戦亾鏈厤缃?)
 	}
 	count := 0
 	for _, sourceURL := range sourceURLs {

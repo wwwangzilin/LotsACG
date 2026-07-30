@@ -10,11 +10,11 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
   
 ---
 
-这里�?LotsACG 的后端代�?
+这里�?LotsACG 的后端代�?
 
-LotsACG 是为收集与整理二次元插画作品而生的项�? 目前主要通过 Telegram Bot 完成数据交互.
+LotsACG 是为收集与整理二次元插画作品而生的项�? 目前主要通过 Telegram Bot 完成数据交互.
 
-在充�?Telegram 插画频道的爬虫与管理 Bot 的同�? LotsACG 还能使用已存入数据库的作品构建一个自己的二次元图片分享网�?
+在充�?Telegram 插画频道的爬虫与管理 Bot 的同�? LotsACG 还能使用已存入数据库的作品构建一个自己的二次元图片分享网�?
 
 > 前端代码 -> [LotsACG/web](https://github.com/LotsACG/web)
 
@@ -26,9 +26,9 @@ LotsACG 是为收集与整理二次元插画作品而生的项�? 目前主要�
 - 频道 - [@MoreACG](https://t.me/MoreACG)
 - 网站 - [LotsACG](https://lotsacg.top)
 
-## 特�?
+## 特�?
 
-- **多图源支�?*
+- **多图源支�?*
   - [x] [Pixiv](https://www.pixiv.net/)
   - [x] [Twitter](https://x.com/)
   - [x] [Danbooru](https://danbooru.donmai.us/)
@@ -42,17 +42,17 @@ LotsACG 是为收集与整理二次元插画作品而生的项�? 目前主要�
   - [x] Telegram
 - 基于图像哈希的去重与以图搜图
 - 带有逻辑控制的关键词搜图
-- �?Telegram 所接受的最高质量发送图�?
-- 支持动图和视�?
-- 基于 AI 的图片标签生�?-> [konatagger](https://github.com/krau/konatagger)
-- 集成 [MeiliSearch](https://www.meilisearch.com/) , 支持混合搜索与相似作品检�?
-- 轻量, 原生跨平�? 部署简�?
+- �?Telegram 所接受的最高质量发送图�?
+- 支持动图和视�?
+- 基于 AI 的图片标签生�?-> [konatagger](https://github.com/krau/konatagger)
+- 集成 [MeiliSearch](https://www.meilisearch.com/) , 支持混合搜索与相似作品检�?
+- 轻量, 原生跨平�? 部署简�?
 
 ## 部署
 
-### 安装FFmpeg(可�?
+### 安装FFmpeg(可�?
 
-LotsACG 需要使�?FFmpeg 来从动图序列合成视频, 请在自己的系统上安装, 以下是一些系统的安装示例:
+LotsACG 需要使�?FFmpeg 来从动图序列合成视频, 请在自己的系统上安装, 以下是一些系统的安装示例:
 
 Ubuntu/Debian:
 
@@ -66,29 +66,29 @@ Arch Linux:
 sudo pacman -S ffmpeg --noconfirm
 ```
 
-[其他/任意 Linux 发行版安�?FFmepg 参考](https://krau.top/posts/linux-install-ffmpeg)
+[其他/任意 Linux 发行版安�?FFmepg 参考](https://krau.top/posts/linux-install-ffmpeg)
 
 Windows:
 
-1. �?[gyan.dev](https://www.gyan.dev/ffmpeg/builds/) 下载 [ffmpeg-release-full.7z](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z)
-2. 解压并将 `bin` 目录添加到环境变�?`PATH`
+1. �?[gyan.dev](https://www.gyan.dev/ffmpeg/builds/) 下载 [ffmpeg-release-full.7z](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z)
+2. 解压并将 `bin` 目录添加到环境变�?`PATH`
 
 ### 从二进制文件部署 LotsACG
 
-�?[release](https://github.com/wwwangzilin/LotsACG/releases) 页面下载与自己系统和架构对应的文�? 解压.
+�?[release](https://github.com/wwwangzilin/LotsACG/releases) 页面下载与自己系统和架构对应的文�? 解压.
 
-在与解压出的二进制文件的相同目录下创�?`config.toml` 文件, 修改各项配置.
+在与解压出的二进制文件的相同目录下创�?`config.toml` 文件, 修改各项配置.
 
 #### 最简配置
 
-如果你只需要将 LotsACG 作为一�?Telegram 频道的自动发图与管理 Bot 使用, 使用以下简单的配置即可:
+如果你只需要将 LotsACG 作为一�?Telegram 频道的自动发图与管理 Bot 使用, 使用以下简单的配置即可:
 
 ```toml
 [telegram]
 bot_token = "token"
 admins = [123456789] # 你的 Telegram 用户 ID
-username = "@moreacg" # 频道用户�?如有)
-chat_id = -1001234567890 # 主频�?ID, �?username 二选一
+username = "@moreacg" # 频道用户�?如有)
+chat_id = -1001234567890 # 主频�?ID, �?username 二选一
 
 [source.pixiv]
 # 建议配置 pixiv cookies, 可以提高作品的爬取成功率
@@ -99,18 +99,18 @@ value = ""
 name = "yuid_b"
 value = ""
 
-# 如果你不需要存储原�? 以下配置也可以删�?
+# 如果你不需要存储原�? 以下配置也可以删�?
 [storage]
 original_type = "telegram"
 [storage.telegram]
 enable = true
-token = "用于发送原图的 Bot �?Token" # 可以�?telegram.bot_token 相同
-chat_id = -1001234567890 # 用于存储原图的频�?ID
+token = "用于发送原图的 Bot �?Token" # 可以�?telegram.bot_token 相同
+chat_id = -1001234567890 # 用于存储原图的频�?ID
 ```
 
 #### 完整配置案例
 
-下面是一个更完整的示例，包含主频道、R18 分流频道、数据库、搜索和 Pixiv 配置�?
+下面是一个更完整的示例，包含主频道、R18 分流频道、数据库、搜索和 Pixiv 配置�?
 
 ```toml
 [telegram]
@@ -121,22 +121,22 @@ admins = [123456789]
 caption_template = ""
 chat_id = -1001111111111 # 主频道（普通作品）
 
-# 额外目标频道会被作为 R18 分流频道使用�?
-# 当作品是 R18，或者包�?R-18 / R18 / R-18G / R18G 标签时，
-# 会自动把作品发布到这里，而非主频道�?
+# 额外目标频道会被作为 R18 分流频道使用�?
+# 当作品是 R18，或者包�?R-18 / R18 / R-18G / R18G 标签时，
+# 会自动把作品发布到这里，而非主频道�?
 [[telegram.extra_target]]
 title = "R18频道"
 chat_id = -1002222222222
 
 [database]
 # 可选：sqlite / postgres / mysql
-# 这里只给�?sqlite 示例
+# 这里只给�?sqlite 示例
 kind = "sqlite"
 dsn = "lotsacg.db"
 
 [search]
 enable = false
-# 如果启用 MeiliSearch，可配置如下�?
+# 如果启用 MeiliSearch，可配置如下�?
 # host = "http://127.0.0.1:7700"
 # api_key = ""
 # index = "lotsacg"
@@ -178,11 +178,11 @@ name = "yuid_b"
 value = ""
 
 [source.twitter]
-# 可选：配置后可提高推特内容抓取成功�?
+# 可选：配置后可提高推特内容抓取成功�?
 # cookies = ""
 
 [source.danbooru]
-# 可选：配置后可提高 Danbooru 内容抓取成功�?
+# 可选：配置后可提高 Danbooru 内容抓取成功�?
 # username = ""
 # password = ""
 
@@ -192,12 +192,12 @@ file_level = "info"
 file = "logs/lotsacg.log"
 ```
 
-说明�?
+说明�?
 
-- `telegram.chat_id` 作为主发布频道，普通作品默认发到这里�?
-- `telegram.extra_target` 的第一个有效配置会被当�?R18 分流频道；R18 作品会自动发到该频道�?
-- 如果你只需要单频道，也可以只配�?`telegram.chat_id`，不需�?`extra_target`�?
-- Pixiv 支持多账号轮询抓取；如果配置�?`source.pixiv.accounts`，会按顺序轮换使用不同账号，并在当前账号请求失败时自动跳过到下一个账号重试�?
+- `telegram.chat_id` 作为主发布频道，普通作品默认发到这里�?
+- `telegram.extra_target` 的第一个有效配置会被当�?R18 分流频道；R18 作品会自动发到该频道�?
+- 如果你只需要单频道，也可以只配�?`telegram.chat_id`，不需�?`extra_target`�?
+- Pixiv 支持多账号轮询抓取；如果配置�?`source.pixiv.accounts`，会按顺序轮换使用不同账号，并在当前账号请求失败时自动跳过到下一个账号重试�?
 
 赋予二进制文件执行权限并运行即可:
 
@@ -206,9 +206,9 @@ chmod +x lotsacg
 ./lotsacg
 ```
 
-#### 安装为服�?
+#### 安装为服�?
 
-适用�?Linux 系统, �?systemd 为例:
+适用�?Linux 系统, �?systemd 为例:
 
 `/etc/systemd/system/lotsacg.service`
 
@@ -233,14 +233,14 @@ systemctl enable --now lotsacg
 
 ---
 
-## �?v0 迁移
+## �?v0 迁移
 
-如果你之前使用的�?v0 版本�?LotsACG, 请下载最新的 v0.x 版本 release, 并修改配置文�? 添加迁移目标数据库配�?
+如果你之前使用的�?v0 版本�?LotsACG, 请下载最新的 v0.x 版本 release, 并修改配置文�? 添加迁移目标数据库配�?
 
 ```toml
 [migrate]
 target = "sqlite" # pgsql/mysql/sqlite
-dsn = "file:lotsacg_migrate.db" # 连接字符�?
+dsn = "file:lotsacg_migrate.db" # 连接字符�?
 # 示例: pgsql dsn
 # dsn = "host=localhost user=postgres password=yourpassword dbname=lotsacg port=5432 sslmode=disable"
 ```
@@ -251,4 +251,4 @@ dsn = "file:lotsacg_migrate.db" # 连接字符�?
 ./lotsacg db migrate
 ```
 
-数据迁移完成�? 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节�?
+数据迁移完成�? 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节�?
