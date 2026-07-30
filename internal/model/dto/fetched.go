@@ -1,10 +1,10 @@
 package dto
 
 import (
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
-// FetchedArtwork 只会传递给 service 层, 其他层获取到的应该是 CachedArtwork 或 Artwork 实体.
+// FetchedArtwork 只会传递给 service �? 其他层获取到的应该是 CachedArtwork �?Artwork 实体.
 // var _ shared.ArtworkLike = (*FetchedArtwork)(nil)
 // var _ shared.PictureLike = (*FetchedPicture)(nil)
 // var _ shared.UgoiraMetaLike = (*FetchedUgoiraMeta)(nil)

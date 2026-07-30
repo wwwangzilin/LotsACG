@@ -11,8 +11,8 @@ import (
 	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/duke-git/lancet/v2/validator"
 	"github.com/imroc/req/v3"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/samber/oops"
 )
 
@@ -57,7 +57,7 @@ type PixivAjaxRespBody struct {
 	UserAccount string                `json:"userAccount"`
 	Description string                `json:"description"`
 	Tags        PixivAjaxRespBodyTags `json:"tags"`
-	IllustType  int                   `json:"illustType"` // 2: ugoira (动图) 0: 普通图片
+	IllustType  int                   `json:"illustType"` // 2: ugoira (动图) 0: 普通图�?
 }
 
 type PixivAjaxRespBodyTags struct {
@@ -66,7 +66,7 @@ type PixivAjaxRespBodyTags struct {
 
 type PixivAjaxRespBodyTagsTag struct {
 	Translation *PixivAjaxRespBodyTagTranslation `json:"translation"`
-	// 返回里确实就是这么套的
+	// 返回里确实就是这么套�?
 	Tag string `json:"tag"`
 }
 

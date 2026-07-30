@@ -1,4 +1,4 @@
-module github.com/krau/LotsACG
+module github.com/wwwangzilin/LotsACG
 
 go 1.25.7
 

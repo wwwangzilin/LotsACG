@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/ncruces/go-sqlite3/gormlite"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"gorm.io/gorm"
 )
 

@@ -10,9 +10,9 @@ cd build
 meson compile
 meson install
 nano /usr/lib/pkgconfig/mount.pc
-# 修改 Requires.private 将 libeconf 添加到后面
-# 原: Requires.private: blkid
-# 改: Requires.private: blkid libeconf
+# 修改 Requires.private �?libeconf 添加到后�?
+# �? Requires.private: blkid
+# �? Requires.private: blkid libeconf
 
 wget https://download.osgeo.org/libtiff/tiff-4.7.1rc1.tar.gz
 tar xvf tiff-4.7.1rc1.tar.gz
@@ -68,9 +68,9 @@ builtAt="$(date +'%F %T %z')"
 gitCommit=$(git log --pretty=format:"%h" -1)
 version=$(git describe --abbrev=0 --tags)
 
-versionFlags="-X 'github.com/krau/LotsACG/common.BuildTime=$builtAt' \
--X 'github.com/krau/LotsACG/common.Commit=$gitCommit' \
--X 'github.com/krau/LotsACG/common.Version=$version'"
+versionFlags="-X 'github.com/wwwangzilin/LotsACG/common.BuildTime=$builtAt' \
+-X 'github.com/wwwangzilin/LotsACG/common.Commit=$gitCommit' \
+-X 'github.com/wwwangzilin/LotsACG/common.Version=$version'"
 
 vipsFlags=$(pkg-config --static --libs vips)
 

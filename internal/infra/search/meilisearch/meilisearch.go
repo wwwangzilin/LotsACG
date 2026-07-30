@@ -8,11 +8,11 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/unvgo/ouid"
 
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/meilisearch/meilisearch-go"
 )
 
@@ -41,7 +41,7 @@ func settingsEqual(a, b *meilisearch.Settings) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
-	// 比较二者的 FilterableAttributes 和 SearchableAttributes 是否相同，忽略顺序
+	// 比较二者的 FilterableAttributes �?SearchableAttributes 是否相同，忽略顺�?
 	if len(a.FilterableAttributes) != len(b.FilterableAttributes) ||
 		len(a.SearchableAttributes) != len(b.SearchableAttributes) {
 		return false

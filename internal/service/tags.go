@@ -7,12 +7,12 @@ import (
 
 	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/LotsACG/internal/common/httpclient"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/infra/tagging"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/repo"
-	"github.com/krau/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/tagging"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/repo"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"github.com/unvgo/ouid"
 )
 
@@ -24,9 +24,9 @@ func (s *Service) GetTagByName(ctx context.Context, name string) (*entity.Tag, e
 	return s.repos.Tag().GetTagByName(ctx, name)
 }
 
-// 为已有 tag 添加别名
+// 为已�?tag 添加别名
 //
-// 同时检查是否有其他 tag 的 name 为所指定的别名之一, 在添加完成后, 删除这些 tag, 并将其对应的 artwork 添加这个新的 tag (即传入的tagID)
+// 同时检查是否有其他 tag �?name 为所指定的别名之一, 在添加完成后, 删除这些 tag, 并将其对应的 artwork 添加这个新的 tag (即传入的tagID)
 func (s *Service) AddTagAlias(ctx context.Context, tagID ouid.OUID, alias []string) (*entity.Tag, error) {
 	tag, err := s.repos.Tag().GetTagByID(ctx, tagID)
 	if err != nil {
@@ -49,7 +49,7 @@ func (s *Service) AddTagAlias(ctx context.Context, tagID ouid.OUID, alias []stri
 			if existTag.ID == tagID {
 				continue
 			}
-			// 处理查询到的 tag name 和 alias 相同的情况
+			// 处理查询到的 tag name �?alias 相同的情�?
 			if a.Alias == existTag.Name {
 				continue
 			}
@@ -69,9 +69,9 @@ func (s *Service) AddTagAlias(ctx context.Context, tagID ouid.OUID, alias []stri
 				continue
 			}
 
-			// 如果 aliasTag 还有自己的别名，合并进目标 tag
+			// 如果 aliasTag 还有自己的别名，合并进目�?tag
 			if len(aliasTag.Alias) > 0 {
-				// 重新拉取目标 tag，避免脏读
+				// 重新拉取目标 tag，避免脏�?
 				reloadedTag, err := repos.Tag().GetTagByID(ctx, tagID)
 				if err != nil {
 					return err

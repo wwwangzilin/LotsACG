@@ -9,10 +9,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gorilla/feeds"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 func EntityArtworkToFeedItems(
@@ -56,15 +56,15 @@ func EntityArtworkToFeedItems(
 	return items
 }
 
-// 在api返回中重写存储路径, 用于拼接直链
+// 在api返回中重写存储路�? 用于拼接直链
 //
-// 例: rule.Type = "alist", rule.Path = "/pictures/", rule.JoinPrefix = "https://example.com/pictures/", rule.TrimPrefix = "/pictures/"
+// �? rule.Type = "alist", rule.Path = "/pictures/", rule.JoinPrefix = "https://example.com/pictures/", rule.TrimPrefix = "/pictures/"
 //
 // -> https://example.com/pictures/1234567890abcdef.jpg
 //
-// 如果图片路径以rule.Path开头, 且rule.StorageType为空或与图片存储类型匹配, 则将图片路径转换为rule.JoinPrefix + 图片路径去掉rule.TrimPrefix的部分
+// 如果图片路径以rule.Path开�? 且rule.StorageType为空或与图片存储类型匹配, 则将图片路径转换为rule.JoinPrefix + 图片路径去掉rule.TrimPrefix的部�?
 //
-// 否则空
+// 否则�?
 func ResponseUrlForStoragePath(ctx fiber.Ctx, detail shared.StorageDetail, rules []runtimecfg.StoragePathRule) string {
 	if len(rules) == 0 {
 		return ""
@@ -83,7 +83,7 @@ func ResponseUrlForStoragePath(ctx fiber.Ctx, detail shared.StorageDetail, rules
 	return ""
 }
 
-// 根据配置生成图片的访问 URL
+// 根据配置生成图片的访�?URL
 //
 // 返回值一定不为空, 无可用配置时会回落到 pic.Thumbnail
 func PictureResponseUrl(ctx fiber.Ctx, pic *entity.Picture, cfg runtimecfg.RestConfig) (thumbnail, regular string) {

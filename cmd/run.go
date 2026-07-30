@@ -8,10 +8,10 @@ import (
 	"syscall"
 
 	"github.com/goccy/go-json"
-	"github.com/krau/LotsACG/internal/app"
-	"github.com/krau/LotsACG/internal/common/version"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/app"
+	"github.com/wwwangzilin/LotsACG/internal/common/version"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/unvgo/ouid"
 )
 
@@ -24,8 +24,8 @@ const banner = `
                            |___/                                        
 
 Build time: %s  Version: %s  Commit: %s
-Github: https://github.com/krau/LotsACG
-Kawaii is All You Need! ᕕ(◠ڼ◠)ᕗ
+Github: https://github.com/wwwangzilin/LotsACG
+Kawaii is All You Need! �?◠ڼ◠)�?
 
 `
 

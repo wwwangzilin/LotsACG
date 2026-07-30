@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/krau/LotsACG/pkg/reutil"
+	"github.com/wwwangzilin/LotsACG/pkg/reutil"
 )
 
 func getDynamicID(url string) string {

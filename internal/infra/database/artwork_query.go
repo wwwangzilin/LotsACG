@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -30,7 +30,7 @@ func applyBaseFilters(que query.ArtworksDB) func(db *gorm.DB) *gorm.DB {
 			db = db.Where("EXISTS (SELECT 1 FROM ugoira_metas u WHERE u.artwork_id = artworks.id)")
 		}
 
-		// Tags：Group AND，Group 内 OR（IDs）
+		// Tags：Group AND，Group �?OR（IDs�?
 		if len(que.Tags) > 0 {
 			for _, orTags := range que.Tags {
 				if len(orTags) > 0 {
@@ -82,7 +82,7 @@ func (d *DB) QueryArtworks(ctx context.Context, que query.ArtworksDB) ([]*entity
 	baseQuery := d.db.WithContext(ctx).Model(&entity.Artwork{}).
 		Scopes(applyBaseFilters(que))
 
-	// Keyword 处理（Group AND 内部 OR）
+	// Keyword 处理（Group AND 内部 OR�?
 	if len(que.Keywords) > 0 {
 		keywordOrExpr := `
 		artworks.title LIKE ? OR
@@ -191,7 +191,7 @@ func (d *DB) QueryArtworks(ctx context.Context, que query.ArtworksDB) ([]*entity
 // 			base = base.Where("EXISTS (SELECT 1 FROM artwork_tags at WHERE at.artwork_id = artworks.id AND at.tag_id IN ?)", orTags)
 // 		}
 // 	} else if len(que.Keywords) > 0 {
-// 		// Keywords: 组内 OR，组间 AND
+// 		// Keywords: 组内 OR，组�?AND
 // 		for _, orKeywords := range que.Keywords {
 // 			if len(orKeywords) == 0 {
 // 				continue
@@ -206,7 +206,7 @@ func (d *DB) QueryArtworks(ctx context.Context, que query.ArtworksDB) ([]*entity
 // 				perKWArgs = append(perKWArgs, like, like, like, like, like)
 // 			}
 
-// 			// 将当前 group 的所有 keyword 表达式用 OR 拼接，整个 group 作为一个 WHERE 条件（与其他 group AND）
+// 			// 将当�?group 的所�?keyword 表达式用 OR 拼接，整�?group 作为一�?WHERE 条件（与其他 group AND�?
 // 			groupSQL := strings.Join(perKWExpr, " OR ")
 // 			base = base.Where(groupSQL, perKWArgs...)
 // 		}
@@ -281,7 +281,7 @@ func (d *DB) QueryArtworks(ctx context.Context, que query.ArtworksDB) ([]*entity
 // 		return artworks, nil
 // 	}
 
-// 	// 总数<1000时直接 RANDOM()
+// 	// 总数<1000时直�?RANDOM()
 // 	if total < 1000 {
 // 		if err := dataQuery.Order("RANDOM()").Limit(que.Limit).Find(&artworks).Error; err != nil {
 // 			return nil, err

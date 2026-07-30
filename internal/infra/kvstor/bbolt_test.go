@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/krau/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"go.etcd.io/bbolt"
 )
 

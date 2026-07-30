@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/repo"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/repo"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/samber/oops"
 	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
@@ -44,9 +44,9 @@ func (s *Service) QueryPicturesByORB(ctx context.Context, que query.PicturesORB)
 	return s.repos.Picture().QueryPicturesByORB(ctx, que)
 }
 
-// 删除单张图片, 如果删除后对应的 artwork 中没有图片, 则也删除 artwork
+// 删除单张图片, 如果删除后对应的 artwork 中没有图�? 则也删除 artwork
 //
-// 删除后对 artwork 的 pictures 的 index 进行重整, 并在 cached_artwork 中将对应的图片标记为隐藏
+// 删除后对 artwork �?pictures �?index 进行重整, 并在 cached_artwork 中将对应的图片标记为隐藏
 func (s *Service) DeletePictureByID(ctx context.Context, id ouid.OUID) error {
 	toDelete, err := s.repos.Picture().GetPictureByID(ctx, id)
 	if err != nil {
@@ -76,7 +76,7 @@ func (s *Service) DeletePictureByID(ctx context.Context, id ouid.OUID) error {
 		if err == nil {
 			data := cached.Artwork.Data()
 			for _, pic := range data.Pictures {
-				// 将对应的图片标记为隐藏
+				// 将对应的图片标记为隐�?
 				if pic.Original == toDelete.Original {
 					pic.Hidden = true
 				}

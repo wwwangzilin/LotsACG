@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/imroc/req/v3"
-	config "github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/infra/source"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/strutil"
+	config "github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/source"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 )
 
 type Nhentai struct {

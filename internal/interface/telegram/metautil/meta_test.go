@@ -3,7 +3,7 @@ package metautil
 import (
 	"testing"
 
-	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/mymmrac/telego"
 )
 

@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/LotsACG/internal/interface/rest/common"
-	"github.com/krau/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
+	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/unvgo/ouid"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/krau/LotsACG/internal/common/version"
+	"github.com/wwwangzilin/LotsACG/internal/common/version"
 	"github.com/spf13/cobra"
 )
 

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/krau/LotsACG/internal/infra/source"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/infra/source"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 type stubArtworkSource struct{}
@@ -34,7 +34,7 @@ func TestFindSourceURLsExtractsAllSupportedURLs(t *testing.T) {
 		shared.SourceTypePixiv: stubArtworkSource{},
 	}}
 
-	got := srv.FindSourceURLs("先看 https://pixiv.net/artworks/1，然后再看 https://pixiv.net/artworks/2")
+	got := srv.FindSourceURLs("先看 https://pixiv.net/artworks/1，然后再�?https://pixiv.net/artworks/2")
 	want := []string{"https://pixiv.net/artworks/1", "https://pixiv.net/artworks/2"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected urls: got %v want %v", got, want)

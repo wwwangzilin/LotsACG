@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/krau/LotsACG/internal/infra/kvstor"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -63,7 +63,7 @@ func PostArtworkCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQ
 	}
 
 	if err := serv.UpdateCachedArtworkStatusByURL(ctx, sourceURL, shared.ArtworkStatusPosting); err != nil {
-		log.Errorf("更新缓存作品状态失败: %s", err)
+		log.Errorf("更新缓存作品状态失�? %s", err)
 		return oops.Wrapf(err, "failed to update cached artwork status")
 	}
 	log.Info("posting artwork", "url", sourceURL)
@@ -100,7 +100,7 @@ func PostArtworkCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQ
 				Caption:   "发布失败: " + err.Error() + "\n" + time.Now().Format("2006-01-02 15:04:05"),
 			})
 			if err := serv.UpdateCachedArtworkStatusByURL(ctx, sourceURL, shared.ArtworkStatusCached); err != nil {
-				// log.Warnf("更新缓存作品状态失败: %s", err)
+				// log.Warnf("更新缓存作品状态失�? %s", err)
 				log.Error("failed to update cached artwork status", "err", err)
 			}
 			return nil
@@ -130,7 +130,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 	}
 	_, _, args := telegoutil.ParseCommand(message.Text)
 	if len(args) == 0 && message.ReplyToMessage == nil {
-		utils.ReplyMessage(ctx, message, "请提供作品链接, 或回复一条消息")
+		utils.ReplyMessage(ctx, message, "请提供作品链�? 或回复一条消�?)
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		uniqueSourceURLs = append(uniqueSourceURLs, sourceURL)
 	}
 
-	msg, err := utils.ReplyMessage(ctx, message, fmt.Sprintf("正在排队发布 %d 条作品...", len(uniqueSourceURLs)))
+	msg, err := utils.ReplyMessage(ctx, message, fmt.Sprintf("正在排队发布 %d 条作�?..", len(uniqueSourceURLs)))
 	if err != nil || msg == nil {
 		msg = nil
 	}
@@ -187,7 +187,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		awEnt, _ := serv.GetArtworkByURL(ctx, sourceURL)
 		if awEnt != nil {
 			skipCount++
-			results = append(results, fmt.Sprintf("%d/%d 已存在: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			results = append(results, fmt.Sprintf("%d/%d 已存�? %s", idx+1, len(uniqueSourceURLs), sourceURL))
 			continue
 		}
 
@@ -200,7 +200,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		}
 		if cachedArtwork.Status != shared.ArtworkStatusCached {
 			skipCount++
-			results = append(results, fmt.Sprintf("%d/%d 已发布或正在发布中: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			results = append(results, fmt.Sprintf("%d/%d 已发布或正在发布�? %s", idx+1, len(uniqueSourceURLs), sourceURL))
 			continue
 		}
 		artwork := cachedArtwork.Artwork.Data()
@@ -212,7 +212,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		createdArtwork, err := serv.GetArtworkByURL(ctx, sourceURL)
 		if err != nil {
 			failCount++
-			results = append(results, fmt.Sprintf("%d/%d 发布后查找作品失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			results = append(results, fmt.Sprintf("%d/%d 发布后查找作品失�? %s", idx+1, len(uniqueSourceURLs), sourceURL))
 			continue
 		}
 		successCount++
@@ -294,8 +294,8 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 	}
 
 // 	currentPictureIndexStr := queryDataSlice[4]
-// 	// 此处为当前图片在 cachedArtwork.Pictures 中的 Index 字段, 从0开始
-// 	// 由于隐藏机制的存在, 呈递到界面的图片索引不一定连续
+// 	// 此处为当前图片在 cachedArtwork.Pictures 中的 Index 字段, �?开�?
+// 	// 由于隐藏机制的存�? 呈递到界面的图片索引不一定连�?
 // 	currentPictureIndex, err := strconv.Atoi(currentPictureIndexStr)
 // 	if err != nil {
 // 		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{
@@ -321,7 +321,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 		if err != nil {
 // 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{
 // 				CallbackQueryID: query.ID,
-// 				Text:            "已删除该图片, 但获取更新信息失败: " + err.Error(),
+// 				Text:            "已删除该图片, 但获取更新信息失�? " + err.Error(),
 // 				ShowAlert:       true,
 // 				CacheTime:       60,
 // 			})
@@ -337,7 +337,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 		previewKeyboard := []telego.InlineKeyboardButton{}
 
 // 		if currentPictureIndex+1 >= len(cachedArtwork.GetViewablePictures()) {
-// 			// 如果删除的是最后一张图片, 则显示前一张
+// 			// 如果删除的是最后一张图�? 则显示前一�?
 // 			if currentPictureIndex > 0 {
 // 				currentPictureIndex -= 1
 // 				currentPictureIndexStr = strconv.Itoa(currentPictureIndex)
@@ -350,18 +350,18 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 			if currentPictureIndex == 0 {
 // 				previewKeyboard = append(previewKeyboard,
 // 					deleteButton,
-// 					telegoutil.InlineKeyboardButton("下一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex+1, currentPictureIndex)),
+// 					telegoutil.InlineKeyboardButton("下一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex+1, currentPictureIndex)),
 // 				)
 // 			} else if currentPictureIndex == len(cachedArtwork.Pictures)-1 {
 // 				previewKeyboard = append(previewKeyboard,
-// 					telegoutil.InlineKeyboardButton("上一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex-1, currentPictureIndex)),
+// 					telegoutil.InlineKeyboardButton("上一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex-1, currentPictureIndex)),
 // 					deleteButton,
 // 				)
 // 			} else {
 // 				previewKeyboard = append(previewKeyboard,
-// 					telegoutil.InlineKeyboardButton("上一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex-1, currentPictureIndex)),
+// 					telegoutil.InlineKeyboardButton("上一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex-1, currentPictureIndex)),
 // 					deleteButton,
-// 					telegoutil.InlineKeyboardButton("下一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex+1, currentPictureIndex)),
+// 					telegoutil.InlineKeyboardButton("下一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", currentPictureIndex+1, currentPictureIndex)),
 // 				)
 // 			}
 // 		}
@@ -382,7 +382,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 			MessageID:   callbackMessage.MessageID,
 // 			ReplyMarkup: telegoutil.InlineKeyboard(postArtworkKeyboard...),
 // 			Media: telegoutil.MediaPhoto(inputFile).
-// 				WithCaption(utils.ArtworkHTMLCaption(meta, cachedArtwork) + fmt.Sprintf("\n<i>当前作品有 %d 张图片</i>", len(cachedArtwork.GetPictures()))).
+// 				WithCaption(utils.ArtworkHTMLCaption(meta, cachedArtwork) + fmt.Sprintf("\n<i>当前作品�?%d 张图�?/i>", len(cachedArtwork.GetPictures()))).
 // 				WithParseMode(telego.ModeHTML),
 // 		})
 // 		if err != nil {
@@ -419,18 +419,18 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 		if pictureIndex == 0 {
 // 			previewKeyboard = append(previewKeyboard,
 // 				deleteButton,
-// 				telegoutil.InlineKeyboardButton("下一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex+1, pictureIndex)),
+// 				telegoutil.InlineKeyboardButton("下一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex+1, pictureIndex)),
 // 			)
 // 		} else if pictureIndex == len(cachedArtwork.Pictures)-1 {
 // 			previewKeyboard = append(previewKeyboard,
-// 				telegoutil.InlineKeyboardButton("上一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex-1, pictureIndex)),
+// 				telegoutil.InlineKeyboardButton("上一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex-1, pictureIndex)),
 // 				deleteButton,
 // 			)
 // 		} else {
 // 			previewKeyboard = append(previewKeyboard,
-// 				telegoutil.InlineKeyboardButton("上一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex-1, pictureIndex)),
+// 				telegoutil.InlineKeyboardButton("上一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex-1, pictureIndex)),
 // 				deleteButton,
-// 				telegoutil.InlineKeyboardButton("下一张").WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex+1, pictureIndex)),
+// 				telegoutil.InlineKeyboardButton("下一�?).WithCallbackData("awpv "+dataID+fmt.Sprintf(" preview %d %d", pictureIndex+1, pictureIndex)),
 // 			)
 // 		}
 // 	}
@@ -439,7 +439,7 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 // 		ChatID:    callbackMessage.Chat.ChatID(),
 // 		MessageID: callbackMessage.MessageID,
 // 		Media: telegoutil.MediaPhoto(inputFile).
-// 			WithCaption(utils.ArtworkHTMLCaption(meta, cachedArtwork) + fmt.Sprintf("\n<i>当前作品有 %d 张图片</i>", len(cachedArtwork.Pictures))).
+// 			WithCaption(utils.ArtworkHTMLCaption(meta, cachedArtwork) + fmt.Sprintf("\n<i>当前作品�?%d 张图�?/i>", len(cachedArtwork.Pictures))).
 // 			WithParseMode(telego.ModeHTML),
 // 		ReplyMarkup: telegoutil.InlineKeyboard(
 // 			postArtworkKeyboard...,

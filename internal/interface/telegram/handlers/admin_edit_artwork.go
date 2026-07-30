@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -34,7 +34,7 @@ func ToggleArtworkR18(ctx *telegohandler.Context, message telego.Message) error 
 	}
 	if sourceURL == "" {
 		helpText := `
-[管理员] <b>使用 /r18 命令回复一条包含作品链接的消息, 或在参数中提供作品链接, 将切换该作品的 R18 值</b>
+[管理员] <b>使用 /r18 命令回复一条包含作品链接的消息, 或在参数中提供作品链�? 将切换该作品�?R18 �?/b>
 
 命令语法: /r18 [作品链接]
 `
@@ -51,7 +51,7 @@ func ToggleArtworkR18(ctx *telegohandler.Context, message telego.Message) error 
 		utils.ReplyMessage(ctx, message, "更新作品信息失败: "+err.Error())
 		return nil
 	}
-	utils.ReplyMessage(ctx, message, "该作品 R18 已标记为 "+strconv.FormatBool(!artwork.R18))
+	utils.ReplyMessage(ctx, message, "该作�?R18 已标记为 "+strconv.FormatBool(!artwork.R18))
 	return nil
 }
 
@@ -72,7 +72,7 @@ func SetArtworkTags(ctx *telegohandler.Context, message telego.Message) error {
 		sourceURL = serv.FindSourceURL(message.Text)
 	}
 	if sourceURL == "" {
-		utils.ReplyMessage(ctx, message, "请回复一条消息, 或者指定作品链接")
+		utils.ReplyMessage(ctx, message, "请回复一条消�? 或者指定作品链�?)
 		return nil
 	}
 
@@ -86,13 +86,13 @@ func SetArtworkTags(ctx *telegohandler.Context, message telego.Message) error {
 	var argTags []string
 	if message.ReplyToMessage != nil {
 		if len(args) == 0 {
-			utils.ReplyMessage(ctx, message, "请提供标签, 用空格分隔")
+			utils.ReplyMessage(ctx, message, "请提供标�? 用空格分�?)
 			return nil
 		}
 		argTags = args
 	} else {
 		if len(args) <= 1 {
-			utils.ReplyMessage(ctx, message, "请在链接后提供标签, 用空格分隔")
+			utils.ReplyMessage(ctx, message, "请在链接后提供标�? 用空格分�?)
 			return nil
 		}
 		argTags = args[1:]
@@ -205,7 +205,7 @@ func EditArtworkR18(ctx *telegohandler.Context, query telego.CallbackQuery) erro
 	ctx.Bot().AnswerCallbackQuery(ctx,
 		&telego.AnswerCallbackQueryParams{
 			CallbackQueryID: query.ID,
-			Text:            "该作品 R18 已标记为 " + strconv.FormatBool(r18),
+			Text:            "该作�?R18 已标记为 " + strconv.FormatBool(r18),
 			CacheTime:       2,
 		},
 	)
@@ -229,7 +229,7 @@ func EditArtworkTitle(ctx *telegohandler.Context, message telego.Message) error 
 		sourceURL = serv.FindSourceURL(message.Text)
 	}
 	if sourceURL == "" {
-		utils.ReplyMessage(ctx, message, "请回复一条消息, 或者指定作品链接")
+		utils.ReplyMessage(ctx, message, "请回复一条消�? 或者指定作品链�?)
 		return nil
 	}
 
@@ -243,13 +243,13 @@ func EditArtworkTitle(ctx *telegohandler.Context, message telego.Message) error 
 	var titleSlice []string
 	if message.ReplyToMessage != nil {
 		if len(args) == 0 {
-			utils.ReplyMessage(ctx, message, "请提供标题")
+			utils.ReplyMessage(ctx, message, "请提供标�?)
 			return nil
 		}
 		titleSlice = args
 	} else {
 		if len(args) <= 1 {
-			utils.ReplyMessage(ctx, message, "请在链接后提供标题")
+			utils.ReplyMessage(ctx, message, "请在链接后提供标�?)
 			return nil
 		}
 		titleSlice = args[1:]
@@ -298,7 +298,7 @@ func RefreshArtwork(ctx *telegohandler.Context, message telego.Message) error {
 		sourceURL = serv.FindSourceURL(message.Text)
 	}
 	if sourceURL == "" {
-		utils.ReplyMessage(ctx, message, "请回复一条消息, 或者指定作品链接")
+		utils.ReplyMessage(ctx, message, "请回复一条消�? 或者指定作品链�?)
 		return nil
 	}
 
@@ -309,7 +309,7 @@ func RefreshArtwork(ctx *telegohandler.Context, message telego.Message) error {
 
 	artwork, err := serv.GetArtworkByURL(ctx, sourceURL)
 	if errors.Is(err, errs.ErrRecordNotFound) {
-		utils.ReplyMessage(ctx, message, "作品未发布, 缓存已删除")
+		utils.ReplyMessage(ctx, message, "作品未发�? 缓存已删�?)
 		return nil
 	}
 	if err != nil {
@@ -328,7 +328,7 @@ func RefreshArtwork(ctx *telegohandler.Context, message telego.Message) error {
 			return nil
 		}
 	}
-	utils.ReplyMessage(ctx, message, "已刷新作品信息")
+	utils.ReplyMessage(ctx, message, "已刷新作品信�?)
 	return nil
 }
 
@@ -348,7 +348,7 @@ func ReCaptionArtwork(ctx *telegohandler.Context, message telego.Message) error 
 		sourceURL = serv.FindSourceURL(message.Text)
 	}
 	if sourceURL == "" {
-		utils.ReplyMessage(ctx, message, "请回复一条消息, 或者指定作品链接")
+		utils.ReplyMessage(ctx, message, "请回复一条消�? 或者指定作品链�?)
 		return nil
 	}
 	artwork, err := serv.GetArtworkByURL(ctx, sourceURL)
@@ -361,7 +361,7 @@ func ReCaptionArtwork(ctx *telegohandler.Context, message telego.Message) error 
 		return err
 	}
 	if artwork.FirstMedia().GetTelegramInfo().MessageID(meta.ChannelChatID().ID) == 0 {
-		utils.ReplyMessage(ctx, message, "该作品未在频道发布")
+		utils.ReplyMessage(ctx, message, "该作品未在频道发�?)
 		return nil
 	}
 	ctx.Bot().EditMessageCaption(ctx, &telego.EditMessageCaptionParams{
@@ -370,7 +370,7 @@ func ReCaptionArtwork(ctx *telegohandler.Context, message telego.Message) error 
 		Caption:   utils.ArtworkHTMLCaption(artwork),
 		ParseMode: telego.ModeHTML,
 	})
-	utils.ReplyMessage(ctx, message, "已重新生成作品描述")
+	utils.ReplyMessage(ctx, message, "已重新生成作品描�?)
 	return nil
 }
 
@@ -391,7 +391,7 @@ func AutoTaggingArtwork(ctx *telegohandler.Context, message telego.Message) erro
 	}
 	if sourceURL == "" {
 		helpText := `
-[管理员] <b>使用 /autotag 命令回复一条包含作品链接的消息, 或在参数中提供作品链接, 将基于AI自动为该作品添加标签</b>
+[管理员] <b>使用 /autotag 命令回复一条包含作品链接的消息, 或在参数中提供作品链�? 将基于AI自动为该作品添加标签</b>
 
 命令语法: /autotag [作品链接]
 `
@@ -465,7 +465,7 @@ func ReindexArtworks(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	if sourceURL == "" {
 		helpText := `
-[管理员] <b>使用 /reindex 命令回复一条包含作品链接的消息, 或在参数中提供作品链接, 将重新索引该作品到搜索引擎</b>
+[管理员] <b>使用 /reindex 命令回复一条包含作品链接的消息, 或在参数中提供作品链�? 将重新索引该作品到搜索引�?/b>
 
 命令语法: /reindex [作品链接]
 `

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/krau/LotsACG/cmd"
+	"github.com/wwwangzilin/LotsACG/cmd"
 )
 
 func main() {

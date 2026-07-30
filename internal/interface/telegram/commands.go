@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/mymmrac/telego"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -13,7 +13,7 @@ var (
 	CommonCommands = []telego.BotCommand{
 		{
 			Command:     "start",
-			Description: "开始使用",
+			Description: "开始使�?,
 		},
 		{
 			Command:     "files",
@@ -33,7 +33,7 @@ var (
 		},
 		{
 			Command:     "info",
-			Description: "获取作品图片和信息",
+			Description: "获取作品图片和信�?,
 		},
 		{
 			Command:     "help",
@@ -45,7 +45,7 @@ var (
 		},
 		{
 			Command:     "similar",
-			Description: "获取与回复的图片相似的作品",
+			Description: "获取与回复的图片相似的作�?,
 		},
 		{
 			Command:     "tagging",
@@ -56,11 +56,11 @@ var (
 	AdminCommands = []telego.BotCommand{
 		{
 			Command:     "addadmin",
-			Description: "添加管理员",
+			Description: "添加管理�?,
 		},
 		{
 			Command:     "deladmin",
-			Description: "删除管理员",
+			Description: "删除管理�?,
 		},
 		{
 			Command:     "delete",
@@ -92,7 +92,7 @@ var (
 		},
 		{
 			Command:     "tagalias",
-			Description: "为标签添加别名",
+			Description: "为标签添加别�?,
 		},
 		{
 			Command:     "post",

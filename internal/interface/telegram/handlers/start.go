@@ -4,11 +4,11 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/infra/kvstor"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -94,7 +94,7 @@ func Start(ctx *telegohandler.Context, message telego.Message) error {
 			}
 			results, err := utils.SendArtworkMediaGroup(ctx, ctx.Bot(), serv, meta, message.Chat.ChatID(), artwork)
 			if err != nil {
-				utils.ReplyMessage(ctx, message, "发送作品信息失败")
+				utils.ReplyMessage(ctx, message, "发送作品信息失�?)
 				return oops.Wrapf(err, "failed to send artwork media group")
 			}
 			data := artwork.Artwork.Data()

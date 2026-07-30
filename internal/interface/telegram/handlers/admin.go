@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -32,7 +32,7 @@ func SetAdmin(ctx *telegohandler.Context, message telego.Message) error {
 	if message.ReplyToMessage == nil {
 		if len(args) == 0 {
 			utils.ReplyMessageWithHTML(ctx, message,
-				fmt.Sprintf("请回复一名用户或提供ID, 并指定权限, 以空格分隔, 支持的权限:\n%s", supportedPermissionsText),
+				fmt.Sprintf("请回复一名用户或提供ID, 并指定权�? 以空格分�? 支持的权�?\n%s", supportedPermissionsText),
 			)
 			return nil
 		}
@@ -51,14 +51,14 @@ func SetAdmin(ctx *telegohandler.Context, message telego.Message) error {
 		}
 	}
 	if userID == message.From.ID {
-		utils.ReplyMessage(ctx, message, "不能修改自己的权限")
+		utils.ReplyMessage(ctx, message, "不能修改自己的权�?)
 		return nil
 	}
 
 	deladmin := cmd == "deladmin"
 	if deladmin {
 		if err := serv.DeleteAdminByTgID(ctx, userID); err != nil {
-			utils.ReplyMessage(ctx, message, "删除管理员失败: "+err.Error())
+			utils.ReplyMessage(ctx, message, "删除管理员失�? "+err.Error())
 			return oops.Wrapf(err, "delete admin failed")
 		}
 		utils.ReplyMessage(ctx, message, "操作成功")
@@ -75,17 +75,17 @@ func SetAdmin(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	if len(inputPermissions) == 0 {
 		utils.ReplyMessageWithHTML(ctx, message,
-			fmt.Sprintf("请指定权限, 以空格分隔, 支持的权限:\n%s", supportedPermissionsText),
+			fmt.Sprintf("请指定权�? 以空格分�? 支持的权�?\n%s", supportedPermissionsText),
 		)
 		return nil
 	}
 	if userID <= -1000000000000 && slices.Contains(inputPermissions, shared.PermissionSudo) {
-		utils.ReplyMessage(ctx, message, "不能赋予群组超级管理员权限")
+		utils.ReplyMessage(ctx, message, "不能赋予群组超级管理员权�?)
 		return nil
 	}
 
 	if err := serv.CreateOrUpdateAdmin(ctx, userID, inputPermissions); err != nil {
-		utils.ReplyMessage(ctx, message, "更新管理员权限失败: "+err.Error())
+		utils.ReplyMessage(ctx, message, "更新管理员权限失�? "+err.Error())
 		return oops.Wrapf(err, "update admin permissions failed")
 	}
 	utils.ReplyMessage(ctx, message, "操作成功")
@@ -98,7 +98,7 @@ func AddTagAlias(ctx *telegohandler.Context, message telego.Message) error {
 		return err
 	}
 	if !serv.CheckAdminPermissionByTgID(ctx, message.From.ID, shared.PermissionSudo) {
-		utils.ReplyMessage(ctx, message, "你没有权限添加标签别名")
+		utils.ReplyMessage(ctx, message, "你没有权限添加标签别�?)
 		return nil
 	}
 	_, _, args := utils.ParseCommandBy(message.Text, " ", "\"")

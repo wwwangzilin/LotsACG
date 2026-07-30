@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/pkg/mediatool"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/ioutil"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -63,7 +63,7 @@ func GetArtworkFiles(ctx *telegohandler.Context, message telego.Message) error {
 		picture := getPictureByHash()
 		if picture == nil {
 			helpText := fmt.Sprintf(`
-<b>使用 /files 命令回复一条含有图片或支持的链接的消息, 或在参数中提供作品链接, 将发送作品全部原图文件</b>
+<b>使用 /files 命令回复一条含有图片或支持的链接的消息, 或在参数中提供作品链�? 将发送作品全部原图文�?/b>
 
 命令语法: %s
 `, utils.EscapeHTML("/files [作品链接]"))
@@ -95,7 +95,7 @@ func getArtworkFiles(ctx *telegohandler.Context,
 	meta *metautil.MetaData,
 	message telego.Message,
 	artwork shared.ArtworkLike) error {
-	msg, err := utils.ReplyMessage(ctx, message, "正在发送文件, 请稍等...")
+	msg, err := utils.ReplyMessage(ctx, message, "正在发送文�? 请稍�?..")
 	if err == nil {
 		defer func() {
 			ctx.Bot().DeleteMessage(ctx, telegoutil.Delete(msg.Chat.ChatID(), msg.MessageID))

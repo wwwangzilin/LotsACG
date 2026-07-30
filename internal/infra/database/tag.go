@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )
@@ -98,14 +98,14 @@ func (d *DB) DeleteTagByID(ctx context.Context, id ouid.OUID) error {
 	return nil
 }
 
-// MigrateTagAlias 迁移别名标签到目标标签，并删除别名标签
+// MigrateTagAlias 迁移别名标签到目标标签，并删除别名标�?
 //
 // 返回受影响的 artwork ids
 func (d *DB) MigrateTagAlias(ctx context.Context, aliasTagID, targetTagID ouid.OUID) ([]ouid.OUID, error) {
 	var affected []ouid.OUID
 
 	err := d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 所有拥有 aliasTagID 的 artwork_id, 即受影响的 artworks
+		// 所有拥�?aliasTagID �?artwork_id, 即受影响�?artworks
 		rows, err := tx.Raw(`SELECT DISTINCT artwork_id FROM artwork_tags WHERE tag_id = ?`, aliasTagID).Rows()
 		if err != nil {
 			return fmt.Errorf("select affected artworks: %w", err)
@@ -172,7 +172,7 @@ func (d *DB) MigrateTagAlias(ctx context.Context, aliasTagID, targetTagID ouid.O
 // 			return fmt.Errorf("delete old tag references: %w", err)
 // 		}
 
-// 		// 删除 tag 表中 aliasTagID 的记录
+// 		// 删除 tag 表中 aliasTagID 的记�?
 // 		res := tx.Where("id = ?", aliasTagID).Delete(&entity.Tag{})
 // 		if res.Error != nil {
 // 			return fmt.Errorf("delete alias tag: %w", res.Error)

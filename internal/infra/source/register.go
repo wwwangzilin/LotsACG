@@ -4,7 +4,7 @@ import (
 	"maps"
 	"sync"
 
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 type Factory func() ArtworkSource

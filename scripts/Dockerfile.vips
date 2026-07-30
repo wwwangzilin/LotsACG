@@ -16,9 +16,9 @@ ARG VERSION
 RUN builtAt=${BUILT_AT:-$(date +'%F %T %z')} && \
     gitCommit=${GIT_COMMIT:-$(git log --pretty=format:"%h" -1)} && \
     version=${VERSION:-$(git describe --abbrev=0 --tags)} && \
-    versionFlags="-X 'github.com/krau/LotsACG/internal/common/version.BuildTime=$builtAt' \
-    -X 'github.com/krau/LotsACG/internal/common/version.Commit=$gitCommit' \
-    -X 'github.com/krau/LotsACG/internal/common/version.Version=$version'" && \
+    versionFlags="-X 'github.com/wwwangzilin/LotsACG/internal/common/version.BuildTime=$builtAt' \
+    -X 'github.com/wwwangzilin/LotsACG/internal/common/version.Commit=$gitCommit' \
+    -X 'github.com/wwwangzilin/LotsACG/internal/common/version.Version=$version'" && \
     vipsFlags="$(pkg-config --static --libs vips)" && \
     CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
     go build -tags vips,nodynamic,netgo \

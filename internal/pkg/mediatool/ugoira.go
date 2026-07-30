@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/krau/ffmpeg-go"
 )
 
-// UgoiraZipToMp4 从 ugoira 的 zip 解压并转换为 mp4
+// UgoiraZipToMp4 �?ugoira �?zip 解压并转换为 mp4
 //
-// 返回生成的 mp4 路径（可能与 outputPath 不同，会自动添加 .mp4 后缀）
+// 返回生成�?mp4 路径（可能与 outputPath 不同，会自动添加 .mp4 后缀�?
 func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath string) (string, error) {
 	if !ffmpegAvailable {
 		return "", fmt.Errorf("ffmpeg is not available")
@@ -45,7 +45,7 @@ func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath stri
 				bname := filepath.Base(fr.File)
 				zf, ok := zipMap[bname]
 				if !ok {
-					// 尝试按原名直接匹配（有时 frames.File 已带相对路径）
+					// 尝试按原名直接匹配（有时 frames.File 已带相对路径�?
 					zf = nil
 					for _, f := range zr.File {
 						if f.Name == fr.File || filepath.Base(f.Name) == fr.File {
@@ -102,7 +102,7 @@ func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath stri
 			log.Warn("ugoira frames length mismatch", "expected", len(frames), "got", len(extractedPaths))
 			break
 		}
-		// duration 单位为（小数）
+		// duration 单位为（小数�?
 		delaySec := float64(fr.Delay) / 1000
 		bw.WriteString(fmt.Sprintf("file '%s'\n", escapePathForConcat(extractedPaths[i])))
 		bw.WriteString(fmt.Sprintf("duration %.6f\n", delaySec))
@@ -111,7 +111,7 @@ func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath stri
 		listF.Close()
 		return "", fmt.Errorf("no frames to encode")
 	}
-	// 重复一次最后的 file 行（concat demuxer 要求）
+	// 重复一次最后的 file 行（concat demuxer 要求�?
 	// _, _ = bw.WriteString(fmt.Sprintf("file '%s'\n", escapePathForConcat(extractedPaths[len(extractedPaths)-1])))
 	bw.Flush()
 	listF.Close()
@@ -127,7 +127,7 @@ func UgoiraZipToMp4(zipPath string, frames []shared.UgoiraFrame, outputPath stri
 		ffoutPath += ".mp4"
 	}
 
-	// 调整为偶数边长, mp4 编码要求
+	// 调整为偶数边�? mp4 编码要求
 	filtered := in.Filter("pad", ffmpeg.Args{
 		"ceil(iw/2)*2", // width
 		"ceil(ih/2)*2", // height

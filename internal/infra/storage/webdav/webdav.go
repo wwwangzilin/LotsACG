@@ -8,9 +8,9 @@ import (
 	"path"
 	"strings"
 
-	config "github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/infra/storage"
-	"github.com/krau/LotsACG/internal/shared"
+	config "github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/storage"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 
 	"github.com/studio-b12/gowebdav"
 )

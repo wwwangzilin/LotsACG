@@ -6,9 +6,9 @@ gitCommit=$(git log --pretty=format:"%h" -1)
 version=$(git describe --abbrev=0 --tags)
 
 versionFlags="-w -s \
--X 'github.com/krau/LotsACG/common.BuildTime=$builtAt' \
--X 'github.com/krau/LotsACG/common.Commit=$gitCommit' \
--X 'github.com/krau/LotsACG/common.Version=$version'"
+-X 'github.com/wwwangzilin/LotsACG/common.BuildTime=$builtAt' \
+-X 'github.com/wwwangzilin/LotsACG/common.Commit=$gitCommit' \
+-X 'github.com/wwwangzilin/LotsACG/common.Version=$version'"
 
 vipsFlags=$(pkg-config --static --libs vips)
 

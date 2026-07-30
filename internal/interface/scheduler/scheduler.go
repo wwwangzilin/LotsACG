@@ -7,16 +7,16 @@ import (
 	"math"
 	"time"
 
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/model/converter"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/model/converter"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
-// Poster 应该完成所有创建工作, 包括文件存储等
+// Poster 应该完成所有创建工�? 包括文件存储�?
 type ArtworkPoster interface {
 	PostAndCreateArtwork(ctx context.Context, artwork *entity.CachedArtworkData) error
 }

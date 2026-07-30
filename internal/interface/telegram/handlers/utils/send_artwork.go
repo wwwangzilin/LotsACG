@@ -7,18 +7,18 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/krau/LotsACG/internal/common/httpclient"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/infra/kvstor"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/pkg/mediatool"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/ioutil"
-	"github.com/krau/LotsACG/pkg/log"
-	"github.com/krau/LotsACG/pkg/osutil"
+	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
@@ -112,7 +112,7 @@ func GetVideoVideoInputFile(ctx context.Context, serv *service.Service, meta *me
 
 // MediaLike 转换为对应的 InputMedia
 //
-// 第一个 Media 意为 MediaLike, 第二个 Media 意为tg的 MediaInputFile
+// 第一�?Media 意为 MediaLike, 第二�?Media 意为tg�?MediaInputFile
 func GetMediaInputMedia(ctx context.Context,
 	serv *service.Service,
 	meta *metautil.MetaData,
@@ -207,7 +207,7 @@ func ArtworkPostKeyboard(meta *metautil.MetaData, cbId string) [][]telego.Inline
 	if extra := runtimecfg.Get().Telegram.ExtraTarget; len(extra) > 0 {
 		row := []telego.InlineKeyboardButton{}
 		for _, target := range extra {
-			// 两个一行
+			// 两个一�?
 			btn := telegoutil.InlineKeyboardButton(fmt.Sprintf("发到 %s", target.Title))
 			btn = btn.WithCallbackData(fmt.Sprintf("sendto %s %d", cbId, target.ChatID))
 			row = append(row, btn)
@@ -223,9 +223,9 @@ func ArtworkPostKeyboard(meta *metautil.MetaData, cbId string) [][]telego.Inline
 	return base
 }
 
-// 将作品信息附带操作按钮发送到指定聊天, 用于提供给管理员发布或修改作品
+// 将作品信息附带操作按钮发送到指定聊天, 用于提供给管理员发布或修改作�?
 //
-// 需要区分已发布的作品, 已标记为删除的作品, 和未发布的作品
+// 需要区分已发布的作�? 已标记为删除的作�? 和未发布的作�?
 func SendArtworkInfo(ctx context.Context,
 	bot *telego.Bot,
 	meta *metautil.MetaData,
@@ -258,7 +258,7 @@ func SendArtworkInfo(ctx context.Context,
 			return oops.Wrapf(err, "failed to get cached artwork by url: %s", sourceUrl)
 		}
 		if artwork == nil {
-			// 既没有发布也没有缓存, 则尝试抓取
+			// 既没有发布也没有缓存, 则尝试抓�?
 			cbId := ouid.New().Hex()
 			err := kvstor.SetWithTTL(ctx, cbId, sourceUrl, time.Hour*24*7)
 			if err != nil {
@@ -279,7 +279,7 @@ func SendArtworkInfo(ctx context.Context,
 			}
 			artwork = cached
 		}
-		// 再次检查是否已经发布, 主要解决某些源作品多个图片不同url时的问题
+		// 再次检查是否已经发�? 主要解决某些源作品多个图片不同url时的问题
 		if awent, err := serv.GetArtworkByURL(ctx, cached.SourceURL); err == nil {
 			artwork = awent
 			created = true
@@ -289,9 +289,9 @@ func SendArtworkInfo(ctx context.Context,
 		return oops.New("no artwork found")
 	}
 	caption := ArtworkHTMLCaption(artwork)
-	caption += fmt.Sprintf("\n<i>该作品共有%d个媒体</i>", artwork.MediasCount())
+	caption += fmt.Sprintf("\n<i>该作品共�?d个媒�?/i>", artwork.MediasCount())
 	if deleted != nil {
-		caption += fmt.Sprintf("\n<i>这是一个在 %s 被标记为删除的作品, 如果发布会取消删除</i>", deleted.DeletedAt.Format("2006-01-02 15:04:05"))
+		caption += fmt.Sprintf("\n<i>这是一个在 %s 被标记为删除的作�? 如果发布会取消删�?/i>", deleted.DeletedAt.Format("2006-01-02 15:04:05"))
 	}
 	if opts.AppendCaption != "" {
 		caption += "\n" + opts.AppendCaption
@@ -377,7 +377,7 @@ func SendArtworkInfo(ctx context.Context,
 			}
 		}
 		if msg != nil && msg.Video != nil && (len(artwork.GetVideos()) > 0 || len(artwork.GetUgoiraMetas()) > 0) {
-			// 如果 artwork 有 ugoira 则这里应该是 ugoira, 详见各个 FirstMedia 实现
+			// 如果 artwork �?ugoira 则这里应该是 ugoira, 详见各个 FirstMedia 实现
 			if len(artwork.GetUgoiraMetas()) > 0 {
 				ugoira := artwork.GetUgoiraMetas()[0]
 				switch v := ugoira.(type) {

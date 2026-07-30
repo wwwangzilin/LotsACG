@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/strutil"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -67,12 +67,12 @@ func FindSourceURLsInMessage(serv *service.Service, message *telego.Message) []s
 
 var tagCharsReplacer = strings.NewReplacer(
 	":", "_",
-	"：", "_",
+	"�?, "_",
 	"-", "_",
-	"（", "_",
-	"）", "_",
-	"「", "_",
-	"」", "_",
+	"�?, "_",
+	"�?, "_",
+	"�?, "_",
+	"�?, "_",
 	"*", "_",
 	"?", "",
 	"/", " #",
@@ -107,7 +107,7 @@ type ArtworkCaptionData struct {
 	ArtistName  string
 	Description template.HTML
 	Tags        template.HTML
-	// 用于对未发布到频道的作品的标记
+	// 用于对未发布到频道的作品的标�?
 	IsCache bool
 }
 

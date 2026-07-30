@@ -7,17 +7,17 @@ import (
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/krau/LotsACG/internal/common/httpclient"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/command"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/pkg/mediatool"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
-	"github.com/krau/LotsACG/pkg/strutil"
+	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/command"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
@@ -59,7 +59,7 @@ func doPostAndCreateArtwork(
 			log.Warn("failed to edit reply markup", "err", err)
 		}
 	}
-	// replyWaitMsg 回复 messageID 的消息
+	// replyWaitMsg 回复 messageID 的消�?
 	replyWaitMsg := func(text string) {
 		if !showProgress {
 			return
@@ -84,7 +84,7 @@ func doPostAndCreateArtwork(
 	editReplyMarkupText("正在存储资源...")
 
 	for i, pic := range artwork.Pictures {
-		// 下载并存储图片, 同时计算 phash, thumbhash, width, height
+		// 下载并存储图�? 同时计算 phash, thumbhash, width, height
 		err = func() error {
 			file, err := httpclient.DownloadWithCache(ctx, pic.Original, nil)
 			if err != nil {
@@ -147,7 +147,7 @@ func doPostAndCreateArtwork(
 			return err
 		}
 	}
-	// 处理 ugoira 的 original
+	// 处理 ugoira �?original
 	for _, ugoira := range artwork.UgoiraMetas {
 		err := func() error {
 			origZip := ugoira.MetaData.OriginalZip
@@ -169,7 +169,7 @@ func doPostAndCreateArtwork(
 		}
 	}
 	for _, video := range artwork.Videos {
-		// 下载并存储视频
+		// 下载并存储视�?
 		err := func() error {
 			file, err := httpclient.DownloadWithCache(ctx, video.URL, nil)
 			if err != nil {
@@ -260,7 +260,7 @@ func doPostAndCreateArtwork(
 		}
 	}
 
-	editReplyMarkupText("正在发布到频道...")
+	editReplyMarkupText("正在发布到频�?..")
 
 	targetChatID := toChatID
 	if targetChatID.ID == 0 && targetChatID.Username == "" {
@@ -276,8 +276,8 @@ func doPostAndCreateArtwork(
 	if len(results) == 0 {
 		return oops.New("no messages sent")
 	}
-	// 更新 cached artwork 的 TelegramInfo
-	// 这里不用 UpdateCachedArtworkFileID , 因为还需要更新 message 信息
+	// 更新 cached artwork �?TelegramInfo
+	// 这里不用 UpdateCachedArtworkFileID , 因为还需要更�?message 信息
 	for _, msg := range results {
 		tginfo := shared.TelegramInfo{}
 		tginfo.SetMessage(targetChatID.ID, msg.Message.MessageID, msg.Message.MediaGroupID)
@@ -369,7 +369,7 @@ func doPostAndCreateArtwork(
 	}
 	log.Info("created artwork", "id", ent.ID, "url", ent.SourceURL, "title", ent.Title, "pics", len(ent.Pictures))
 
-	editReplyMarkupText("已发布到频道, 正在检测重复图片...")
+	editReplyMarkupText("已发布到频道, 正在检测重复图�?..")
 	newEnt, err := serv.GetArtworkByURL(ctx, artwork.SourceURL)
 	if err != nil {
 		return oops.Wrapf(err, "failed to get artwork by url for duplicate picture check")
@@ -380,7 +380,7 @@ func doPostAndCreateArtwork(
 			phashSims, err := serv.QueryPicturesByPhash(ctx, query.PicturesPhash{Input: pic.Phash, Distance: 10, Limit: 20})
 			if err != nil {
 				log.Error("failed to query pictures by phash", "phash", pic.Phash, "err", err)
-				editReplyMarkupText(fmt.Sprintf("检测第%d张图片重复失败, 作品已发布", i+1))
+				editReplyMarkupText(fmt.Sprintf("检测第%d张图片重复失�? 作品已发�?, i+1))
 				continue
 			}
 			similars = append(similars, phashSims...)
@@ -420,8 +420,8 @@ func doPostAndCreateArtwork(
 			return ids
 		}())
 		var text strings.Builder
-		text.WriteString(fmt.Sprintf("检测到 %d 张与作品 <a href='%s'>%s 第 %d 张图片</a>相似的图片", len(sims), func() string {
-			if meta.ChannelAvailable() { // 非 telegram handler context 下 meta 可能为 nil
+		text.WriteString(fmt.Sprintf("检测到 %d 张与作品 <a href='%s'>%s �?%d 张图�?/a>相似的图�?, len(sims), func() string {
+			if meta.ChannelAvailable() { // �?telegram handler context �?meta 可能�?nil
 				if msgId := pic.TelegramInfo.Data().MessageID(meta.ChannelChatID().ID); msgId != 0 {
 					return meta.ChannelMessageURL(msgId)
 				}

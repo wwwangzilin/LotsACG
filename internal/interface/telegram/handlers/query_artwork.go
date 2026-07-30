@@ -9,14 +9,14 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/strutil"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -50,14 +50,14 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 	})
 	if err != nil {
 		if errors.Is(err, errs.ErrRecordNotFound) {
-			utils.ReplyMessage(ctx, message, "未找到相关图片")
+			utils.ReplyMessage(ctx, message, "未找到相关图�?)
 			return nil
 		}
 		utils.ReplyMessage(ctx, message, "查询图片失败")
 		return oops.Wrapf(err, "failed to query artworks for random picture")
 	}
 	if len(artwork) == 0 {
-		utils.ReplyMessage(ctx, message, "未找到相关图片")
+		utils.ReplyMessage(ctx, message, "未找到相关图�?)
 		return nil
 	}
 	pictures := artwork[0].Pictures
@@ -87,7 +87,7 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	photoMessage, err := ctx.Bot().SendPhoto(ctx, photo)
 	if err != nil {
-		utils.ReplyMessage(ctx, message, "发送图片失败")
+		utils.ReplyMessage(ctx, message, "发送图片失�?)
 		return oops.Wrapf(err, "failed to send photo message")
 	}
 	if photoMessage != nil {
@@ -109,13 +109,13 @@ func HybridSearchArtworks(ctx *telegohandler.Context, message telego.Message) er
 	_, _, args := telegoutil.ParseCommand(message.Text)
 	if len(args) == 0 {
 		helpText := `
-<b>使用 /hybrid 命令并提供查询参数, 将使用混合搜索引擎搜索相关图片</b>
+<b>使用 /hybrid 命令并提供查询参�? 将使用混合搜索引擎搜索相关图�?/b>
 
 命令语法: /hybrid 搜索内容 [语义比例]
 
-语义比例为0-1的浮点数, 应位于参数列表最后, 越大越趋向于基于语义搜索, 若不提供, 使用默认值0.8
+语义比例�?-1的浮点数, 应位于参数列表最�? 越大越趋向于基于语义搜索, 若不提供, 使用默认�?.8
 
-<i>Tips: 该命令将基于文本语义进行搜索, 而非关键词匹配</i>
+<i>Tips: 该命令将基于文本语义进行搜索, 而非关键词匹�?/i>
 `
 		utils.ReplyMessageWithHTML(ctx, message, helpText)
 		return nil
@@ -128,7 +128,7 @@ func HybridSearchArtworks(ctx *telegohandler.Context, message telego.Message) er
 		queryText = strings.Join(args, " ")
 	} else {
 		if hybridSemanticRatio < 0 || hybridSemanticRatio > 1 {
-			utils.ReplyMessage(ctx, message, "参数错误: 语义比例应为0-1的小数")
+			utils.ReplyMessage(ctx, message, "参数错误: 语义比例应为0-1的小�?)
 			return nil
 		}
 		queryText = strings.Join(args[:len(args)-1], " ")
@@ -146,14 +146,14 @@ func HybridSearchArtworks(ctx *telegohandler.Context, message telego.Message) er
 	})
 	if err != nil {
 		if errors.Is(err, errs.ErrSearchEngineNotEnabled) {
-			utils.ReplyMessage(ctx, message, "搜索引擎未启用")
+			utils.ReplyMessage(ctx, message, "搜索引擎未启�?)
 			return nil
 		}
 		utils.ReplyMessage(ctx, message, "搜索失败")
 		return oops.Wrapf(err, "failed to search artworks")
 	}
 	if len(artworks) == 0 {
-		utils.ReplyMessage(ctx, message, "未找到相关图片")
+		utils.ReplyMessage(ctx, message, "未找到相关图�?)
 		return nil
 	}
 	// [TODO] 处理无图作品
@@ -170,11 +170,11 @@ func HybridSearchArtworks(ctx *telegohandler.Context, message telego.Message) er
 func SearchSimilarArtworks(ctx *telegohandler.Context, message telego.Message) error {
 	if message.ReplyToMessage == nil {
 		helpText := `
-<b>使用 /similar 命令回复一条包含图片或作品链接的消息, 将搜索与该图片相关的作品</b>
+<b>使用 /similar 命令回复一条包含图片或作品链接的消�? 将搜索与该图片相关的作品</b>
 
 命令语法: /similar [偏移量] [限制数量]
 
-若回复的消息中未找到支持的链接, 将尝试识别图片内容并搜索相关作品
+若回复的消息中未找到支持的链�? 将尝试识别图片内容并搜索相关作品
 `
 		utils.ReplyMessageWithHTML(ctx, message, helpText)
 		return nil
@@ -199,14 +199,14 @@ func SearchSimilarArtworks(ctx *telegohandler.Context, message telego.Message) e
 	if len(args) > 0 {
 		offset, err = strconv.Atoi(args[0])
 		if err != nil || offset < 0 {
-			utils.ReplyMessage(ctx, message, "参数错误: 偏移量应为非负整数")
+			utils.ReplyMessage(ctx, message, "参数错误: 偏移量应为非负整�?)
 			return nil
 		}
 	}
 	if len(args) > 1 {
 		limit, err = strconv.Atoi(args[1])
 		if err != nil || limit < 1 || limit > 100 {
-			utils.ReplyMessage(ctx, message, "参数错误: 限制数量应为1-10的整数")
+			utils.ReplyMessage(ctx, message, "参数错误: 限制数量应为1-10的整�?)
 			return nil
 		}
 	}
@@ -220,7 +220,7 @@ func SearchSimilarArtworks(ctx *telegohandler.Context, message telego.Message) e
 	})
 	if err != nil {
 		if errors.Is(err, errs.ErrSearchEngineNotEnabled) {
-			utils.ReplyMessage(ctx, message, "搜索引擎未启用")
+			utils.ReplyMessage(ctx, message, "搜索引擎未启�?)
 			return nil
 		}
 		utils.ReplyMessage(ctx, message, "搜索失败")
@@ -277,7 +277,7 @@ func handleSendResultArtworks(ctx context.Context, artworks []*entity.Artwork, m
 		inputMedias = append(inputMedias, telegoutil.MediaPhoto(file).WithCaption(caption).WithParseMode(telego.ModeHTML))
 	}
 	if len(inputMedias) == 0 {
-		bot.SendMessage(ctx, telegoutil.Message(message.Chat.ChatID(), "未找到相关图片").WithReplyParameters(&telego.ReplyParameters{
+		bot.SendMessage(ctx, telegoutil.Message(message.Chat.ChatID(), "未找到相关图�?).WithReplyParameters(&telego.ReplyParameters{
 			MessageID: message.MessageID,
 			ChatID:    message.Chat.ChatID(),
 		}))

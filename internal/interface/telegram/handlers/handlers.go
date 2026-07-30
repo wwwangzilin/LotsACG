@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/filter"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/filter"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 )

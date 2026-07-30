@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 func readLastLine(t *testing.T, filePath string) string {
@@ -30,7 +30,7 @@ func readLastLine(t *testing.T, filePath string) string {
 }
 
 func TestZapLogger(t *testing.T) {
-	// 创建临时目录和日志文件
+	// 创建临时目录和日志文�?
 	tmpDir := t.TempDir()
 	logFile := filepath.Join(tmpDir, "test.log")
 
@@ -38,33 +38,33 @@ func TestZapLogger(t *testing.T) {
 		LogFile: logFile,
 	})
 
-	// 写日志
+	// 写日�?
 	log.Info("服务启动", "port", 8080)
 	log.Debug("调试信息", "user", "alice")
-	log.Error("出错了", "err", "连接超时")
+	log.Error("出错�?, "err", "连接超时")
 
 	// 确认文件存在
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
-		t.Fatalf("日志文件未生成: %s", logFile)
+		t.Fatalf("日志文件未生�? %s", logFile)
 	}
 
-	// 读取最后一行（应为 Error）
+	// 读取最后一行（应为 Error�?
 	lastLine := readLastLine(t, logFile)
 
-	// 检查关键字段是否存在
-	if !strings.Contains(lastLine, `"msg":"出错了"`) {
-		t.Errorf("日志内容缺失 msg，实际: %s", lastLine)
+	// 检查关键字段是否存�?
+	if !strings.Contains(lastLine, `"msg":"出错�?`) {
+		t.Errorf("日志内容缺失 msg，实�? %s", lastLine)
 	}
 	if !strings.Contains(lastLine, `"err":"连接超时"`) {
-		t.Errorf("日志内容缺失字段 err，实际: %s", lastLine)
+		t.Errorf("日志内容缺失字段 err，实�? %s", lastLine)
 	}
 	if !strings.Contains(lastLine, `"caller"`) {
-		t.Errorf("日志未包含 caller 信息，实际: %s", lastLine)
+		t.Errorf("日志未包�?caller 信息，实�? %s", lastLine)
 	}
 }
 
 func TestCharmLogger(t *testing.T) {
-	// 创建临时目录和日志文件
+	// 创建临时目录和日志文�?
 	tmpDir := t.TempDir()
 	logFile := filepath.Join(tmpDir, "test.log")
 
@@ -72,27 +72,27 @@ func TestCharmLogger(t *testing.T) {
 		LogFile: logFile,
 	})
 
-	// 写日志
+	// 写日�?
 	log.Info("服务启动", "port", 8080)
 	log.Debug("调试信息", "user", "alice")
-	log.Error("出错了", "err", "连接超时")
+	log.Error("出错�?, "err", "连接超时")
 
 	// 确认文件存在
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
-		t.Fatalf("日志文件未生成: %s", logFile)
+		t.Fatalf("日志文件未生�? %s", logFile)
 	}
 
-	// 读取最后一行（应为 Error）
+	// 读取最后一行（应为 Error�?
 	lastLine := readLastLine(t, logFile)
 
-	// 检查关键字段是否存在
-	if !strings.Contains(lastLine, `"msg":"出错了"`) {
-		t.Errorf("日志内容缺失 msg，实际: %s", lastLine)
+	// 检查关键字段是否存�?
+	if !strings.Contains(lastLine, `"msg":"出错�?`) {
+		t.Errorf("日志内容缺失 msg，实�? %s", lastLine)
 	}
 	if !strings.Contains(lastLine, `"err":"连接超时"`) {
-		t.Errorf("日志内容缺失字段 err，实际: %s", lastLine)
+		t.Errorf("日志内容缺失字段 err，实�? %s", lastLine)
 	}
 	if !strings.Contains(lastLine, `"caller"`) {
-		t.Errorf("日志未包含 caller 信息，实际: %s", lastLine)
+		t.Errorf("日志未包�?caller 信息，实�? %s", lastLine)
 	}
 }

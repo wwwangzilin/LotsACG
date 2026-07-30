@@ -6,15 +6,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/krau/LotsACG/internal/infra"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/infra/database"
-	"github.com/krau/LotsACG/internal/infra/search/meilisearch"
-	"github.com/krau/LotsACG/internal/model/converter"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/database"
+	"github.com/wwwangzilin/LotsACG/internal/infra/search/meilisearch"
+	"github.com/wwwangzilin/LotsACG/internal/model/converter"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -42,15 +42,15 @@ func IndexArtworks(ctx context.Context) {
 	// 读取配置
 	cfg := runtimecfg.Get()
 
-	// 初始化日志
+	// 初始化日�?
 	log.SetDefault(log.New(log.Config{}))
 
-	// 检查搜索是否启用
+	// 检查搜索是否启�?
 	if !cfg.Search.Enable {
 		log.Fatal("search engine is not enabled in config")
 	}
 
-	// 检查搜索引擎类型
+	// 检查搜索引擎类�?
 	if cfg.Search.Engine != "meilisearch" {
 		log.Fatal("only meilisearch is supported for indexing", "engine", cfg.Search.Engine)
 	}
@@ -68,10 +68,10 @@ func IndexArtworks(ctx context.Context) {
 		}
 	}()
 
-	// 获取数据库实例
+	// 获取数据库实�?
 	db := database.Default()
 
-	// 初始化搜索引擎
+	// 初始化搜索引�?
 	searcher, err := meilisearch.NewSearcher(ctx, cfg.Search.MeiliSearch)
 	if err != nil {
 		log.Fatal("failed to initialize searcher", "err", err)
@@ -102,7 +102,7 @@ func IndexArtworks(ctx context.Context) {
 		return
 	}
 
-	// 批量读取并索引
+	// 批量读取并索�?
 	indexed := 0
 	failed := 0
 	offset := 0
@@ -110,7 +110,7 @@ func IndexArtworks(ctx context.Context) {
 	startTime := time.Now()
 
 	for {
-		// 查询一批 artwork
+		// 查询一�?artwork
 		que := query.ArtworksDB{
 			ArtworksFilter: query.ArtworksFilter{
 				R18: shared.R18TypeAll,
@@ -133,7 +133,7 @@ func IndexArtworks(ctx context.Context) {
 			break
 		}
 
-		// 转换为搜索文档
+		// 转换为搜索文�?
 		docs := make([]*dto.ArtworkSearchDocument, 0, len(artworks))
 		for _, artwork := range artworks {
 			doc := converter.EntityArtworkToSearchDocument(artwork)
@@ -142,7 +142,7 @@ func IndexArtworks(ctx context.Context) {
 			}
 		}
 
-		// 批量添加到搜索引擎
+		// 批量添加到搜索引�?
 		if len(docs) > 0 {
 			err = searcher.AddDocuments(ctx, docs)
 			if err != nil {
@@ -156,7 +156,7 @@ func IndexArtworks(ctx context.Context) {
 
 		offset += indexBatchSize
 
-		// 如果查询结果少于批次大小，说明已经到达末尾
+		// 如果查询结果少于批次大小，说明已经到达末�?
 		if len(artworks) < indexBatchSize {
 			break
 		}

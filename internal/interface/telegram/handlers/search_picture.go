@@ -7,13 +7,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/infra/tagging"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/interface/telegram/metautil"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/pkg/mediatool"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/tagging"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -36,7 +36,7 @@ func SearchPicture(ctx *telegohandler.Context, message telego.Message) error {
 		utils.ReplyMessageWithHTML(ctx, message, helpText)
 		return nil
 	}
-	msg, err := utils.ReplyMessage(ctx, message, "少女祈祷中...")
+	msg, err := utils.ReplyMessage(ctx, message, "少女祈祷�?..")
 	if err != nil {
 		return oops.Wrapf(err, "reply message failed")
 	}
@@ -140,7 +140,7 @@ func SearchPictureCallbackQuery(ctx *telegohandler.Context, query telego.Callbac
 	if !hasResult {
 		go ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText(text).WithCacheTime(5))
 	} else {
-		go ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("搜索到相似图片").WithCacheTime(5))
+		go ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("搜索到相似图�?).WithCacheTime(5))
 	}
 	utils.ReplyMessageWithHTML(ctx, *message, text)
 	return nil
@@ -220,7 +220,7 @@ func SearchPictureCallbackQuery(ctx *telegohandler.Context, query telego.Callbac
 
 func TaggingPicture(ctx *telegohandler.Context, message telego.Message) error {
 	if !tagging.Enabled() {
-		utils.ReplyMessage(ctx, message, "标签识别服务未启用")
+		utils.ReplyMessage(ctx, message, "标签识别服务未启�?)
 		return nil
 	}
 	if message.ReplyToMessage == nil {
@@ -231,7 +231,7 @@ func TaggingPicture(ctx *telegohandler.Context, message telego.Message) error {
 		return nil
 	}
 
-	msg, err := utils.ReplyMessage(ctx, message, "少女祈祷中...")
+	msg, err := utils.ReplyMessage(ctx, message, "少女祈祷�?..")
 	if err != nil {
 		return oops.Wrapf(err, "reply message failed")
 	}

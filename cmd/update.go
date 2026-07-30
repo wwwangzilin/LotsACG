@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/krau/LotsACG/internal/common/version"
+	"github.com/wwwangzilin/LotsACG/internal/common/version"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/spf13/cobra"
 )

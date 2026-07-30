@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/krau/LotsACG/internal/interface/rest/common"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 type RequestSendArtworkInfoByTelegramBot struct {

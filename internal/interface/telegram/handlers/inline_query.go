@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
-	"github.com/krau/LotsACG/pkg/strutil"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 	"github.com/samber/oops"
 	"github.com/unvgo/ouid"
 
@@ -76,10 +76,10 @@ func InlineQuery(ctx *telegohandler.Context, inlineQuery telego.InlineQuery) err
 	})
 	if err != nil || len(artworks) == 0 {
 		log.Errorf("获取图片失败: %s", err)
-		ctx.Bot().AnswerInlineQuery(ctx, telegoutil.InlineQuery(inlineQuery.ID, telegoutil.ResultArticle(ouid.New().Hex(), "未找到相关图片", telegoutil.TextMessage(fmt.Sprintf(`
-未找到相关图片 (搜索: %s)
+		ctx.Bot().AnswerInlineQuery(ctx, telegoutil.InlineQuery(inlineQuery.ID, telegoutil.ResultArticle(ouid.New().Hex(), "未找到相关图�?, telegoutil.TextMessage(fmt.Sprintf(`
+未找到相关图�?(搜索: %s)
 
-<b>在任意聊天框中输入 @%s [关键词参数] 来查找相关图片</b>`, utils.EscapeHTML(queryText), utils.EscapeHTML(meta.BotUsername()))).WithParseMode(telego.ModeHTML))))
+<b>在任意聊天框中输�?@%s [关键词参数] 来查找相关图�?/b>`, utils.EscapeHTML(queryText), utils.EscapeHTML(meta.BotUsername()))).WithParseMode(telego.ModeHTML))))
 		return nil
 	}
 	results := make([]telego.InlineQueryResult, 0)

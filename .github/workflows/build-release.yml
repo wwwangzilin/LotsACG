@@ -115,7 +115,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           ldflags: >-
             -s -w
-            -X "github.com/krau/LotsACG/internal/common/version.Version=${{ env.VERSION }}"
-            -X "github.com/krau/LotsACG/internal/common/version.BuildTime=${{ env.BUILD_TIME }}"
-            -X "github.com/krau/LotsACG/internal/common/version.Commit=${{ env.COMMIT }}"
+            -X "github.com/wwwangzilin/LotsACG/internal/common/version.Version=${{ env.VERSION }}"
+            -X "github.com/wwwangzilin/LotsACG/internal/common/version.BuildTime=${{ env.BUILD_TIME }}"
+            -X "github.com/wwwangzilin/LotsACG/internal/common/version.Commit=${{ env.COMMIT }}"
           binary_name: lotsacg

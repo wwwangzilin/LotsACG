@@ -5,12 +5,12 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gorilla/feeds"
-	"github.com/krau/LotsACG/internal/infra/config/runtimecfg"
-	"github.com/krau/LotsACG/internal/interface/rest/common"
-	"github.com/krau/LotsACG/internal/interface/rest/utils"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/service"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
+	"github.com/wwwangzilin/LotsACG/internal/interface/rest/utils"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 func GenerateAtomFeed(ctx fiber.Ctx) error {

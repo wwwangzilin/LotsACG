@@ -5,9 +5,9 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 )
 
 func (s *Service) IsAdminByTgID(ctx context.Context, tgid int64) (bool, error) {

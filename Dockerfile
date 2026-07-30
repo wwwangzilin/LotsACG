@@ -17,9 +17,9 @@ RUN builtAt=${BUILT_AT:-$(date +'%F %T %z')} && \
     version=${VERSION:-$(git describe --abbrev=0 --tags)} && \
     ldflags="\
     -w -s \
-    -X 'github.com/krau/LotsACG/internal/common/version.BuildTime=$builtAt' \
-    -X 'github.com/krau/LotsACG/internal/common/version.Commit=$gitCommit' \
-    -X 'github.com/krau/LotsACG/internal/common/version.Version=$version'\
+    -X 'github.com/wwwangzilin/LotsACG/internal/common/version.BuildTime=$builtAt' \
+    -X 'github.com/wwwangzilin/LotsACG/internal/common/version.Commit=$gitCommit' \
+    -X 'github.com/wwwangzilin/LotsACG/internal/common/version.Version=$version'\
     " && \
     CGO_ENABLED=0 go build -tags nodynamic -ldflags "$ldflags" -o lotsacg
 

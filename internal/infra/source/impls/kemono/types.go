@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 type KemonoPostResp struct {
@@ -45,8 +45,8 @@ type KemonoCreatorProfileResp struct {
 type KemonoPreview struct {
 	Type   string `json:"type"`   // "thumbnail" or others?
 	Server string `json:"server"` // cdn server, e.g. "https://n4.kemono.cr"
-	Name   string `json:"name"`   // file name, 好像没啥用
-	Path   string `json:"path"`   // file path, 和原图一致
+	Name   string `json:"name"`   // file name, 好像没啥�?
+	Path   string `json:"path"`   // file path, 和原图一�?
 }
 
 type KemonoVideo struct {
@@ -79,7 +79,7 @@ func (k *Kemono) convertToFetchedArtwork(ctx context.Context, resp *KemonoPostRe
 		picCdnMap[preview.Path] = preview.Server
 	}
 	pictures := make([]*dto.FetchedPicture, 0)
-	// 不再处理 File, 因为它很多情况下是一张裁剪过的第一张图片
+	// 不再处理 File, 因为它很多情况下是一张裁剪过的第一张图�?
 	// if isImage(postResp.File.Path) {
 	// 	thumbnailUrl, err := url.JoinPath(thumbnailsBase, postResp.File.Path)
 	// 	if err != nil {

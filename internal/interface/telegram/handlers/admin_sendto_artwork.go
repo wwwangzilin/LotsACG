@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/infra/kvstor"
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -34,7 +34,7 @@ func SendtoArtworkCallbackQuery(ctx *telegohandler.Context, query telego.Callbac
 	queryDataSlice := strings.Split(query.Data, " ")
 	// sendto <cbId> <chatId>
 	if len(queryDataSlice) != 3 {
-		answerQuery("无效的回调数据", true)
+		answerQuery("无效的回调数�?, true)
 		return nil
 	}
 	dataID := queryDataSlice[1]
@@ -59,7 +59,7 @@ func SendtoArtworkCallbackQuery(ctx *telegohandler.Context, query telego.Callbac
 		telegoutil.EditMessageReplyMarkup(query.Message.GetChat().ChatID(),
 			query.Message.GetMessageID(),
 			telegoutil.InlineKeyboard([]telego.InlineKeyboardButton{
-				telegoutil.InlineKeyboardButton("正在发送").WithCallbackData("noop"),
+				telegoutil.InlineKeyboardButton("正在发�?).WithCallbackData("noop"),
 			})))
 
 	meta, err := requireMeta(ctx)

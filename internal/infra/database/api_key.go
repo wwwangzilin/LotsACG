@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/krau/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )

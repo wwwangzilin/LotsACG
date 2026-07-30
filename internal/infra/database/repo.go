@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/krau/LotsACG/internal/repo"
+	"github.com/wwwangzilin/LotsACG/internal/repo"
 	"gorm.io/gorm"
 )
 

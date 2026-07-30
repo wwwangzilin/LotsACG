@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -255,7 +255,7 @@ type CachedPicture struct {
 
 	Width  uint `json:"width"`
 	Height uint `json:"height"`
-	Hidden bool `json:"hidden"` // 设为 true 时不发布到 Artwork 中, 但仍在其他接口中返回
+	Hidden bool `json:"hidden"` // 设为 true 时不发布�?Artwork �? 但仍在其他接口中返回
 
 }
 

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -31,7 +31,7 @@ func DeleteArtwork(ctx *telegohandler.Context, message telego.Message) error {
 		sourceURL = serv.FindSourceURL(message.Text)
 	}
 	helpText := `
-[管理员] <b>使用 /delete 命令回复一条包含作品链接的消息, 或在参数中提供作品链接, 将删除该作品</b>
+[管理员] <b>使用 /delete 命令回复一条包含作品链接的消息, 或在参数中提供作品链�? 将删除该作品</b>
 
 命令语法: /delete [作品链接]
 `
@@ -51,7 +51,7 @@ func DeleteArtwork(ctx *telegohandler.Context, message telego.Message) error {
 			utils.ReplyMessageWithHTML(ctx, message, "删除作品失败: "+err.Error())
 			return nil
 		}
-		utils.ReplyMessageWithHTML(ctx, message, "在数据库中已删除该作品")
+		utils.ReplyMessageWithHTML(ctx, message, "在数据库中已删除该作�?)
 		if err := serv.StorageDeleteArtworkFiles(ctx, artwork); err != nil {
 			log.Errorf("删除作品文件失败: %s", err)
 		}
@@ -60,7 +60,7 @@ func DeleteArtwork(ctx *telegohandler.Context, message telego.Message) error {
 
 	// cmd == del, 删除artwork里的图片
 	if len(args) == 0 {
-		utils.ReplyMessage(ctx, message, "请提供要删除的图片序号, 从1开始, 以空格分隔多个序号\n"+helpText)
+		utils.ReplyMessage(ctx, message, "请提供要删除的图片序�? �?开�? 以空格分隔多个序号\n"+helpText)
 		return nil
 	}
 
@@ -68,27 +68,27 @@ func DeleteArtwork(ctx *telegohandler.Context, message telego.Message) error {
 	for _, arg := range args {
 		pictureIndex, err := strconv.Atoi(arg)
 		if err != nil {
-			utils.ReplyMessage(ctx, message, fmt.Sprintf("参数错误, 请指定要删除的图片序号 (从1开始)\nerror: %s", err))
+			utils.ReplyMessage(ctx, message, fmt.Sprintf("参数错误, 请指定要删除的图片序�?(�?开�?\nerror: %s", err))
 			return nil
 		}
 		if pictureIndex <= 0 || pictureIndex > len(artwork.Pictures) {
-			utils.ReplyMessage(ctx, message, "图片索引越界, 该作品共有 "+strconv.Itoa(len(artwork.Pictures))+" 张图片")
+			utils.ReplyMessage(ctx, message, "图片索引越界, 该作品共�?"+strconv.Itoa(len(artwork.Pictures))+" 张图�?)
 			return nil
 		}
-		pictureIndexes = append(pictureIndexes, pictureIndex-1) // pictureIndex - 1 , 转为数组索引值
+		pictureIndexes = append(pictureIndexes, pictureIndex-1) // pictureIndex - 1 , 转为数组索引�?
 	}
 
 	for _, pictureIndex := range pictureIndexes {
 		picture := artwork.Pictures[pictureIndex]
 		if err := serv.DeletePictureByID(ctx, picture.ID); err != nil {
-			utils.ReplyMessage(ctx, message, fmt.Sprintf("删除第 %d 张图片失败\nerror: %s", pictureIndex+1, err))
+			utils.ReplyMessage(ctx, message, fmt.Sprintf("删除�?%d 张图片失败\nerror: %s", pictureIndex+1, err))
 			return oops.Errorf("delete picture %d of artwork %s failed: %w", pictureIndex, artwork.ID.String(), err)
 		}
 		if err := serv.StorageDeleteByInfo(ctx, picture.StorageInfo.Data()); err != nil {
 			log.Errorf("failed to delete picture file: %s", err)
 		}
 	}
-	utils.ReplyMessage(ctx, message, "在数据库中已删除所选图片")
+	utils.ReplyMessage(ctx, message, "在数据库中已删除所选图�?)
 	return nil
 }
 
@@ -122,11 +122,11 @@ func DeleteArtworkCallbackQuery(ctx *telegohandler.Context, query telego.Callbac
 	}
 
 	if err := serv.DeleteArtworkByID(ctx, artworkID); err != nil {
-		ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("从数据库中删除失败: "+err.Error()).WithCacheTime(60).WithShowAlert())
+		ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("从数据库中删除失�? "+err.Error()).WithCacheTime(60).WithShowAlert())
 		return nil
 	}
 
-	ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("在数据库中已删除该作品").WithCacheTime(60))
+	ctx.Bot().AnswerCallbackQuery(ctx, telegoutil.CallbackQuery(query.ID).WithText("在数据库中已删除该作�?).WithCacheTime(60))
 
 	if err := serv.StorageDeleteArtworkFiles(ctx, artwork); err != nil {
 		log.Warnf("删除作品文件失败: %s", err)

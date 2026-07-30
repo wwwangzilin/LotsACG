@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/krau/LotsACG/internal/shared"
-	"github.com/krau/LotsACG/internal/shared/errs"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -52,7 +52,7 @@ func GetArtworkInfo(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	hasPermission := utils.CheckPermissionInGroup(ctx, serv, message, shared.PermissionGetArtworkInfo)
 	if !hasPermission {
-		// 若没有权限, 只发送作品信息的 media group , 且作品图片数量不超过10张(避免刷屏)
+		// 若没有权�? 只发送作品信息的 media group , 且作品图片数量不超过10�?避免刷屏)
 		cached, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
 		if err != nil {
 			return oops.Wrapf(err, "get or fetch cached artwork failed: %s", sourceURL)
@@ -97,7 +97,7 @@ func GetArtworkInfoCommand(ctx *telegohandler.Context, message telego.Message) e
 	}
 	if sourceURL == "" {
 		helpText := `
-	<b>使用 /info 命令并在参数中提供作品链接, 或使用该命令回复一条包含支持的链接的消息, 将获取作品信息并发送全部图片</b>
+	<b>使用 /info 命令并在参数中提供作品链�? 或使用该命令回复一条包含支持的链接的消�? 将获取作品信息并发送全部图�?/b>
 
 	命令语法: /info [作品链接]
 	`

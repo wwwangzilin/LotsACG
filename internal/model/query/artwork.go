@@ -1,7 +1,7 @@
 package query
 
 import (
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 )
 
@@ -20,14 +20,14 @@ type ArtworksFilter struct {
 	HasUgoira  bool
 }
 
-// 只需要查数据库
+// 只需要查数据�?
 type ArtworksDB struct {
 	ArtworksFilter
 	Paginate
-	Random bool // 随机排序, 默认按 created_at 降序
+	Random bool // 随机排序, 默认�?created_at 降序
 }
 
-// 需要其他设施
+// 需要其他设�?
 type ArtworkSearch struct {
 	Query               string
 	Hybrid              bool

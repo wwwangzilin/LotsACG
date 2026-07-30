@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/krau/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -27,7 +27,7 @@ func DumpArtworkInfo(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	sourceURL := utils.FindSourceURLInMessage(serv, message.ReplyToMessage)
 	if sourceURL == "" {
-		utils.ReplyMessageWithHTML(ctx, message, "回复的消息中没有支持的链接, 命令帮助:\n"+helpText)
+		utils.ReplyMessageWithHTML(ctx, message, "回复的消息中没有支持的链�? 命令帮助:\n"+helpText)
 		return nil
 	}
 	artwork, err := serv.GetArtworkByURL(ctx, sourceURL)

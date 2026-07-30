@@ -4,9 +4,10 @@ import (
 	"context"
 
 	"github.com/corona10/goimagehash"
-	"github.com/krau/LotsACG/internal/model/entity"
-	"github.com/krau/LotsACG/internal/model/query"
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -36,7 +37,7 @@ func (d *DB) DeletePictureByID(ctx context.Context, id ouid.OUID) error {
 }
 
 func (d *DB) ReorderArtworkPicturesByID(ctx context.Context, artworkID ouid.OUID) error {
-	// 将 artwork 的 pictures 的 order_index 重设为连续的数字, 从 0 开始
+	// �?artwork �?pictures �?order_index 重设为连续的数字, �?0 开�?
 	var pictures []entity.Picture
 	err := d.db.WithContext(ctx).Model(&entity.Picture{}).Where("artwork_id = ?", artworkID).Order("order_index ASC").Find(&pictures).Error
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/krau/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/mymmrac/telego"
 )
 

@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/duke-git/lancet/v2/retry"
-	"github.com/krau/LotsACG/internal/infra/search"
-	"github.com/krau/LotsACG/internal/model/converter"
-	"github.com/krau/LotsACG/internal/model/dto"
-	"github.com/krau/LotsACG/internal/repo"
-	"github.com/krau/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/internal/infra/search"
+	"github.com/wwwangzilin/LotsACG/internal/model/converter"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
+	"github.com/wwwangzilin/LotsACG/internal/repo"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 type dtoArtworkEventItem = dto.ArtworkEventItem
