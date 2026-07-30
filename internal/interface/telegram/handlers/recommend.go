@@ -89,7 +89,7 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "还没有收藏任何作品", ShowAlert: true, CacheTime: 30})
 			return nil
 		}
-		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), query.Message.GetMessageID(), session.LikedSourceURLs)
+		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), 0, session.LikedSourceURLs)
 		if err != nil {
 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失败: " + err.Error(), ShowAlert: true, CacheTime: 30})
 			return nil
@@ -315,7 +315,7 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 						caption).
 					WithParseMode(telego.ModeHTML))
 				if err != nil {
-					log.Warn("failed to recaption pushed artwork", "err", err)
+					log.Debug("failed to recaption pushed artwork", "err", err)
 				}
 				count++
 			}
