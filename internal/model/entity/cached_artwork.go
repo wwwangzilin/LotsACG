@@ -249,6 +249,7 @@ type CachedPicture struct {
 	Thumbnail    string              `json:"thumbnail"`
 	Original     string              `json:"original"`
 	Phash        string              `json:"phash"`      // phash
+	Orb          string              `json:"orb"`        // orb features
 	ThumbHash    string              `json:"thumb_hash"` // thumbhash
 
 	OrderIndex uint `json:"index"`
