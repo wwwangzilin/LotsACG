@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"strings"
+	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
@@ -17,6 +18,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
+	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
@@ -86,12 +88,23 @@ func doPostAndCreateArtwork(
 	for i, pic := range artwork.Pictures {
 		// 下载并存储图片, 同时计算 phash, thumbhash, width, height
 		err = func() error {
-			file, err := httpclient.DownloadWithCache(ctx, pic.Original, nil)
-			if err != nil {
-				return oops.Wrapf(err, "failed to download picture %d", i)
+			var cachedFile *osutil.File
+			var dlErr error
+			for retry := 0; retry < 3; retry++ {
+				if retry > 0 {
+					time.Sleep(time.Duration(retry) * time.Second)
+				}
+				cachedFile, dlErr = httpclient.DownloadWithCache(ctx, pic.Original, nil)
+				if dlErr == nil {
+					break
+				}
+				log.Warnf("download picture %d attempt %d failed: %v", i, retry+1, dlErr)
 			}
-			defer file.Close()
-			img, _, err := image.Decode(file)
+			if dlErr != nil {
+				return oops.Wrapf(dlErr, "failed to download picture %d", i)
+			}
+			defer cachedFile.Close()
+			img, _, err := image.Decode(cachedFile)
 			if err != nil {
 				return oops.Wrapf(err, "failed to decode picture %d", i)
 			}
