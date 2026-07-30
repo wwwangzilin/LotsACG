@@ -56,7 +56,7 @@ func doPostAndCreateArtwork(
 			}),
 		))
 		if err != nil {
-			log.Warn("failed to edit reply markup", "err", err)
+			log.Debug("failed to edit reply markup", "err", err)
 		}
 	}
 	// replyWaitMsg 回复 messageID 的消息

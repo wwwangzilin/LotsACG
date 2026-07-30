@@ -12,6 +12,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/model/query"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
@@ -298,6 +299,29 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 	}
 	count := 0
 	for _, sourceURL := range sourceURLs {
+		// Check if artwork already exists in DB
+		awEnt, err := serv.GetArtworkByURL(ctx, sourceURL)
+		if err == nil && awEnt != nil {
+			// Artwork already created - just send to channel
+			results, err := utils.SendArtworkMediaGroup(ctx, tgCtx.Bot(), serv, meta, meta.ChannelChatID(), awEnt)
+			if err != nil {
+				continue
+			}
+			if len(results) > 0 {
+				caption := utils.ArtworkHTMLCaption(awEnt)
+				_, err = tgCtx.Bot().EditMessageCaption(ctx, telegoutil.
+					EditMessageCaption(meta.ChannelChatID(),
+						awEnt.FirstMedia().GetTelegramInfo().MessageID(meta.ChannelChatID().ID),
+						caption).
+					WithParseMode(telego.ModeHTML))
+				if err != nil {
+					log.Warn("failed to recaption pushed artwork", "err", err)
+				}
+				count++
+			}
+			continue
+		}
+		// Artwork not yet created - fetch cached and create
 		cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
 		if err != nil {
 			continue
