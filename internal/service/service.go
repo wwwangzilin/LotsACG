@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/imseek"
 	"github.com/wwwangzilin/LotsACG/internal/infra/search"
 	"github.com/wwwangzilin/LotsACG/internal/infra/source"
 	"github.com/wwwangzilin/LotsACG/internal/infra/storage"
@@ -20,9 +21,14 @@ type Service struct {
 	storages map[shared.StorageType]storage.Storage
 	sources  map[shared.SourceType]source.ArtworkSource
 	storCfg  runtimecfg.StorageConfig
+	imseek   imseek.Engine
 }
 
 type Option func(*Service)
+
+func WithImseek(e imseek.Engine) Option {
+	return func(s *Service) { s.imseek = e }
+}
 
 func NewService(
 	repos repo.Repositories,
@@ -46,6 +52,9 @@ func NewService(
 	}
 	return s
 }
+
+// Imseek returns the feature search engine (may be nil or disabled).
+func (s *Service) Imseek() imseek.Engine { return s.imseek }
 
 type serviceCtxKey struct{}
 

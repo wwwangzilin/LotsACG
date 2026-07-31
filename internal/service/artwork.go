@@ -233,7 +233,7 @@ func (s *Service) DeleteArtworkByURL(ctx context.Context, sourceURL string) erro
 	if err != nil {
 		return err
 	}
-	err = s.repos.Transaction(ctx, func(repos repo.Repositories) error {
+	return s.repos.Transaction(ctx, func(repos repo.Repositories) error {
 		err := repos.DeletedRecord().CreateDeletedRecord(ctx, &entity.DeletedRecord{
 			SourceURL: sourceURL,
 		})
@@ -242,7 +242,6 @@ func (s *Service) DeleteArtworkByURL(ctx context.Context, sourceURL string) erro
 		}
 		return repos.Artwork().DeleteArtworkByID(ctx, awEnt.ID)
 	})
-	return err
 }
 
 func (s *Service) GetArtworkByID(ctx context.Context, id ouid.OUID) (*entity.Artwork, error) {
@@ -254,7 +253,7 @@ func (s *Service) DeleteArtworkByID(ctx context.Context, id ouid.OUID) error {
 	if err != nil {
 		return err
 	}
-	err = s.repos.Transaction(ctx, func(repos repo.Repositories) error {
+	return s.repos.Transaction(ctx, func(repos repo.Repositories) error {
 		err := repos.DeletedRecord().CreateDeletedRecord(ctx, &entity.DeletedRecord{
 			SourceURL: awEnt.SourceURL,
 		})
@@ -263,7 +262,6 @@ func (s *Service) DeleteArtworkByID(ctx context.Context, id ouid.OUID) error {
 		}
 		return repos.Artwork().DeleteArtworkByID(ctx, id)
 	})
-	return err
 }
 
 func (s *Service) UpdateArtworkTitleByURL(ctx context.Context, sourceURL, title string) error {

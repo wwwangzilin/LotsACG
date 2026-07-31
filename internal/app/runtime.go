@@ -9,6 +9,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/database"
 	"github.com/wwwangzilin/LotsACG/internal/infra/eventbus"
+	"github.com/wwwangzilin/LotsACG/internal/infra/imseek"
 	"github.com/wwwangzilin/LotsACG/internal/infra/search"
 	"github.com/wwwangzilin/LotsACG/internal/infra/source"
 	"github.com/wwwangzilin/LotsACG/internal/infra/storage"
@@ -41,10 +42,48 @@ func NewRuntime(ctx context.Context, cfg runtimecfg.Config) (*Runtime, error) {
 
 	dbRepo := database.Default()
 	searcher := search.Default(ctx)
+
+	// local feature-point search(Optional)
+	imCfg := cfg.Imseek
+	eng, err := imseek.Init(ctx, imseek.Config{
+		Enable:           imCfg.Enable,
+		DataDir:          imCfg.DataDir,
+		Distance:         imCfg.Distance,
+		Count:            imCfg.Count,
+		K:                imCfg.K,
+		NProbe:           imCfg.NProbe,
+		NFeatures:        imCfg.NFeatures,
+		MaxHeight:        imCfg.MaxHeight,
+		MaxWidth:         imCfg.MaxWidth,
+		AutoBuild:        imCfg.AutoBuild,
+		BuildDebounceSec: imCfg.BuildDebounceSec,
+		MinMatches:       imCfg.MinMatches,
+		MinScore:         imCfg.MinScore,
+	})
+	if err != nil {
+		log.Error("imseek init failed, continuing without feature search", "err", err)
+		eng, _ = imseek.Init(ctx, imseek.DefaultConfig())
+	}
+	if eng != nil && eng.Enabled() {
+		log.Info("imseek feature search enabled", "data_dir", imCfg.DataDir)
+		oldCloser := closer
+		closer = func() error {
+			_ = eng.Close()
+			if oldCloser != nil {
+				return oldCloser()
+			}
+			return nil
+		}
+	}
+
+	var artworkBus *eventbus.EventBus[*dtoArtworkEventItem]
+	needBus := search.Enabled() || (eng != nil && eng.Enabled())
 	repos := repo.Repositories(dbRepo)
-	if search.Enabled() {
-		artworkBus := eventbus.New[*dtoArtworkEventItem]()
-		registerArtworkEventSearcherHandlers(ctx, artworkBus, searcher)
+	if needBus {
+		artworkBus = eventbus.New[*dtoArtworkEventItem]()
+		if search.Enabled() {
+			registerArtworkEventSearcherHandlers(ctx, artworkBus, searcher)
+		}
 		repos = repo.NewWithArtworkEventImpl(dbRepo, artworkBus)
 	}
 
@@ -55,7 +94,11 @@ func NewRuntime(ctx context.Context, cfg runtimecfg.Config) (*Runtime, error) {
 		storage.Storages(),
 		source.Sources(),
 		cfg.Storage,
+		service.WithImseek(eng),
 	)
+	if artworkBus != nil {
+		registerArtworkEventImseekHandlers(ctx, artworkBus, serv)
+	}
 
 	return &Runtime{
 		cfg:     cfg,
