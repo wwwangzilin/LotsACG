@@ -146,10 +146,11 @@ func parseTagList(content string) []string {
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		p = strings.Trim(p, `"'*。-–—:：`)
-		// 去掉 "1. " 之类的编号
-		if len(p) > 2 && (p[1] == '.' || p[1] == '、' || p[1] == ')') {
-			if p[0] >= '0' && p[0] <= '9' {
-				p = p[2:]
+		// 去掉 "1. " 之类的编号 (使用 rune 索引以安全处理多字节字符)
+		runes := []rune(p)
+		if len(runes) > 2 && (runes[1] == '.' || runes[1] == '、' || runes[1] == ')') {
+			if runes[0] >= '0' && runes[0] <= '9' {
+				p = string(runes[2:])
 			}
 		}
 		p = strings.TrimSpace(p)

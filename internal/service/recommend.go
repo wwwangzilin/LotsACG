@@ -41,7 +41,10 @@ func (s *Service) BuildRecentTagProfile(ctx context.Context, recentCount int) ma
 	freq := make(map[string]int)
 	for _, aw := range artworks {
 		for _, tag := range aw.Tags {
-			name := normalizeTag(tag)
+			if tag == nil || tag.Name == "" {
+				continue
+			}
+			name := normalizeTag(tag.Name)
 			if name == "" {
 				continue
 			}
