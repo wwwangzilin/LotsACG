@@ -35,6 +35,7 @@ require (
 	github.com/unvgo/ouid v1.0.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/yapingcat/gomedia v0.0.0-20240906162731-17feea57090c
+	github.com/zeebo/blake3 v0.2.4
 	go.etcd.io/bbolt v1.4.3
 	go.uber.org/zap v1.27.1
 	golang.org/x/image v0.39.0
