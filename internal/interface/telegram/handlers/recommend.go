@@ -309,15 +309,6 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 				continue
 			}
 			if len(results) > 0 {
-				caption := utils.ArtworkHTMLCaption(awEnt)
-				_, err = tgCtx.Bot().EditMessageCaption(ctx, telegoutil.
-					EditMessageCaption(targetChatID,
-						awEnt.FirstMedia().GetTelegramInfo().MessageID(targetChatID.ID),
-						caption).
-					WithParseMode(telego.ModeHTML))
-				if err != nil {
-					log.Debug("failed to recaption pushed artwork", "err", err)
-				}
 				count++
 			}
 			continue

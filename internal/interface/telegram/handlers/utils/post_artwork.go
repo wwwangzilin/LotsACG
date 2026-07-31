@@ -88,6 +88,17 @@ func doPostAndCreateArtwork(
 	for i, pic := range artwork.Pictures {
 		// 下载并存储图片, 同时计算 phash, thumbhash, width, height
 		err = func() error {
+			// 若缓存的 URL 使用的代理与当前配置不一致, 立即刷新避免下载失败重试浪费时间
+			imgProxy := runtimecfg.Get().Source.Pixiv.ImgProxy
+			if imgProxy != "" && !strings.Contains(pic.Original, imgProxy) {
+				log.Warn("cached picture URL uses different proxy, refreshing")
+				if fresh, err := serv.FetchArtworkInfo(ctx, artwork.SourceURL); err == nil && fresh != nil {
+					if i < len(fresh.Pictures) {
+						pic.Original = fresh.Pictures[i].Original
+						pic.Thumbnail = fresh.Pictures[i].Thumbnail
+					}
+				}
+			}
 			var cachedFile *osutil.File
 			var dlErr error
 			for retry := 0; retry < 3; retry++ {
@@ -472,9 +483,18 @@ func doPostAndCreateArtwork(
 		return oops.Wrapf(err, "failed to get artwork by url for recaption")
 	}
 	caption := ArtworkHTMLCaption(ent)
+	firstMedia := ent.FirstMedia()
+	msgID := 0
+	if firstMedia != nil {
+		msgID = firstMedia.GetTelegramInfo().MessageID(targetChatID.ID)
+	}
+	if msgID == 0 {
+		log.Warn("no channel message id found for recaption, skip", "artwork", ent.SourceURL, "chat_id", targetChatID.ID)
+		return nil
+	}
 	_, err = bot.EditMessageCaption(ctx, telegoutil.
 		EditMessageCaption(targetChatID,
-			ent.FirstMedia().GetTelegramInfo().MessageID(targetChatID.ID),
+			msgID,
 			caption).
 		WithParseMode(telego.ModeHTML))
 	if err != nil {
