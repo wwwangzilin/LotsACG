@@ -42,7 +42,7 @@ func GetPicturePhotoInputFile(ctx context.Context, serv *service.Service, meta *
 		}
 		return ioutil.NewCloser(telegoutil.File(compressed), func() error { return compressed.Close() }), nil
 	}
-	file, err := httpclient.DownloadWithCache(ctx, picture.GetOriginal(), nil)
+	file, _, err := DownloadPixivImageWithFallback(ctx, picture.GetOriginal(), 2)
 	if err != nil {
 		return nil, oops.Wrapf(err, "failed to download file: %s", picture.GetOriginal())
 	}

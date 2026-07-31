@@ -1,5 +1,7 @@
 package runtimecfg
 
+import "strings"
+
 type SourceConfig struct {
 	Twitter  SourceTwitterConfig  `toml:"twitter" mapstructure:"twitter" json:"twitter" yaml:"twitter"`
 	Proxy    string               `toml:"proxy" mapstructure:"proxy" json:"proxy" yaml:"proxy"`
@@ -12,11 +14,35 @@ type SourceConfig struct {
 }
 
 type SourcePixivConfig struct {
-	ImgProxy string             `toml:"img_proxy" mapstructure:"img_proxy" json:"img_proxy" yaml:"img_proxy"`
-	RssURLs  []string           `toml:"rss_urls" mapstructure:"rss_urls" json:"rss_urls" yaml:"rss_urls"`
-	Cookies  []CookieConfig     `toml:"cookies" mapstructure:"cookies" json:"cookies" yaml:"cookies"`
-	Accounts []PixivAccountConfig `toml:"accounts" mapstructure:"accounts" json:"accounts" yaml:"accounts"`
-	Disable  bool               `toml:"disable" mapstructure:"disable" json:"disable" yaml:"disable"`
+	ImgProxy  string             `toml:"img_proxy" mapstructure:"img_proxy" json:"img_proxy" yaml:"img_proxy"`
+	ImgProxies []string          `toml:"img_proxies" mapstructure:"img_proxies" json:"img_proxies" yaml:"img_proxies"`
+	RssURLs   []string           `toml:"rss_urls" mapstructure:"rss_urls" json:"rss_urls" yaml:"rss_urls"`
+	Cookies   []CookieConfig     `toml:"cookies" mapstructure:"cookies" json:"cookies" yaml:"cookies"`
+	Accounts  []PixivAccountConfig `toml:"accounts" mapstructure:"accounts" json:"accounts" yaml:"accounts"`
+	Disable   bool               `toml:"disable" mapstructure:"disable" json:"disable" yaml:"disable"`
+}
+
+// ImgProxyHosts returns the ordered list of image proxy hosts to try when downloading,
+// primary first, then fallbacks. Empty values are skipped.
+func (c SourcePixivConfig) ImgProxyHosts() []string {
+	seen := make(map[string]struct{}, 4)
+	hosts := make([]string, 0, 4)
+	add := func(h string) {
+		h = strings.TrimSpace(h)
+		if h == "" {
+			return
+		}
+		if _, ok := seen[h]; ok {
+			return
+		}
+		seen[h] = struct{}{}
+		hosts = append(hosts, h)
+	}
+	add(c.ImgProxy)
+	for _, p := range c.ImgProxies {
+		add(p)
+	}
+	return hosts
 }
 
 type PixivAccountConfig struct {

@@ -214,7 +214,7 @@ func ArtworkInputMedias(
 						photo = telegoutil.MediaPhoto(telegoutil.File(compressed))
 						closers = append(closers, func() error { return compressed.Close() })
 					} else {
-						file, err := httpclient.DownloadWithCache(ctx, picture.GetOriginal(), nil)
+						file, _, err := DownloadPixivImageWithFallback(ctx, picture.GetOriginal(), 2)
 						if err != nil {
 							return oops.Wrapf(err, "failed to download file: %s", picture.GetOriginal())
 						}

@@ -10,6 +10,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/source/impls/pixiv"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/model/command"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
@@ -99,27 +100,44 @@ func doPostAndCreateArtwork(
 					}
 				}
 			}
+			// 按优先级依次尝试多个图源: manyacg -> pixiv.cat -> i.muxmus.com -> 官方 i.pximg.net
+			proxyHosts := runtimecfg.Get().Source.Pixiv.ImgProxyHosts()
+			candidates := pixiv.BuildPixivImageCandidates(pic.Original, proxyHosts)
 			var cachedFile *osutil.File
 			var dlErr error
-			for retry := 0; retry < 3; retry++ {
-				if retry > 0 {
-					time.Sleep(time.Duration(retry) * time.Second)
+			for ci, candidate := range candidates {
+				for retry := 0; retry < 3; retry++ {
+					if retry > 0 {
+						time.Sleep(time.Duration(retry) * time.Second)
+					}
+					cachedFile, dlErr = httpclient.DownloadWithCache(ctx, candidate, nil)
+					if dlErr == nil {
+						break
+					}
+					log.Warnf("download picture %d via %s attempt %d failed: %v", i, candidate, retry+1, dlErr)
 				}
-				cachedFile, dlErr = httpclient.DownloadWithCache(ctx, pic.Original, nil)
 				if dlErr == nil {
 					break
 				}
-				log.Warnf("download picture %d attempt %d failed: %v", i, retry+1, dlErr)
+				if ci < len(candidates)-1 {
+					log.Warnf("picture %d all attempts failed via %s, trying next source", i, candidate)
+				}
 			}
 			if dlErr != nil {
-				// 代理可能已变更, 尝试重新拉取作品信息刷新 URL
+				// 所有图源都失败, 尝试重新拉取作品信息刷新 URL 后再试一次
 				log.Warn("refreshing cached artwork due to download failure")
 				if fresh, err := serv.FetchArtworkInfo(ctx, artwork.SourceURL); err == nil && fresh != nil {
 					if i < len(fresh.Pictures) {
 						pic.Original = fresh.Pictures[i].Original
 						pic.Thumbnail = fresh.Pictures[i].Thumbnail
-						// 用新 URL 再试一次
-						cachedFile, dlErr = httpclient.DownloadWithCache(ctx, pic.Original, nil)
+						candidates = pixiv.BuildPixivImageCandidates(pic.Original, proxyHosts)
+						for _, candidate := range candidates {
+							cachedFile, dlErr = httpclient.DownloadWithCache(ctx, candidate, nil)
+							if dlErr == nil {
+								break
+							}
+							log.Warnf("download picture %d (refreshed) via %s failed: %v", i, candidate, dlErr)
+						}
 					}
 				}
 			}
