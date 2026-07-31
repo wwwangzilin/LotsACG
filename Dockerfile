@@ -13,8 +13,9 @@ ARG GIT_COMMIT
 ARG VERSION
 
 RUN builtAt=${BUILT_AT:-$(date +'%F %T %z')} && \
-    gitCommit=${GIT_COMMIT:-$(git log --pretty=format:"%h" -1)} && \
-    version=${VERSION:-$(git describe --abbrev=0 --tags)} && \
+    git fetch origin >/dev/null 2>&1; \
+    gitCommit=${GIT_COMMIT:-$(git rev-parse --short origin/HEAD 2>/dev/null || git log --pretty=format:"%h" -1)} && \
+    version=${VERSION:-$(git describe --abbrev=0 --tags 2>/dev/null || echo "v26.0.0.1")} && \
     ldflags="\
     -w -s \
     -X 'github.com/wwwangzilin/LotsACG/internal/common/version.BuildTime=$builtAt' \

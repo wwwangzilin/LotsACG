@@ -10,9 +10,9 @@ cd build
 meson compile
 meson install
 nano /usr/lib/pkgconfig/mount.pc
-# 修改 Requires.private �?libeconf 添加到后�?
-# �? Requires.private: blkid
-# �? Requires.private: blkid libeconf
+# 修改 Requires.private �?libeconf 添加到后�?
+# �? Requires.private: blkid
+# �? Requires.private: blkid libeconf
 
 wget https://download.osgeo.org/libtiff/tiff-4.7.1rc1.tar.gz
 tar xvf tiff-4.7.1rc1.tar.gz
@@ -65,12 +65,14 @@ meson install
 cd /LotsACG
 
 builtAt="$(date +'%F %T %z')"
-gitCommit=$(git log --pretty=format:"%h" -1)
-version=$(git describe --abbrev=0 --tags)
+# 优先使用 GitHub 最新提交, 失败则回退到本地 HEAD
+git fetch origin >/dev/null 2>&1
+gitCommit=$(git rev-parse --short origin/HEAD 2>/dev/null || git log --pretty=format:"%h" -1)
+version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v26.0.0.1")
 
-versionFlags="-X 'github.com/wwwangzilin/LotsACG/common.BuildTime=$builtAt' \
--X 'github.com/wwwangzilin/LotsACG/common.Commit=$gitCommit' \
--X 'github.com/wwwangzilin/LotsACG/common.Version=$version'"
+versionFlags="-X 'github.com/wwwangzilin/LotsACG/internal/common/version.BuildTime=$builtAt' \
+-X 'github.com/wwwangzilin/LotsACG/internal/common/version.Commit=$gitCommit' \
+-X 'github.com/wwwangzilin/LotsACG/internal/common/version.Version=$version'"
 
 vipsFlags=$(pkg-config --static --libs vips)
 
