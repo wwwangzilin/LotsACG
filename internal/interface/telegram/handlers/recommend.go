@@ -306,6 +306,7 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 			targetChatID := meta.ResolvePostChatID(awEnt)
 			results, err := utils.SendArtworkMediaGroup(ctx, tgCtx.Bot(), serv, meta, targetChatID, awEnt)
 			if err != nil {
+				log.Warn("failed to send created artwork to channel", "url", sourceURL, "err", err)
 				continue
 			}
 			if len(results) > 0 {
