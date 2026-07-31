@@ -84,19 +84,21 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 		}
 		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "为你换一个推荐", CacheTime: 10})
 		return sendRecommendation(ctx, ctx, query.Message.GetChat().ChatID(), query.From.ID, serv, meta, query.Message.GetMessageID())
-	case "recommend_push":
-		if len(session.LikedSourceURLs) == 0 {
-			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "还没有收藏任何作品", ShowAlert: true, CacheTime: 30})
+	case "recommend_push", "recommend_push_current":
+		if session.CurrentSourceURL == "" {
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "当前没有作品可推送", ShowAlert: true, CacheTime: 30})
 			return nil
 		}
-		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), 0, session.LikedSourceURLs)
+		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), 0, []string{session.CurrentSourceURL})
 		if err != nil {
 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失败: " + err.Error(), ShowAlert: true, CacheTime: 30})
 			return nil
 		}
-		session.LikedSourceURLs = nil
-		_ = saveRecommendationSession(ctx, query.From.ID, session)
-		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: fmt.Sprintf("已推送 %d 个作品到频道", count), CacheTime: 10})
+		if count == 0 {
+			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失败，请查看日志", ShowAlert: true, CacheTime: 30})
+			return nil
+		}
+		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "已推送到群", CacheTime: 10})
 		return nil
 	default:
 		ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "无效操作", CacheTime: 10})
@@ -219,7 +221,7 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		return oops.Wrapf(err, "failed to get photo input file")
 	}
 	defer file.Close()
-	caption := fmt.Sprintf("%s\n\n匹配度: %.0f%% · 已收藏 %d 个作品", utils.ArtworkHTMLCaption(artwork), score*100, len(session.LikedSourceURLs))
+	caption := fmt.Sprintf("%s\n\n匹配度: %.0f%%", utils.ArtworkHTMLCaption(artwork), score*100)
 	photo := telegoutil.Photo(chatID, file.Value).
 		WithCaption(caption).
 		WithParseMode(telego.ModeHTML).
@@ -230,7 +232,7 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 			),
 			telegoutil.InlineKeyboardRow(
 				telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
-				telegoutil.InlineKeyboardButton("📤 推送已喜欢").WithCallbackData("recommend_push"),
+				telegoutil.InlineKeyboardButton("📤 推送到群").WithCallbackData("recommend_push_current"),
 			),
 		))
 	if replyToMessageID != 0 {
@@ -243,27 +245,28 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 	return err
 }
 
-// pickScoredRecommendation 基于用户 XP 画像(偏好权重)推荐作品:
-//  1. 取用户偏好权重最高的 tag
-//  2. 通过 AI API 扩展为更多关联/相似 tag(若启用)
-//  3. 用这些 tag 在 Pixiv 搜索全新作品
-//  4. 按 XP 画像匹配分数从高到低排序, 返回得分最高且未发布/未看过的作品及其分数
-//  5. 若 Pixiv 搜索失败或无结果, 回退到从数据库已有作品按 XP 画像直接推荐
+// pickScoredRecommendation 基于用户 XP 画像推荐 Pixiv 全新作品 (移植 XP-Pusher):
+//  1. 构建用户 XP 画像 (偏好 + 群历史, TF-IDF + 时间衰减)
+//  2. 组合搜索 + 单 tag 兜底 (XPDiscover)
+//  3. 过滤排序: 匹配度 + 收藏数 + AI 精排 (XPFilterAndRank)
+//  4. 排除已发布/已看过, 返回得分最高的新作品
+//     注意: 推荐始终来自 Pixiv 新图, 绝不会回退到数据库中已发布的作品。
 func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID int64, session *recommendationSession) (shared.ArtworkLike, float64, error) {
-	// 1. 获取用户 XP 画像
+	// 1. 获取用户偏好 (XP 画像基础)
 	pref, err := service.GetUserPreference(ctx, userID)
 	if err != nil {
 		pref = &service.UserPreference{
 			PositiveWeights: make(map[string]float64),
 			NegativeWeights: make(map[string]float64),
+			TagUpdatedAt:    make(map[string]time.Time),
+			TagPairs:        make(map[string]float64),
 		}
 	}
 
-	// 2. 取权重最高的 tag (无画像时用群/频道近期画像兜底)
-	topTags := service.TopPreferenceTags(pref, 8)
-	if len(topTags) == 0 {
-		profile := serv.BuildRecentTagProfile(ctx, 10000)
-		topTags = service.TopProfileTags(profile, 8)
+	// 2. 构建完整 XP 画像 (偏好 + 群历史)
+	profile, err := serv.BuildUserXPProfile(ctx, userID)
+	if err != nil {
+		log.Warn("recommend: failed to build user xp profile", "err", err)
 	}
 
 	// 3. 排除已看过/已喜欢的
@@ -275,52 +278,29 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 		seen[u] = struct{}{}
 	}
 
-	// 4. 若没有可用 tag 画像, 直接从数据库按 XP 画像推荐已有作品
-	if len(topTags) == 0 {
-		return pickFromDBByXP(ctx, serv, userID, pref, seen)
-	}
-	tagNames := make([]string, 0, len(topTags))
-	for _, tw := range topTags {
-		tagNames = append(tagNames, tw.Tag)
-	}
-
-	// 5. AI 扩展关联 tag (失败时回退到原始 tags), 控制总数避免搜索词过长
-	searchTags := tagNames
-	expanded, expandErr := serv.ExpandTagsWithAI(ctx, tagNames)
-	if expandErr == nil && len(expanded) > 0 {
-		searchTags = append([]string{}, tagNames...)
-		searchTags = append(searchTags, expanded...)
-		if len(searchTags) > 12 {
-			searchTags = searchTags[:12]
-		}
-	}
-
-	// 6. 按 tag 搜索全新作品
-	fetched, err := serv.SearchNewArtworksByTags(ctx, searchTags, 50)
+	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品
+	fetched, err := serv.XPDiscover(ctx, pref, profile, 50)
 	if err != nil {
-		log.Warn("recommend: tag search failed, fallback to rss fetch", "err", err)
-		fetched, err = serv.FetchNewArtworks(ctx, 50)
-	}
-	if err != nil {
-		log.Warn("recommend: fetch failed, fallback to db recommend", "err", err)
-		return pickFromDBByXP(ctx, serv, userID, pref, seen)
+		return nil, 0, oops.Wrapf(err, "failed to discover new artworks")
 	}
 	if len(fetched) == 0 {
-		log.Warn("recommend: no new artworks fetched, fallback to db recommend")
-		return pickFromDBByXP(ctx, serv, userID, pref, seen)
+		return nil, 0, nil
 	}
 
-	// 7. 按 XP 画像分数从高到低选出最佳
-	best, bestURL, bestScore, err := serv.PickBestRecommendationByXP(ctx, fetched, pref, seen)
+	// 5. 过滤排序 (匹配度 + 收藏数 + AI 精排)
+	ranked, err := serv.XPFilterAndRank(ctx, fetched, profile, pref, seen)
 	if err != nil {
-		return nil, 0, oops.Wrapf(err, "failed to pick best recommendation by xp profile")
+		return nil, 0, oops.Wrapf(err, "failed to filter and rank artworks")
 	}
-	if best == nil {
-		log.Warn("recommend: no scored new artwork matched, fallback to db recommend")
-		return pickFromDBByXP(ctx, serv, userID, pref, seen)
+	if len(ranked) == 0 {
+		return nil, 0, nil
 	}
 
-	// 8. 对选中的作品获取完整详情(含原图), 搜索结果条目只有封面缩略图
+	best := ranked[0].Artwork
+	bestURL := best.SourceURL
+	bestScore := ranked[0].Score
+
+	// 6. 对选中的作品获取完整详情(含原图), 搜索结果条目只有封面缩略图
 	full, err := serv.FetchArtworkInfo(ctx, bestURL)
 	if err != nil {
 		log.Warn("recommend: failed to fetch full artwork info, fallback to search item", "url", bestURL, "err", err)
@@ -335,24 +315,6 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 	session.addSeen(bestURL)
 	_ = saveRecommendationSession(ctx, userID, session)
 	return cached, bestScore, nil
-}
-
-// pickFromDBByXP 从数据库已有作品中按用户 XP 画像推荐得分最高的一个。
-// 用户历史记录(已发布/已入库作品)的 tag 即为其画像来源之一。
-func pickFromDBByXP(ctx context.Context, serv *service.Service, userID int64, pref *service.UserPreference, seen map[string]struct{}) (shared.ArtworkLike, float64, error) {
-	seenURLs := make([]string, 0, len(seen))
-	for u := range seen {
-		seenURLs = append(seenURLs, u)
-	}
-	artwork, err := serv.FetchAndScoreRecommendations(ctx, userID, 100, seenURLs)
-	if err != nil {
-		return nil, 0, oops.Wrapf(err, "failed to fetch and score db recommendations")
-	}
-	if artwork == nil {
-		return nil, 0, nil
-	}
-	score := service.CalculateMatchScore(artwork.GetTags(), pref)
-	return artwork, score, nil
 }
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {

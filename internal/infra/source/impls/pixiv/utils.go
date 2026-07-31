@@ -9,11 +9,11 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/imroc/req/v3"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/reutil"
-	"github.com/samber/oops"
 )
 
 func getPid(url string) string {
@@ -35,8 +35,12 @@ func doReqAjaxResp(ctx context.Context, sourceURL string, client *req.Client) (*
 	if err != nil {
 		return nil, err
 	}
+	body, err := respBodyBytes(resp)
+	if err != nil {
+		return nil, err
+	}
 	var pixivAjaxResp PixivAjaxResp
-	err = json.Unmarshal(resp.Bytes(), &pixivAjaxResp)
+	err = json.Unmarshal(body, &pixivAjaxResp)
 	if err != nil {
 		return nil, ErrUnmarshalPixivAjax
 	}
@@ -57,8 +61,12 @@ func doReqIllustPages(ctx context.Context, sourceURL string, client *req.Client)
 	if err != nil {
 		return nil, err
 	}
+	body, err := respBodyBytes(resp)
+	if err != nil {
+		return nil, err
+	}
 	var pixivIllustPages PixivIllustPages
-	err = json.Unmarshal(resp.Bytes(), &pixivIllustPages)
+	err = json.Unmarshal(body, &pixivIllustPages)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +87,12 @@ func doReqUgoiraMeta(ctx context.Context, sourceURL string, client *req.Client) 
 	if err != nil {
 		return nil, err
 	}
+	body, err := respBodyBytes(resp)
+	if err != nil {
+		return nil, err
+	}
 	var pixivUgoiraMeta PixivUgoiraMeta
-	err = json.Unmarshal(resp.Bytes(), &pixivUgoiraMeta)
+	err = json.Unmarshal(body, &pixivUgoiraMeta)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +117,14 @@ func (p *Pixiv) fetchNewArtworksForRSSURL(ctx context.Context, rssURL string, li
 			log.Warnf("pixiv rss request failed with account %d: %v", i+1, err)
 			continue
 		}
-		body := resp.String()
-		rsssum := sha256.Sum256([]byte(body))
+		bodyBytes, err := respBodyBytes(resp)
+		if err != nil {
+			lastErr = err
+			log.Warnf("pixiv rss decompress failed with account %d: %v", i+1, err)
+			continue
+		}
+		body := string(bodyBytes)
+		rsssum := sha256.Sum256(bodyBytes)
 		fingerprint := hex.EncodeToString(rsssum[:])
 		cacheKey := pixivRSSCacheKey(rssURL)
 

@@ -30,20 +30,22 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
 
 ### 🎯 智能推荐系统 `/recommend`
 
-在**私聊**中智能推荐作品，完全不同于上游的随机推送：
+在**私聊**中智能推荐作品，完整移植 [Pixiv-XP-Pusher](https://github.com/krau/Pixiv-XP-Pusher) 的推荐算法：
 
-- **XP 画像学习**：点赞/点踩自动学习你的偏好标签权重（移植自 Pixiv-XP-Pusher 算法）
-- **Tag 权重系统**：从你的偏好画像中提取权重最高的标签，按权重从高到低推荐
-- **AI 关联标签**：可接入任意 OpenAI 兼容 API，自动将你的偏好标签扩展为更多相似/关联标签
-- **Pixiv 全新作品**：用权重标签在 Pixiv 搜索**全新**作品（而不是推荐已入库的旧图），并排除已发布/已看过的内容
-- **匹配度展示**：每条推荐直接显示与你 XP 画像的匹配百分比
-- **一键推送**：收藏的作品可一键推送到你的频道
+- **XP 画像构建**：TF-IDF + 时间衰减权重算法，结合你的点赞/点踩偏好 + 群历史记录
+- **Tag 权重系统**：从画像中提取高权重标签 + 常用组合（co-occurrence），按权重从高到低推荐
+- **组合搜索**：用 top tag 组合在 Pixiv 搜索全新作品（AND 语义），单 tag 兜底 + RSS 拉新
+- **综合排序**：匹配度评分（移植 calculate_match_score）+ 收藏数归一化
+- **AI 精排**：可接入任意 OpenAI 兼容 API，用 LLM 对候选二次精排（喜爱概率）
+- **Pixiv 全新作品**：推荐始终来自 Pixiv 新图，排除已发布/已看过的内容
+- **匹配度展示**：每条推荐直接显示匹配百分比
+- **推送到群**：每个推荐作品都带「📤 推送到群」按钮，一键发布到你的频道
 
 ```text
-/recommend → 按偏好权重取 top tags
-          → [可选] AI 扩展相似 tag
-          → Pixiv 按 tag 搜索全新作品
-          → 按 XP 画像分数从高到低 → 展示最优推荐
+/recommend → 构建 XP 画像 (TF-IDF + 时间衰减)
+          → 组合搜索 + 单 tag 兜底 → Pixiv 新图
+          → 匹配度 + 收藏数 + AI 精排
+          → 展示最优推荐 (👍/👎/⏭️/📤 推送到群)
 ```
 
 ### 🤖 AI API 接入 `[aiapi]`
@@ -207,6 +209,12 @@ discovery_rate = 0.1              # 探索率 (0~1)：推荐中随机探索新�
 model = "text-embedding-3-small"
 dimensions = 1536
 
+# 配置 Pixiv refresh_token + user_id 后, /recommend 会通过 OAuth 访问你的
+# Pixiv 收藏夹, 用收藏作品的 tag 构建 XP 画像 (移植 XP-Pusher profiler)
+[xpaiapi.pixiv]
+refresh_token = ""
+user_id = ""
+
 [storage]
 original_type = "telegram"        # telegram / local / webdav / alist
 regular_length = 2560
@@ -326,7 +334,7 @@ file = "logs/lotsacg.log"
 | `/files` | 获取作品原图 |
 | `/hybrid` | 混合搜索 |
 | `/similar` | 搜索相似作品 |
-| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品，失败时自动回退数据库推荐） |
+| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品搜索，只推荐新图） |
 | `/xp` 或 `/pref` | 查看你的 XP 画像（偏好标签权重） |
 | `/tagging` | 识别回复图片中的标签 |
 

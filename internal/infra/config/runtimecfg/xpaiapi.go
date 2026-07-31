@@ -19,6 +19,16 @@ type XPAIAPIConfig struct {
 	ScanLimit int `toml:"scan_limit" mapstructure:"scan_limit" json:"scan_limit" yaml:"scan_limit"`
 	// DiscoveryRate 探索率 (0~1): 推荐中随机探索新风格的比例
 	DiscoveryRate float64 `toml:"discovery_rate" mapstructure:"discovery_rate" json:"discovery_rate" yaml:"discovery_rate"`
+	// Pixiv Pixiv 账号配置 (用于访问收藏夹构建画像)
+	Pixiv XPPixivConfig `toml:"pixiv" mapstructure:"pixiv" json:"pixiv" yaml:"pixiv"`
+}
+
+// XPPixivConfig Pixiv 账号配置, 用于通过 OAuth 访问收藏夹构建 XP 画像。
+type XPPixivConfig struct {
+	// RefreshToken Pixiv refresh_token (在 https://oauth.secure.pixiv.net 获取)
+	RefreshToken string `toml:"refresh_token" mapstructure:"refresh_token" json:"refresh_token" yaml:"refresh_token"`
+	// UserID Pixiv 用户 ID (用于获取该用户的收藏)
+	UserID string `toml:"user_id" mapstructure:"user_id" json:"user_id" yaml:"user_id"`
 }
 
 // XPEmbeddingConfig 文本向量 (Embedding) 配置。

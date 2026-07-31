@@ -21,20 +21,16 @@ type Client struct {
 	reqClient *req.Client
 }
 
-// New 创建 AI API 客户端。优先使用 [aiapi] 配置, 若未启用则回退到 [xpaiapi] 配置。
+// New 创建 AI API 客户端。优先使用 [aiapi] 配置, 若未启用则完全采用 [xpaiapi] 配置。
 func New(aiapiCfg config.AIAPIConfig, xpCfg config.XPAIAPIConfig) *Client {
 	cfg := aiapiCfg
 	if !cfg.Enable {
-		// 回退到 xpaiapi 配置
-		cfg.Enable = xpCfg.Enabled
-		if cfg.BaseURL == "" {
-			cfg.BaseURL = xpCfg.BaseURL
-		}
-		if cfg.APIKey == "" {
-			cfg.APIKey = xpCfg.APIKey
-		}
-		if cfg.Model == "" {
-			cfg.Model = xpCfg.Model
+		// 完全采用 xpaiapi 配置 (不使用 aiapi 的默认值, 避免发错端点)
+		cfg = config.AIAPIConfig{
+			Enable:  xpCfg.Enabled,
+			BaseURL: xpCfg.BaseURL,
+			APIKey:  xpCfg.APIKey,
+			Model:   xpCfg.Model,
 		}
 	}
 	c := req.C().
@@ -192,4 +188,83 @@ func cleanTags(tags []string) []string {
 		out = append(out, t)
 	}
 	return out
+}
+
+// AICandidate 是待 AI 精排的候选作品。
+type AICandidate struct {
+	URL  string   `json:"url"`
+	Tags []string `json:"tags"`
+}
+
+// ScoreArtworks 使用 LLM 对候选作品进行精排打分 (移植自 Pixiv-XP-Pusher AIScorer)。
+// 返回 {url: score(0~1)} 映射。
+func (c *Client) ScoreArtworks(ctx context.Context, prompt string, candidates []AICandidate) (map[string]float64, error) {
+	if !c.Enabled() {
+		return nil, nil
+	}
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+
+	req := chatCompletionRequest{
+		Model: c.cfg.Model,
+		Messages: []chatCompletionMessage{
+			{Role: "system", Content: "你是推荐系统评分器, 只输出 JSON 数组, 不要输出其他内容。"},
+			{Role: "user", Content: prompt},
+		},
+		Temperature: 0.3,
+	}
+
+	var resp chatCompletionResponse
+	httpResp, err := c.reqClient.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetSuccessResult(&resp).
+		Post("/chat/completions")
+	if err != nil {
+		return nil, oops.Wrapf(err, "ai api request failed")
+	}
+	if httpResp.IsErrorState() {
+		if resp.Error != nil {
+			return nil, oops.Errorf("ai api error: %s", resp.Error.Message)
+		}
+		return nil, oops.Errorf("ai api http error: %d", httpResp.GetStatusCode())
+	}
+	if len(resp.Choices) == 0 {
+		return nil, oops.New("ai api returned no choices")
+	}
+	content := strings.TrimSpace(resp.Choices[0].Message.Content)
+	if content == "" {
+		return nil, oops.New("ai api returned empty content")
+	}
+
+	// 解析 JSON 数组 [{"url": "...", "score": 0.85}]
+	content = strings.TrimSpace(content)
+	content = strings.TrimPrefix(content, "```json")
+	content = strings.TrimPrefix(content, "```")
+	content = strings.TrimSuffix(content, "```")
+	content = strings.Trim(content, "`")
+
+	var items []struct {
+		URL   string  `json:"url"`
+		Score float64 `json:"score"`
+	}
+	if err := json.Unmarshal([]byte(content), &items); err != nil {
+		return nil, oops.Wrapf(err, "failed to parse ai score response: %s", content)
+	}
+	result := make(map[string]float64, len(items))
+	for _, item := range items {
+		if item.URL == "" {
+			continue
+		}
+		score := item.Score
+		if score < 0 {
+			score = 0
+		}
+		if score > 1 {
+			score = 1
+		}
+		result[item.URL] = score
+	}
+	return result, nil
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/duke-git/lancet/v2/validator"
 	"github.com/imroc/req/v3"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
-	"github.com/samber/oops"
 )
 
 type PixivRss struct {
@@ -121,7 +121,7 @@ type PixivSearchRespBody struct {
 }
 
 type PixivSearchIllustManga struct {
-	Total int                     `json:"total"`
+	Total int                      `json:"total"`
 	Data  []*PixivSearchIllustData `json:"data"`
 }
 
@@ -132,12 +132,17 @@ type PixivSearchIllustData struct {
 	XRestrict   int    `json:"xRestrict"`
 	URL         string `json:"url"`
 	Description string `json:"description"`
-	Tags        []struct {
-		Tag string `json:"tag"`
-	} `json:"tags"`
-	UserID      string `json:"userId"`
-	UserName    string `json:"userName"`
-	UserAccount string `json:"userAccount"`
+	// 注意: ajax search 接口的 tags 是字符串数组, 不是对象数组
+	Tags        []string `json:"tags"`
+	UserID      string   `json:"userId"`
+	UserName    string   `json:"userName"`
+	UserAccount string   `json:"userAccount"`
+	// 收藏数 (用于综合排序)
+	BookmarkCount int `json:"bookmarkCount"`
+	// 浏览量
+	ViewCount int `json:"viewCount"`
+	// 创建日期 (用于时间衰减)
+	CreateDate string `json:"createDate"`
 }
 
 var (

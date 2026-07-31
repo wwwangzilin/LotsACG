@@ -69,7 +69,40 @@ func XpProfile(ctx *telegohandler.Context, message telego.Message) error {
 	} else {
 		text += "  (无)"
 	}
+	text += "\n\n<b>🔗 常用组合:</b>\n"
+	if pairs := formatPairs(pref.TagPairs); pairs != "" {
+		text += pairs
+	} else {
+		text += "  (无)"
+	}
 	text += "\n\n使用 /recommend 获取推荐, 点击 👍/👎 会实时更新画像"
 	utils.ReplyMessageWithHTML(ctx, message, text)
 	return nil
+}
+
+// formatPairs 格式化 tag 组合 (权重最高的前 10 个)。
+func formatPairs(pairs map[string]float64) string {
+	if len(pairs) == 0 {
+		return ""
+	}
+	type kv struct {
+		pair   string
+		weight float64
+	}
+	items := make([]kv, 0, len(pairs))
+	for p, w := range pairs {
+		if w <= 0 {
+			continue
+		}
+		items = append(items, kv{pair: strings.ReplaceAll(p, "|", " + "), weight: w})
+	}
+	sort.Slice(items, func(i, j int) bool { return items[i].weight > items[j].weight })
+	var sb strings.Builder
+	for i, item := range items {
+		if i >= 10 {
+			break
+		}
+		sb.WriteString(fmt.Sprintf("  %s\n", item.pair))
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }

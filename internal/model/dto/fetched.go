@@ -22,6 +22,10 @@ type FetchedArtwork struct {
 	UgoiraMetas []*FetchedUgoiraMeta `json:"ugoira_metas,omitempty"`
 	Videos      []*FetchedVideo      `json:"videos,omitempty"`
 	R18         bool                 `json:"r18"`
+	// 元数据 (来自搜索结果, 用于综合排序)
+	BookmarkCount int    `json:"bookmark_count,omitempty"`
+	ViewCount     int    `json:"view_count,omitempty"`
+	CreateDate    string `json:"create_date,omitempty"`
 }
 
 // // GetUgoiraMetas implements [shared.ArtworkLike].

@@ -6,12 +6,13 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/model/query"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
-	"github.com/samber/oops"
 )
 
 // UserPreference holds a per-user tag preference profile (XP profile).
@@ -19,6 +20,10 @@ import (
 type UserPreference struct {
 	PositiveWeights map[string]float64 `json:"positive_weights"`
 	NegativeWeights map[string]float64 `json:"negative_weights"`
+	// TagUpdatedAt 记录每个正向 tag 最近一次更新时间 (用于时间衰减)
+	TagUpdatedAt map[string]time.Time `json:"tag_updated_at,omitempty"`
+	// TagPairs 记录 tag 组合权重 (用于组合搜索), key 为 "tag1|tag2"
+	TagPairs map[string]float64 `json:"tag_pairs,omitempty"`
 }
 
 func prefKey(userID int64) string {
@@ -28,10 +33,7 @@ func prefKey(userID int64) string {
 func GetUserPreference(ctx context.Context, userID int64) (*UserPreference, error) {
 	pref, err := kvstor.Get[*UserPreference](ctx, prefKey(userID))
 	if err != nil {
-		return &UserPreference{
-			PositiveWeights: make(map[string]float64),
-			NegativeWeights: make(map[string]float64),
-		}, nil
+		return newEmptyPreference(), nil
 	}
 	if pref.PositiveWeights == nil {
 		pref.PositiveWeights = make(map[string]float64)
@@ -39,7 +41,22 @@ func GetUserPreference(ctx context.Context, userID int64) (*UserPreference, erro
 	if pref.NegativeWeights == nil {
 		pref.NegativeWeights = make(map[string]float64)
 	}
+	if pref.TagUpdatedAt == nil {
+		pref.TagUpdatedAt = make(map[string]time.Time)
+	}
+	if pref.TagPairs == nil {
+		pref.TagPairs = make(map[string]float64)
+	}
 	return pref, nil
+}
+
+func newEmptyPreference() *UserPreference {
+	return &UserPreference{
+		PositiveWeights: make(map[string]float64),
+		NegativeWeights: make(map[string]float64),
+		TagUpdatedAt:    make(map[string]time.Time),
+		TagPairs:        make(map[string]float64),
+	}
 }
 
 func SaveUserPreference(ctx context.Context, userID int64, pref *UserPreference) error {
@@ -54,13 +71,16 @@ func UpdatePreferenceFromLike(ctx context.Context, userID int64, tags []string) 
 		return err
 	}
 	const likeBoost = 1.0
+	now := time.Now()
 	for _, tag := range tags {
 		name := normalizeTag(tag)
 		if name == "" {
 			continue
 		}
 		pref.PositiveWeights[name] += likeBoost
+		pref.TagUpdatedAt[name] = now
 	}
+	updateTagPairs(pref, tags, 1.0)
 	return SaveUserPreference(ctx, userID, pref)
 }
 
@@ -85,6 +105,32 @@ func UpdatePreferenceFromDislike(ctx context.Context, userID int64, tags []strin
 		pref.NegativeWeights[name] += dislikePenalty
 	}
 	return SaveUserPreference(ctx, userID, pref)
+}
+
+// updateTagPairs 更新 tag 组合权重 (共现计数)。
+// 同一作品中出现的 tag 两两组合, 权重递增。
+func updateTagPairs(pref *UserPreference, tags []string, delta float64) {
+	names := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		name := normalizeTag(tag)
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+	}
+	if len(names) < 2 {
+		return
+	}
+	for i := 0; i < len(names); i++ {
+		for j := i + 1; j < len(names); j++ {
+			a, b := names[i], names[j]
+			if a > b {
+				a, b = b, a
+			}
+			key := a + "|" + b
+			pref.TagPairs[key] += delta
+		}
+	}
 }
 
 // CalculateMatchScore computes how well a set of artwork tags matches the user's preference.
@@ -296,4 +342,40 @@ func (s *Service) FetchAndScoreRecommendations(
 
 	best := PickBestRecommendation(artworkLikes, seenURLs, pref)
 	return best, nil
+}
+
+// TagPair 表示一个 tag 组合及其权重。
+type TagPair struct {
+	Tag1   string  `json:"tag1"`
+	Tag2   string  `json:"tag2"`
+	Weight float64 `json:"weight"`
+}
+
+// TopTagPairs 返回权重最高的 n 个 tag 组合 (按权重降序)。
+// 用于 XP 组合搜索: 同时包含这两个 tag 的作品更符合用户偏好。
+func TopTagPairs(pref *UserPreference, n int) []TagPair {
+	if pref == nil || n <= 0 {
+		return nil
+	}
+	pairs := make([]TagPair, 0, len(pref.TagPairs))
+	for key, w := range pref.TagPairs {
+		if w <= 0 {
+			continue
+		}
+		parts := strings.SplitN(key, "|", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		pairs = append(pairs, TagPair{Tag1: parts[0], Tag2: parts[1], Weight: w})
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		if pairs[i].Weight == pairs[j].Weight {
+			return pairs[i].Tag1+pairs[i].Tag2 < pairs[j].Tag1+pairs[j].Tag2
+		}
+		return pairs[i].Weight > pairs[j].Weight
+	})
+	if len(pairs) > n {
+		pairs = pairs[:n]
+	}
+	return pairs
 }
