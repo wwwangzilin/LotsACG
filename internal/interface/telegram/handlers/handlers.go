@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegohandler"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/filter"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/service"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegohandler"
 )
 
 type HandlerManager struct {
@@ -38,6 +38,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(HybridSearchArtworks, telegohandler.CommandEqual("hybrid"))
 	mg.HandleMessage(SearchSimilarArtworks, telegohandler.CommandEqual("similar"))
 	mg.HandleMessage(Recommend, telegohandler.CommandEqual("recommend"))
+	mg.HandleMessage(XpProfile, telegohandler.Or(telegohandler.CommandEqual("xp"), telegohandler.CommandEqual("pref")))
 	mg.HandleMessage(TaggingPicture, telegohandler.CommandEqual("tagging"))
 
 	// Admin commands

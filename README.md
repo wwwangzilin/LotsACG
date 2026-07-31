@@ -192,6 +192,21 @@ api_key = ""
 model = "gpt-4o-mini"
 recommend_tags = 12               # 每次推荐生成的关联 tag 数量
 
+# ── XP 画像 AI API（可选，参考 Pixiv-XP-Pusher）──
+# 与 [aiapi] 二选一；若 [aiapi] 未启用会自动使用此配置
+[xpaiapi]
+enabled = false
+provider = "openai"               # openai / local
+api_key = ""
+base_url = "https://api.openai.com/v1"
+model = "gpt-4o-mini"
+scan_limit = 2000                 # 构建画像时扫描的作品数量上限
+discovery_rate = 0.1              # 探索率 (0~1)：推荐中随机探索新风格的比例
+
+[xpaiapi.embedding]
+model = "text-embedding-3-small"
+dimensions = 1536
+
 [storage]
 original_type = "telegram"        # telegram / local / webdav / alist
 regular_length = 2560
@@ -311,7 +326,8 @@ file = "logs/lotsacg.log"
 | `/files` | 获取作品原图 |
 | `/hybrid` | 混合搜索 |
 | `/similar` | 搜索相似作品 |
-| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品） |
+| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品，失败时自动回退数据库推荐） |
+| `/xp` 或 `/pref` | 查看你的 XP 画像（偏好标签权重） |
 | `/tagging` | 识别回复图片中的标签 |
 
 **管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck`

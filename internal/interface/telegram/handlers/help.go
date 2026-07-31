@@ -26,6 +26,7 @@ func Help(ctx *telegohandler.Context, message telego.Message) error {
 /hybrid - 混合搜索作品
 /similar - 搜索相似作品
 /recommend - 私聊中智能推荐作品(基于你喜欢/不喜欢的标签偏好)
+/xp (或 /pref) - 查看你的 XP 画像(偏好标签权重)
 /tagging - 识别回复图片中的标签
 `
 	helpText += `

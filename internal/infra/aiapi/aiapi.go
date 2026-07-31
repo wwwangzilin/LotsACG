@@ -10,9 +10,9 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/imroc/req/v3"
+	"github.com/samber/oops"
 	config "github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
-	"github.com/samber/oops"
 )
 
 // Client 是 OpenAI 兼容的 AI API 客户端。
@@ -21,7 +21,22 @@ type Client struct {
 	reqClient *req.Client
 }
 
-func New(cfg config.AIAPIConfig) *Client {
+// New 创建 AI API 客户端。优先使用 [aiapi] 配置, 若未启用则回退到 [xpaiapi] 配置。
+func New(aiapiCfg config.AIAPIConfig, xpCfg config.XPAIAPIConfig) *Client {
+	cfg := aiapiCfg
+	if !cfg.Enable {
+		// 回退到 xpaiapi 配置
+		cfg.Enable = xpCfg.Enabled
+		if cfg.BaseURL == "" {
+			cfg.BaseURL = xpCfg.BaseURL
+		}
+		if cfg.APIKey == "" {
+			cfg.APIKey = xpCfg.APIKey
+		}
+		if cfg.Model == "" {
+			cfg.Model = xpCfg.Model
+		}
+	}
 	c := req.C().
 		SetLogger(log.Default()).
 		SetTimeout(30 * time.Second).
@@ -48,9 +63,9 @@ type chatCompletionMessage struct {
 }
 
 type chatCompletionRequest struct {
-	Model       string                 `json:"model"`
+	Model       string                  `json:"model"`
 	Messages    []chatCompletionMessage `json:"messages"`
-	Temperature float64                `json:"temperature"`
+	Temperature float64                 `json:"temperature"`
 }
 
 type chatCompletionResponse struct {

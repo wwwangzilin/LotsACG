@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 func SetAdmin(ctx *telegohandler.Context, message telego.Message) error {
@@ -76,7 +76,7 @@ func SetAdmin(ctx *telegohandler.Context, message telego.Message) error {
 	}
 	if len(inputPermissions) == 0 {
 		utils.ReplyMessageWithHTML(ctx, message,
-			fmt.Sprintf("请指定权限, 以空格分隔, 支持的权限:\n%s", supportedPermissionsText),
+			fmt.Sprintf("请指定权限, 以空格分隔, 支持的权限:\n%s", supportedPermissionsText.String()),
 		)
 		return nil
 	}

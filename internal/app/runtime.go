@@ -96,7 +96,7 @@ func NewRuntime(ctx context.Context, cfg runtimecfg.Config) (*Runtime, error) {
 		source.Sources(),
 		cfg.Storage,
 		service.WithImseek(eng),
-		service.WithAIAPI(aiapi.New(cfg.AIAPI)),
+		service.WithAIAPI(aiapi.New(cfg.AIAPI, cfg.XPAIAPI)),
 	)
 	if artworkBus != nil {
 		registerArtworkEventImseekHandlers(ctx, artworkBus, serv)
