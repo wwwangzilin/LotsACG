@@ -123,6 +123,7 @@ func loadConfig() Config {
 		"source.twitter.fx_twitter_domain": "fxtwitter.com",
 		"search.orb_min_matches":           4,
 		"search.orb_min_score":             1.0,
+		"search.dup_check_enable":          true,
 
 		"database.type": "sqlite",
 		"database.dsn":  `file:lotsacg.db?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_txlock=deferred`,

@@ -8,6 +8,7 @@ type SearchConfig struct {
 	Enable         bool              `toml:"enable" mapstructure:"enable" json:"enable" yaml:"enable"`
 	OrbMinMatches  int               `toml:"orb_min_matches" mapstructure:"orb_min_matches" json:"orb_min_matches" yaml:"orb_min_matches"`
 	OrbMinScore    float64           `toml:"orb_min_score" mapstructure:"orb_min_score" json:"orb_min_score" yaml:"orb_min_score"`
+	DupCheckEnable bool              `toml:"dup_check_enable" mapstructure:"dup_check_enable" json:"dup_check_enable" yaml:"dup_check_enable"`
 }
 
 type MeiliSearchConfig struct {
