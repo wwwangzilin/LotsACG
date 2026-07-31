@@ -55,10 +55,11 @@ func UpdatePreferenceFromLike(ctx context.Context, userID int64, tags []string) 
 	}
 	const likeBoost = 1.0
 	for _, tag := range tags {
-		if tag == "" {
+		name := normalizeTag(tag)
+		if name == "" {
 			continue
 		}
-		pref.PositiveWeights[tag] += likeBoost
+		pref.PositiveWeights[name] += likeBoost
 	}
 	return SaveUserPreference(ctx, userID, pref)
 }
@@ -72,15 +73,16 @@ func UpdatePreferenceFromDislike(ctx context.Context, userID int64, tags []strin
 	}
 	const dislikePenalty = 0.5
 	for _, tag := range tags {
-		if tag == "" {
+		name := normalizeTag(tag)
+		if name == "" {
 			continue
 		}
-		pref.PositiveWeights[tag] -= dislikePenalty
+		pref.PositiveWeights[name] -= dislikePenalty
 		// Clamp positive weights to avoid going too negative
-		if pref.PositiveWeights[tag] < 0 {
-			pref.PositiveWeights[tag] = 0
+		if pref.PositiveWeights[name] < 0 {
+			pref.PositiveWeights[name] = 0
 		}
-		pref.NegativeWeights[tag] += dislikePenalty
+		pref.NegativeWeights[name] += dislikePenalty
 	}
 	return SaveUserPreference(ctx, userID, pref)
 }
@@ -131,8 +133,9 @@ func CalculateMatchScore(artworkTags []string, pref *UserPreference) float64 {
 		if tag == "" {
 			continue
 		}
+		name := normalizeTag(tag)
 		// Positive match
-		if weight, ok := pref.PositiveWeights[tag]; ok && weight > 0 {
+		if weight, ok := pref.PositiveWeights[name]; ok && weight > 0 {
 			totalScore += weight
 			matchedCount++
 			if weight >= topThreshold {
@@ -140,7 +143,7 @@ func CalculateMatchScore(artworkTags []string, pref *UserPreference) float64 {
 			}
 		}
 		// Negative match
-		if negWeight, ok := pref.NegativeWeights[tag]; ok && negWeight > 0 {
+		if negWeight, ok := pref.NegativeWeights[name]; ok && negWeight > 0 {
 			negativePenalty += negWeight * 0.5
 		}
 	}

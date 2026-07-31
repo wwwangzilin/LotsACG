@@ -1,156 +1,227 @@
 <div align="center">
-  
+
 # LotsACG
 
 ![LotsACG_banner](https://github.com/user-attachments/assets/1d2d7835-18c1-4a50-9cb9-c14ae69659be)
 
 Collect, Download, Organize and Share your Favorite Anime Pictures.
 
-</div
-  
+**一个基于 [krau/ManyACG](https://github.com/krau/ManyACG) 的二次元插画收集与管理项目**
+
+</div>
+
 ---
 
-这里�?LotsACG 的后端代�?
+## ⭐ 求 Star ⭐
 
-LotsACG 是为收集与整理二次元插画作品而生的项�? 目前主要通过 Telegram Bot 完成数据交互.
+如果你觉得这个项目有用，欢迎给个 Star 支持一下！
 
-在充�?Telegram 插画频道的爬虫与管理 Bot 的同�? LotsACG 还能使用已存入数据库的作品构建一个自己的二次元图片分享网�?
+[![GitHub stars](https://img.shields.io/github/stars/wwwangzilin/LotsACG?style=social)](https://github.com/wwwangzilin/LotsACG)
 
-> 前端代码 -> [LotsACG/web](https://github.com/LotsACG/web)
+[→ 前往 GitHub 点 Star ←](https://github.com/wwwangzilin/LotsACG)
 
-![lotsacg-web](https://github.com/user-attachments/assets/670a6092-1406-4f51-ab2b-49a6d9be286f)
+你的每一个 Star 都是作者继续维护的动力 💖
 
-## Demo
+---
 
-- Bot - [@KirakaBot](https://t.me/kirakabot)
-- 频道 - [@MoreACG](https://t.me/MoreACG)
-- 网站 - [LotsACG](https://lotsacg.top)
+## 与上游 (krau/ManyACG) 相比的新功能
 
-## 特�?
+本 Fork 在保留上游全部功能的基础上，新增了以下内容：
 
-- **多图源支�?*
-  - [x] [Pixiv](https://www.pixiv.net/)
-  - [x] [Twitter](https://x.com/)
-  - [x] [Danbooru](https://danbooru.donmai.us/)
-  - [x] [Bilibili](https://www.bilibili.com/)
-  - [x] [Kemono](https://www.kemono.cr/)
-  - [x] [Yandere](https://yande.re/)
-  - [x] [Nhentai](https://nhentai.net/)
-- **原图多存储端支持**
-  - [x] 本地存储
-  - [x] WebDAV
-  - [x] Telegram
-- 基于图像哈希的去重与以图搜图
-- 带有逻辑控制的关键词搜图
-- �?Telegram 所接受的最高质量发送图�?
-- 支持动图和视�?
-- 基于 AI 的图片标签生�?-> [konatagger](https://github.com/krau/konatagger)
-- 集成 [MeiliSearch](https://www.meilisearch.com/) , 支持混合搜索与相似作品检�?
-- 轻量, 原生跨平�? 部署简�?
+### 🎯 智能推荐系统 `/recommend`
 
-## 部署
+在**私聊**中智能推荐作品，完全不同于上游的随机推送：
 
-### 安装FFmpeg(可�?
+- **XP 画像学习**：点赞/点踩自动学习你的偏好标签权重（移植自 Pixiv-XP-Pusher 算法）
+- **Tag 权重系统**：从你的偏好画像中提取权重最高的标签，按权重从高到低推荐
+- **AI 关联标签**：可接入任意 OpenAI 兼容 API，自动将你的偏好标签扩展为更多相似/关联标签
+- **Pixiv 全新作品**：用权重标签在 Pixiv 搜索**全新**作品（而不是推荐已入库的旧图），并排除已发布/已看过的内容
+- **匹配度展示**：每条推荐直接显示与你 XP 画像的匹配百分比
+- **一键推送**：收藏的作品可一键推送到你的频道
 
-LotsACG 需要使�?FFmpeg 来从动图序列合成视频, 请在自己的系统上安装, 以下是一些系统的安装示例:
-
-Ubuntu/Debian:
-
-```bash
-sudo apt install ffmpeg -y
+```text
+/recommend → 按偏好权重取 top tags
+          → [可选] AI 扩展相似 tag
+          → Pixiv 按 tag 搜索全新作品
+          → 按 XP 画像分数从高到低 → 展示最优推荐
 ```
 
-Arch Linux:
+### 🤖 AI API 接入 `[aiapi]`
 
-```bash
-sudo pacman -S ffmpeg --noconfirm
+- 支持任意 **OpenAI 兼容**接口（OpenAI / DeepSeek / Moonshot / 本地 Ollama 等）
+- 自动为推荐生成关联/相似的 Pixiv 搜索标签
+- 未配置时推荐功能降级为仅使用偏好标签，不影响使用
+
+### 🖼️ Pixiv 图片多代理下载
+
+上游只有单个图床代理，本 Fork 支持**多级代理自动降级**：
+
+```text
+pximg.manyacg.top (主代理) → pixiv.cat → i.muxmus.com → 官方 i.pximg.net
 ```
 
-[其他/任意 Linux 发行版安�?FFmepg 参考](https://krau.top/posts/linux-install-ffmpeg)
+- 配置 `source.pixiv.img_proxy` + `source.pixiv.img_proxies`
+- 下载失败自动切换下一个代理，大幅提高图片下载成功率（解决上传 EOF 问题）
 
-Windows:
+### 🔀 图片查重开关 `/dupcheck`
 
-1. �?[gyan.dev](https://www.gyan.dev/ffmpeg/builds/) 下载 [ffmpeg-release-full.7z](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z)
-2. 解压并将 `bin` 目录添加到环境变�?`PATH`
+- 新增 **Telegram 指令**随时查看/切换图片查重：
+  - `/dupcheck` 查看当前状态
+  - `/dupcheck on` 开启查重
+  - `/dupcheck off` 关闭查重
+- 无需重启服务即可生效（状态存于 KV 存储）
 
-### 从二进制文件部署 LotsACG
+### 📋 完整 `/help` 帮助
 
-�?[release](https://github.com/wwwangzilin/LotsACG/releases) 页面下载与自己系统和架构对应的文�? 解压.
+- 补全了所有支持的指令说明（普通用户 + 管理员指令）
+- 显示版本号、构建日期、Git 提交号
 
-在与解压出的二进制文件的相同目录下创�?`config.toml` 文件, 修改各项配置.
+### 🛠️ 其他改进
 
-#### 最简配置
+- **上传稳定性修复**：解决发送图片时 `io pipe closed` 错误
+- **构建脚本**：提供 Windows `build.bat`，自动填写版本号与 Git 提交
+- **本地特征搜索 (imseek)**：内置 ORB 特征点以图搜图引擎（无需外部服务）
 
-如果你只需要将 LotsACG 作为一�?Telegram 频道的自动发图与管理 Bot 使用, 使用以下简单的配置即可:
+---
+
+## 如何配置
+
+### 1. 安装 FFmpeg（可选）
+
+处理动图合成视频时需要 FFmpeg：
+
+- **Ubuntu/Debian**: `sudo apt install ffmpeg -y`
+- **Arch Linux**: `sudo pacman -S ffmpeg --noconfirm`
+- **Windows**: 从 [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) 下载 release-full 版，解压后将 `bin` 目录加入 `PATH`
+
+### 2. 下载并准备
+
+从 [Releases](https://github.com/wwwangzilin/LotsACG/releases) 下载对应系统/架构的二进制文件，解压后**在与二进制同目录**下创建 `config.toml`：
+
+### 3. 最简配置（仅自动发图 Bot）
 
 ```toml
 [telegram]
-bot_token = "token"
-admins = [123456789] # 你的 Telegram 用户 ID
-username = "@moreacg" # 频道用户�?如有)
-chat_id = -1001234567890 # 主频�?ID, �?username 二选一
+bot_token = "token"            # Bot Token
+admins = [123456789]           # 你的 Telegram 用户 ID
+username = "@yourchannel"      # 频道用户名（如有）
+chat_id = -1001234567890       # 主频道 ID（与 username 二选一）
 
 [source.pixiv]
-# 建议配置 pixiv cookies, 可以提高作品的爬取成功率
+# 建议配置 pixiv cookies，可提高爬取成功率
 [[source.pixiv.cookies]]
 name = "PHPSESSID"
 value = ""
-[[source.pixiv.cookies]]
-name = "yuid_b"
-value = ""
 
-# 如果你不需要存储原�? 以下配置也可以删�?
+# 如不需要存储原图，以下配置可删除
 [storage]
 original_type = "telegram"
 [storage.telegram]
 enable = true
-token = "用于发送原图的 Bot �?Token" # 可以�?telegram.bot_token 相同
-chat_id = -1001234567890 # 用于存储原图的频�?ID
+token = "用于发送原图的 Bot Token"  # 可与 telegram.bot_token 相同
+chat_id = -1001234567890            # 用于存储原图的频道 ID
 ```
 
-#### 完整配置案例
+### 4. 运行
 
-下面是一个更完整的示例，包含主频道、R18 分流频道、数据库、搜索和 Pixiv 配置�?
+```bash
+chmod +x lotsacg
+./lotsacg
+```
+
+> Linux 下可用 systemd 托管，Windows 下可直接双击运行或注册为计划任务。
+
+---
+
+## 完整配置实例
 
 ```toml
 [telegram]
 bot_token = "123456:ABCDEF"
-api_url = ""
+api_url = ""                      # 可选：自定义 Telegram API 地址
 username = "@lotsacg_bot"
 admins = [123456789]
 caption_template = ""
-chat_id = -1001111111111 # 主频道（普通作品）
+chat_id = -1001111111111          # 主频道（普通作品）
 
-# 额外目标频道会被作为 R18 分流频道使用�?
-# 当作品是 R18，或者包�?R-18 / R18 / R-18G / R18G 标签时，
-# 会自动把作品发布到这里，而非主频道�?
+# 额外目标频道：R18 作品会自动发到这里（第一个有效配置作为 R18 分流频道）
 [[telegram.extra_target]]
 title = "R18频道"
 chat_id = -1002222222222
 
 [database]
-# 可选：sqlite / postgres / mysql
-# 这里只给�?sqlite 示例
-kind = "sqlite"
+type = "sqlite"                   # sqlite / postgres / mysql
 dsn = "lotsacg.db"
 
+[kvdb]
+type = "bbolt"                    # bbolt / redis
+path = "data/kvdb.bbolt"
+
 [search]
-enable = false
-# 如果启用 MeiliSearch，可配置如下�?
+enable = false                    # 是否启用搜索（含查重/以图搜图依赖）
+# 使用 MeiliSearch 时：
+# engine = "meilisearch"
+# [search.meilisearch]
 # host = "http://127.0.0.1:7700"
-# api_key = ""
+# key = ""
 # index = "lotsacg"
+dup_check_enable = true           # 图片查重开关（可用 /dupcheck 指令实时切换）
+
+# ── 本地特征点以图搜图（可选，无需外部服务）──
+[imseek]
+enable = false
+data_dir = "./data/imseek"
+distance = 64
+count = 10
+k = 3
+nprobe = 3
+nfeatures = 500
+max_height = 1080
+max_width = 768
+auto_build = true
+build_debounce_sec = 2
+min_matches = 8
+min_score = 25
+
+# ── AI API：用于 /recommend 自动关联相似 tag（可选）──
+# 支持任意 OpenAI 兼容接口
+[aiapi]
+enable = false
+base_url = "https://api.openai.com/v1"   # 或 DeepSeek/Ollama 等
+api_key = ""
+model = "gpt-4o-mini"
+recommend_tags = 12               # 每次推荐生成的关联 tag 数量
 
 [storage]
-original_type = "telegram"
+original_type = "telegram"        # telegram / local / webdav / alist
+regular_length = 2560
+regular_format = "webp"
+thumb_length = 500
+thumb_format = "avif"
+cache_dir = "./imgcache"
+cache_ttl = 14400
 
 [storage.telegram]
 enable = true
 token = "123456:ABCDEF"
 chat_id = -1003333333333
 
+# [storage.local]
+# enable = true
+# path = "./data/storage"
+
+# [storage.webdav]
+# enable = true
+# url = "https://dav.example.com"
+# username = ""
+# password = ""
+# path = "/lotsacg"
+
 [source.pixiv]
-# 兼容旧写法：单账号可直接使用 cookies 数组
+img_proxy = "pximg.manyacg.top"   # 主图片代理
+img_proxies = ["pixiv.cat", "i.muxmus.com"]   # 备用代理，按顺序降级
+
+# 单账号（兼容旧写法）
 [[source.pixiv.cookies]]
 name = "PHPSESSID"
 value = ""
@@ -158,7 +229,7 @@ value = ""
 name = "yuid_b"
 value = ""
 
-# 新增：多账号轮询抓取，按顺序轮换使用不同账号
+# 多账号轮询（可选，配置后按顺序轮换，请求失败自动跳到下一个）
 [[source.pixiv.accounts]]
 name = "账号A"
 [[source.pixiv.accounts.cookies]]
@@ -173,18 +244,52 @@ name = "账号B"
 [[source.pixiv.accounts.cookies]]
 name = "PHPSESSID"
 value = ""
-[[source.pixiv.accounts.cookies]]
-name = "yuid_b"
-value = ""
 
 [source.twitter]
-# 可选：配置后可提高推特内容抓取成功�?
+# 可选：配置后可提高推特内容抓取成功率
 # cookies = ""
 
 [source.danbooru]
-# 可选：配置后可提高 Danbooru 内容抓取成功�?
+# 可选
 # username = ""
 # password = ""
+
+[source.bilibili]
+disable = false
+
+[source.kemono]
+disable = false
+
+[source.yandere]
+disable = false
+
+[source.nhentai]
+disable = false
+
+[source]
+proxy = ""                       # 可选：全局代理（http://user:pass@host:port）
+
+[tagging]
+enable = false                   # 是否启用 AI 标签生成
+# engine = "konatagger"
+# [tagging.konatagger]
+# host = "http://127.0.0.1:8080"
+# token = ""
+# timeout = 30
+tagnew = false                   # 是否自动为新作品打标签
+
+[rest]
+enable = false                   # 是否启用 Web 网站/API
+addr = ":8080"
+[rest.site]
+title = "LotsACG - Kawaii is all you need"
+desc = "ACG Image Collector and Gallery Server"
+name = "LotsACG"
+url = "https://example.com"
+# [rest.limit]
+# enable = true
+# expiration = 60
+# max = 100
 
 [log]
 level = "info"
@@ -192,63 +297,55 @@ file_level = "info"
 file = "logs/lotsacg.log"
 ```
 
-说明�?
+---
 
-- `telegram.chat_id` 作为主发布频道，普通作品默认发到这里�?
-- `telegram.extra_target` 的第一个有效配置会被当�?R18 分流频道；R18 作品会自动发到该频道�?
-- 如果你只需要单频道，也可以只配�?`telegram.chat_id`，不需�?`extra_target`�?
-- Pixiv 支持多账号轮询抓取；如果配置�?`source.pixiv.accounts`，会按顺序轮换使用不同账号，并在当前账号请求失败时自动跳过到下一个账号重试�?
+## Telegram 指令速览
 
-赋予二进制文件执行权限并运行即可:
+| 指令 | 说明 |
+| --- | --- |
+| `/start` | 开始使用 |
+| `/help` | 显示完整帮助 |
+| `/random` 或 `/setu` | 随机图片（支持 `或\|与` 逻辑标签筛选） |
+| `/search` | 以图搜图 |
+| `/info` | 发送作品图片和信息 |
+| `/files` | 获取作品原图 |
+| `/hybrid` | 混合搜索 |
+| `/similar` | 搜索相似作品 |
+| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品） |
+| `/tagging` | 识别回复图片中的标签 |
 
-```bash
-chmod +x lotsacg
-./lotsacg
-```
-
-#### 安装为服�?
-
-适用�?Linux 系统, �?systemd 为例:
-
-`/etc/systemd/system/lotsacg.service`
-
-```ini
-[Unit]
-Description=LotsACG
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/path/to/lotsacg
-ExecStart=/path/to/lotsacg/lotsacg
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-systemctl enable --now lotsacg
-```
+**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck`
 
 ---
 
-## �?v0 迁移
+## 从 v0 迁移
 
-如果你之前使用的�?v0 版本�?LotsACG, 请下载最新的 v0.x 版本 release, 并修改配置文�? 添加迁移目标数据库配�?
+若你之前使用 v0 版本，下载最新 v0.x release，在配置中添加：
 
 ```toml
 [migrate]
 target = "sqlite" # pgsql/mysql/sqlite
-dsn = "file:lotsacg_migrate.db" # 连接字符�?
-# 示例: pgsql dsn
-# dsn = "host=localhost user=postgres password=yourpassword dbname=lotsacg port=5432 sslmode=disable"
+dsn = "file:lotsacg_migrate.db"
 ```
 
-然后运行
+然后运行：
 
 ```bash
 ./lotsacg db migrate
 ```
 
-数据迁移完成�? 将配置文件也改为使用新的配置格式, 详情参考上方的部署章节�?
+---
+
+<div align="center">
+
+## ⭐ 支持项目 ⭐
+
+如果你觉得 LotsACG 好用，请给仓库点个 **Star**！
+
+[![GitHub stars](https://img.shields.io/github/stars/wwwangzilin/LotsACG?style=social)](https://github.com/wwwangzilin/LotsACG)
+
+[→ Star LotsACG ←](https://github.com/wwwangzilin/LotsACG)
+
+感谢你的支持！❤️
+
+</div>

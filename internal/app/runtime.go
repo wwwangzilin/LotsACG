@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/wwwangzilin/LotsACG/internal/infra"
+	"github.com/wwwangzilin/LotsACG/internal/infra/aiapi"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/database"
 	"github.com/wwwangzilin/LotsACG/internal/infra/eventbus"
@@ -95,6 +96,7 @@ func NewRuntime(ctx context.Context, cfg runtimecfg.Config) (*Runtime, error) {
 		source.Sources(),
 		cfg.Storage,
 		service.WithImseek(eng),
+		service.WithAIAPI(aiapi.New(cfg.AIAPI)),
 	)
 	if artworkBus != nil {
 		registerArtworkEventImseekHandlers(ctx, artworkBus, serv)

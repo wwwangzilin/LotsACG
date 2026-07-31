@@ -29,7 +29,11 @@ Kawaii is All You Need! ᕕ(◠ڼ◠)ᕗ
 `
 
 func Run() {
-	fmt.Printf(banner, version.BuildTime, version.Version, version.Commit[:7])
+	commit := version.Commit
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+	fmt.Printf(banner, version.BuildTime, version.Version, commit)
 	ouid.MarshalJSON = json.Marshal
 	ouid.UnmarshalJSON = json.Unmarshal
 

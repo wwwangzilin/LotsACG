@@ -59,7 +59,11 @@ Inline 查询(在任意聊天框中@本bot)支持同样的参数格式
 /dupcheck - 查看或切换图片查重开关 (on/off)
 `
 	}
-	helpText += fmt.Sprintf("\n版本: %s, 构建日期 %s, 提交 %s\nhttps://github.com/wwwangzilin/LotsACG", version.Version, version.BuildTime, version.Commit[:7])
+	commit := version.Commit
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+	helpText += fmt.Sprintf("\n版本: %s, 构建日期 %s, 提交 %s\nhttps://github.com/wwwangzilin/LotsACG", version.Version, version.BuildTime, commit)
 	utils.ReplyMessage(ctx, message, helpText)
 	return nil
 }

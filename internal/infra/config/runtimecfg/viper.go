@@ -19,6 +19,7 @@ type Config struct {
 	Telegram TelegramConfig `toml:"telegram" mapstructure:"telegram" json:"telegram" yaml:"telegram"`
 	Source   SourceConfig   `toml:"source" mapstructure:"source" json:"source" yaml:"source"`
 	Tagging  TaggingConfig  `toml:"tagging" mapstructure:"tagging" json:"tagging" yaml:"tagging"`
+	AIAPI    AIAPIConfig    `toml:"aiapi" mapstructure:"aiapi" json:"aiapi" yaml:"aiapi"`
 	Database databaseConfig `toml:"database" mapstructure:"database" json:"database" yaml:"database"`
 	// some common packages config
 	Log  LogConfig  `toml:"log" mapstructure:"log" json:"log" yaml:"log"`
@@ -125,6 +126,11 @@ func loadConfig() Config {
 		"search.orb_min_matches":           4,
 		"search.orb_min_score":             1.0,
 		"search.dup_check_enable":          true,
+
+		"aiapi.enable":          false,
+		"aiapi.base_url":        "https://api.openai.com/v1",
+		"aiapi.model":           "gpt-4o-mini",
+		"aiapi.recommend_tags":  12,
 
 		"database.type": "sqlite",
 		"database.dsn":  `file:lotsacg.db?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_txlock=deferred`,

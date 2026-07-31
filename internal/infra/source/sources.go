@@ -13,3 +13,9 @@ type ArtworkSource interface {
 	FetchNewArtworks(ctx context.Context, limit int) ([]*dto.FetchedArtwork, error)
 	PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string
 }
+
+// ArtworkTagSearcher 可选接口: 支持按 tag 搜索新作品的源实现它。
+// 通过类型断言使用, 不影响其他源。
+type ArtworkTagSearcher interface {
+	SearchArtworksByTags(ctx context.Context, tags []string, limit int) ([]*dto.FetchedArtwork, error)
+}

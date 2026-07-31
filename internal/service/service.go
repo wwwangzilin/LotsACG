@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/wwwangzilin/LotsACG/internal/infra/aiapi"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/imseek"
 	"github.com/wwwangzilin/LotsACG/internal/infra/search"
@@ -22,12 +23,17 @@ type Service struct {
 	sources  map[shared.SourceType]source.ArtworkSource
 	storCfg  runtimecfg.StorageConfig
 	imseek   imseek.Engine
+	aiapi    *aiapi.Client
 }
 
 type Option func(*Service)
 
 func WithImseek(e imseek.Engine) Option {
 	return func(s *Service) { s.imseek = e }
+}
+
+func WithAIAPI(c *aiapi.Client) Option {
+	return func(s *Service) { s.aiapi = c }
 }
 
 func NewService(

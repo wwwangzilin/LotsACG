@@ -9,9 +9,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
-	"github.com/wwwangzilin/LotsACG/internal/model/query"
 	"github.com/wwwangzilin/LotsACG/internal/service"
-	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
@@ -23,6 +21,7 @@ type recommendationSession struct {
 	LikedSourceURLs  []string `json:"liked_source_urls"`
 	SeenSourceURLs   []string `json:"seen_source_urls"`
 	CurrentSourceURL string   `json:"current_source_url"`
+	CurrentTags      []string `json:"current_tags"`
 }
 
 func Recommend(ctx *telegohandler.Context, message telego.Message) error {
@@ -155,12 +154,20 @@ func updatePreferenceFromSession(ctx context.Context, serv *service.Service, use
 	if session.CurrentSourceURL == "" {
 		return nil
 	}
-	awEnt, err := serv.GetArtworkByURL(ctx, session.CurrentSourceURL)
-	if err != nil {
-		// Artwork may not be persisted yet (cached only). Try cached.
+	var tags []string
+	if len(session.CurrentTags) > 0 {
+		// 新图尚未入库, 使用会话中保存的 tags
+		tags = session.CurrentTags
+	} else {
+		awEnt, err := serv.GetArtworkByURL(ctx, session.CurrentSourceURL)
+		if err != nil {
+			return nil
+		}
+		tags = extractTagNames(awEnt.Tags)
+	}
+	if len(tags) == 0 {
 		return nil
 	}
-	tags := extractTagNames(awEnt.Tags)
 	if isLike {
 		return service.UpdatePreferenceFromLike(ctx, userID, tags)
 	}
@@ -182,31 +189,31 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 	if err != nil {
 		session = &recommendationSession{}
 	}
-	artwork, err := pickScoredRecommendation(ctx, serv, userID, session)
+	artwork, score, err := pickScoredRecommendation(ctx, serv, userID, session)
 	if err != nil {
 		return oops.Wrapf(err, "failed to pick recommendation artwork")
 	}
 	if artwork == nil {
-		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "鏆傛椂娌℃湁鍙帹鑽愮殑浣滃搧").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
+		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "暂时没有可推荐的新作品").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
-	session.CurrentSourceURL = artwork.GetSourceURL()
+	session.CurrentSourceURL = artwork.SourceURL
+	session.CurrentTags = artwork.Tags
 	if err := saveRecommendationSession(ctx, userID, session); err != nil {
 		return oops.Wrapf(err, "failed to save recommendation session")
 	}
 
-	awEntity, ok := artwork.(*entity.Artwork)
-	if !ok || len(awEntity.Pictures) == 0 {
+	if len(artwork.Pictures) == 0 {
 		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "这篇作品暂时没有图片可展示").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
-	picture := awEntity.Pictures[0]
+	picture := artwork.Pictures[0]
 	file, err := utils.GetPicturePhotoInputFile(ctx, serv, meta, picture)
 	if err != nil {
 		return oops.Wrapf(err, "failed to get photo input file")
 	}
 	defer file.Close()
-	caption := fmt.Sprintf("%s\n\n已收藏 %d 个作品", utils.ArtworkHTMLCaption(artwork), len(session.LikedSourceURLs))
+	caption := fmt.Sprintf("%s\n\n匹配度: %.0f%% · 已收藏 %d 个作品", utils.ArtworkHTMLCaption(artwork), score*100, len(session.LikedSourceURLs))
 	photo := telegoutil.Photo(chatID, file.Value).
 		WithCaption(caption).
 		WithParseMode(telego.ModeHTML).
@@ -223,74 +230,99 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 	if replyToMessageID != 0 {
 		photo = photo.WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID})
 	}
-	if artwork.GetR18() {
+	if artwork.R18 {
 		photo = photo.WithHasSpoiler()
 	}
 	_, err = tgCtx.Bot().SendPhoto(ctx, photo)
 	return err
 }
 
-// pickScoredRecommendation fetches a batch of random artworks and scores them
-// against the user's preference profile, returning the highest-scoring unseen one.
-func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID int64, session *recommendationSession) (shared.ArtworkLike, error) {
+// pickScoredRecommendation 基于用户 XP 画像(偏好权重)推荐全新作品:
+//  1. 取用户偏好权重最高的 tag
+//  2. 通过 AI API 扩展为更多关联/相似 tag(若启用)
+//  3. 用这些 tag 在 Pixiv 搜索全新作品
+//  4. 按 XP 画像匹配分数从高到低排序, 返回得分最高且未发布/未看过的作品及其分数
+func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID int64, session *recommendationSession) (*entity.CachedArtworkData, float64, error) {
+	// 1. 获取用户 XP 画像
 	pref, err := service.GetUserPreference(ctx, userID)
 	if err != nil {
-		return nil, oops.Wrapf(err, "failed to get user preference")
-	}
-	// Determine batch size: if user has preferences, fetch more candidates for better scoring.
-	batchSize := 20
-	if len(pref.PositiveWeights) == 0 && len(pref.NegativeWeights) == 0 {
-		// Cold start: no preference data yet, just try random picks
-		batchSize = 5
+		pref = &service.UserPreference{
+			PositiveWeights: make(map[string]float64),
+			NegativeWeights: make(map[string]float64),
+		}
 	}
 
-	aw, err := serv.QueryArtworks(ctx, query.ArtworksDB{
-		ArtworksFilter: query.ArtworksFilter{
-			HasPicture: true,
-		},
-		Paginate: query.Paginate{
-			Offset: 0,
-			Limit:  batchSize,
-		},
-		Random: true,
-	})
+	// 2. 取权重最高的 tag (无画像时用群/频道近期画像兜底)
+	topTags := service.TopPreferenceTags(pref, 8)
+	if len(topTags) == 0 {
+		profile := serv.BuildRecentTagProfile(ctx, 10000)
+		topTags = service.TopProfileTags(profile, 8)
+	}
+	if len(topTags) == 0 {
+		return nil, 0, nil
+	}
+	tagNames := make([]string, 0, len(topTags))
+	for _, tw := range topTags {
+		tagNames = append(tagNames, tw.Tag)
+	}
+
+	// 3. AI 扩展关联 tag (失败时回退到原始 tags), 控制总数避免搜索词过长
+	searchTags := tagNames
+	expanded, expandErr := serv.ExpandTagsWithAI(ctx, tagNames)
+	if expandErr == nil && len(expanded) > 0 {
+		searchTags = append([]string{}, tagNames...)
+		searchTags = append(searchTags, expanded...)
+		if len(searchTags) > 12 {
+			searchTags = searchTags[:12]
+		}
+	}
+
+	// 4. 按 tag 搜索全新作品
+	fetched, err := serv.SearchNewArtworksByTags(ctx, searchTags, 50)
 	if err != nil {
-		return nil, oops.Wrapf(err, "failed to query artworks")
+		log.Warn("recommend: tag search failed, fallback to rss fetch", "err", err)
+		fetched, err = serv.FetchNewArtworks(ctx, 50)
 	}
-	if len(aw) == 0 {
-		return nil, nil
+	if err != nil {
+		return nil, 0, oops.Wrapf(err, "failed to fetch new artworks from sources")
+	}
+	if len(fetched) == 0 {
+		return nil, 0, nil
 	}
 
-	seenURLs := session.SeenSourceURLs
-	seen := make(map[string]struct{}, len(seenURLs)+len(session.LikedSourceURLs))
-	for _, u := range seenURLs {
+	// 5. 排除已看过/已喜欢的
+	seen := make(map[string]struct{}, len(session.SeenSourceURLs)+len(session.LikedSourceURLs))
+	for _, u := range session.SeenSourceURLs {
 		seen[u] = struct{}{}
 	}
 	for _, u := range session.LikedSourceURLs {
 		seen[u] = struct{}{}
 	}
 
-	artworkLikes := make([]shared.ArtworkLike, 0, len(aw))
-	for _, a := range aw {
-		if _, ok := seen[a.SourceURL]; ok {
-			continue
-		}
-		artworkLikes = append(artworkLikes, a)
+	// 6. 按 XP 画像分数从高到低选出最佳
+	best, bestURL, bestScore, err := serv.PickBestRecommendationByXP(ctx, fetched, pref, seen)
+	if err != nil {
+		return nil, 0, oops.Wrapf(err, "failed to pick best recommendation by xp profile")
 	}
-	if len(artworkLikes) == 0 {
-		return nil, nil
+	if best == nil {
+		return nil, 0, nil
 	}
 
-	best := service.PickBestRecommendation(artworkLikes, nil, pref)
-	if best == nil && len(artworkLikes) > 0 {
-		best = artworkLikes[0]
+	// 7. 对选中的作品获取完整详情(含原图), 搜索结果条目只有封面缩略图
+	full, err := serv.FetchArtworkInfo(ctx, bestURL)
+	if err != nil {
+		log.Warn("recommend: failed to fetch full artwork info, fallback to search item", "url", bestURL, "err", err)
+		full = best
 	}
 
-	if best != nil {
-		session.addSeen(best.GetSourceURL())
-		_ = saveRecommendationSession(ctx, userID, session)
+	cached, err := service.ConvertFetchedToCached(full)
+	if err != nil {
+		return nil, 0, oops.Wrapf(err, "failed to convert fetched artwork")
 	}
-	return best, nil
+
+	session.addSeen(bestURL)
+	_ = saveRecommendationSession(ctx, userID, session)
+	return cached, bestScore, nil
 }
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {

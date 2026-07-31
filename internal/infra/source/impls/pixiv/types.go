@@ -109,6 +109,37 @@ type PixivUgoiraMetaFrame struct {
 	Delay int    `json:"delay"`
 }
 
+// PixivSearchResp 是 Pixiv 搜索插画接口的响应。
+type PixivSearchResp struct {
+	Error   bool                 `json:"error"`
+	Message string               `json:"message"`
+	Body    *PixivSearchRespBody `json:"body"`
+}
+
+type PixivSearchRespBody struct {
+	IllustManga *PixivSearchIllustManga `json:"illustManga"`
+}
+
+type PixivSearchIllustManga struct {
+	Total int                     `json:"total"`
+	Data  []*PixivSearchIllustData `json:"data"`
+}
+
+type PixivSearchIllustData struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	IllustType  int    `json:"illustType"`
+	XRestrict   int    `json:"xRestrict"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	Tags        []struct {
+		Tag string `json:"tag"`
+	} `json:"tags"`
+	UserID      string `json:"userId"`
+	UserName    string `json:"userName"`
+	UserAccount string `json:"userAccount"`
+}
+
 var (
 	tagsSet             = map[string]bool{"R-18": true, "R-18G": true, "R18": true, "R18G": true}
 	bookmarksTagsSuffix = []string{"入り", "bookmarks", "0收藏", "+ users", "加入书籤"}

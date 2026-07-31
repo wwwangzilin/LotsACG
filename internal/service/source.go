@@ -81,6 +81,24 @@ func (s *Service) FetchArtworkInfo(ctx context.Context, sourceURL string) (*dto.
 	return nil, oops.New("no supported source found")
 }
 
+// FetchNewArtworks fetches the latest artworks from all sources (e.g. Pixiv RSS).
+func (s *Service) FetchNewArtworks(ctx context.Context, limit int) ([]*dto.FetchedArtwork, error) {
+	artworks := make([]*dto.FetchedArtwork, 0)
+	errs := make([]error, 0)
+	for _, sou := range s.sources {
+		fetched, err := sou.FetchNewArtworks(ctx, limit)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		artworks = append(artworks, fetched...)
+	}
+	if len(errs) > 0 {
+		return artworks, oops.Join(errs...)
+	}
+	return artworks, nil
+}
+
 func (s *Service) PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string {
 	for _, sou := range s.sources {
 		if _, ok := sou.MatchesSourceURL(artwork.GetSourceURL()); ok {
