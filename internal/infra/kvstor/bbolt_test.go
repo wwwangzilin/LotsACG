@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/vmihailenco/msgpack/v5"
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"go.etcd.io/bbolt"
 )
@@ -43,13 +44,16 @@ func TestBboltSetGet_NoTTL(t *testing.T) {
 	if err := b.Set(ctx, key, val, 0); err != nil {
 		t.Fatalf("Set failed: %v", err)
 	}
-	got, err := b.Get(ctx, key)
+	raw, err := b.GetRaw(ctx, key)
 	if err != nil {
-		t.Fatalf("Get failed: %v", err)
+		t.Fatalf("GetRaw failed: %v", err)
 	}
-	s, ok := got.(string)
-	if !ok || s != val {
-		t.Fatalf("Get value mismatch: got=%T %v want=%q", got, got, val)
+	var s string
+	if err := msgpack.Unmarshal(raw, &s); err != nil {
+		t.Fatalf("msgpack decode failed: %v", err)
+	}
+	if s != val {
+		t.Fatalf("value mismatch: got=%q want=%q", s, val)
 	}
 }
 
@@ -64,7 +68,7 @@ func TestBboltDelete(t *testing.T) {
 	if err := b.Delete(ctx, key); err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
-	if _, err := b.Get(ctx, key); err == nil || err != errs.ErrRecordNotFound {
+	if _, err := b.GetRaw(ctx, key); err == nil || err != errs.ErrRecordNotFound {
 		t.Fatalf("expected ErrRecordNotFound after delete, got: %v", err)
 	}
 }
@@ -78,7 +82,7 @@ func TestBboltTTL_ExpireOnGet(t *testing.T) {
 		t.Fatalf("Set with TTL failed: %v", err)
 	}
 	time.Sleep(70 * time.Millisecond)
-	if _, err := b.Get(ctx, key); err == nil || err != errs.ErrRecordNotFound {
+	if _, err := b.GetRaw(ctx, key); err == nil || err != errs.ErrRecordNotFound {
 		t.Fatalf("expected ErrRecordNotFound after TTL, got: %v", err)
 	}
 }
@@ -133,16 +137,20 @@ func TestBboltTTL_Overwrite(t *testing.T) {
 		t.Fatalf("Set overwrite failed: %v", err)
 	}
 	// immediate get returns new value
-	got, err := b.Get(ctx, key)
+	raw, err := b.GetRaw(ctx, key)
 	if err != nil {
-		t.Fatalf("Get failed: %v", err)
+		t.Fatalf("GetRaw failed: %v", err)
 	}
-	if s := got.(string); s != "v2" {
+	var s string
+	if err := msgpack.Unmarshal(raw, &s); err != nil {
+		t.Fatalf("msgpack decode failed: %v", err)
+	}
+	if s != "v2" {
 		t.Fatalf("value mismatch after overwrite, got=%q want=%q", s, "v2")
 	}
 	// after ttl passed, key should be gone
 	time.Sleep(60 * time.Millisecond)
-	if _, err := b.Get(ctx, key); err == nil || err != errs.ErrRecordNotFound {
+	if _, err := b.GetRaw(ctx, key); err == nil || err != errs.ErrRecordNotFound {
 		t.Fatalf("expected not found after overwrite ttl, got=%v", err)
 	}
 }

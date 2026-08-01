@@ -6,16 +6,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vmihailenco/msgpack/v5"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/redis/rueidis"
-	"github.com/samber/oops"
 	"go.etcd.io/bbolt"
 )
 
 type KVStore interface {
 	Set(ctx context.Context, key string, value any, ttl time.Duration) error
-	Get(ctx context.Context, key string) (any, error)
+	// GetRaw 返回 key 对应的原始 msgpack 字节; 不存在或已过期返回 errs.ErrRecordNotFound。
+	GetRaw(ctx context.Context, key string) ([]byte, error)
 	Delete(ctx context.Context, key string) error
 	Close() error
 }
@@ -122,17 +123,20 @@ func SetWithTTL(ctx context.Context, key string, value any, ttl time.Duration) e
 	return defaultDb.Set(ctx, key, value, ttl)
 }
 
+// Get 读取并 msgpack 解码到具体类型 T。
+// 注意: 之前实现在底层把值反序列化成 any 再做类型断言,
+// 对 struct/map/指针 会得到 map[string]interface{} 导致断言永远失败,
+// 因此改为直接在原始字节上解码到 T。
 func Get[T any](ctx context.Context, key string) (T, error) {
 	var zero T
-	val, err := defaultDb.Get(ctx, key)
+	raw, err := defaultDb.GetRaw(ctx, key)
 	if err != nil {
 		return zero, err
 	}
-	typedVal, ok := val.(T)
-	if !ok {
-		return zero, oops.New("type assertion failed in kvstor.Get")
+	if err := msgpack.Unmarshal(raw, &zero); err != nil {
+		return zero, err
 	}
-	return typedVal, nil
+	return zero, nil
 }
 
 func Delete(ctx context.Context, key string) error {

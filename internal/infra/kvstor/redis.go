@@ -38,8 +38,8 @@ func (r *redisDB) Set(ctx context.Context, key string, value any, ttl time.Durat
 	return r.client.Do(ctx, r.client.B().Set().Key(key).Value(sval).Build()).Error()
 }
 
-// Get implements KVStore.
-func (r *redisDB) Get(ctx context.Context, key string) (any, error) {
+// GetRaw implements KVStore.
+func (r *redisDB) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	key = r.prefix + key
 	rr := r.client.Do(ctx, r.client.B().Get().Key(key).Build())
 	bs, err := rr.AsBytes()
@@ -49,11 +49,7 @@ func (r *redisDB) Get(ctx context.Context, key string) (any, error) {
 		}
 		return nil, err
 	}
-	var value any
-	if err := msgpack.Unmarshal(bs, &value); err != nil {
-		return nil, err
-	}
-	return value, nil
+	return bs, nil
 }
 
 // Delete implements KVStore.

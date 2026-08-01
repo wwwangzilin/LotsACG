@@ -55,7 +55,7 @@ func (b *bboltDB) Delete(ctx context.Context, key string) error {
 		}
 		raw := bucket.Get([]byte(key))
 		if raw != nil {
-			var existing bboltItem[any]
+			var existing bboltItem[[]byte]
 			if err := msgpack.Unmarshal(raw, &existing); err == nil && existing.ExpiresAt > 0 {
 				ttlBucket := tx.Bucket([]byte(b.ttlBucket))
 				if ttlBucket != nil {
@@ -67,8 +67,8 @@ func (b *bboltDB) Delete(ctx context.Context, key string) error {
 	})
 }
 
-// Get implements KVStore.
-func (b *bboltDB) Get(ctx context.Context, key string) (any, error) {
+// GetRaw implements KVStore.
+func (b *bboltDB) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	db := b.db
 	var val []byte
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -85,7 +85,7 @@ func (b *bboltDB) Get(ctx context.Context, key string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	var result bboltItem[any]
+	var result bboltItem[[]byte]
 	if err := msgpack.Unmarshal(val, &result); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (b *bboltDB) Set(ctx context.Context, key string, value any, ttl time.Durat
 		}
 
 		if prev := bucket.Get([]byte(key)); prev != nil {
-			var existing bboltItem[any]
+			var existing bboltItem[[]byte]
 			if err := msgpack.Unmarshal(prev, &existing); err == nil && existing.ExpiresAt > 0 {
 				if err := ttlBucket.Delete(b.encodeTTLKey(existing.ExpiresAt, key)); err != nil {
 					return err
@@ -118,7 +118,13 @@ func (b *bboltDB) Set(ctx context.Context, key string, value any, ttl time.Durat
 			}
 		}
 
-		entry := newbboltItemWithTTL(value, ttl)
+		// 先把 value 编码成字节, 再存进 bboltItem[[]byte] (带 TTL 元信息),
+		// 这样 GetRaw 拿到的原始字节可直接由调用方 msgpack 解码到具体类型。
+		valBytes, err := msgpack.Marshal(value)
+		if err != nil {
+			return err
+		}
+		entry := newbboltItemWithTTL(valBytes, ttl)
 		val, err := msgpack.Marshal(entry)
 		if err != nil {
 			return err
