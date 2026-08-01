@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/redis/rueidis"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
-	"github.com/redis/rueidis"
 	"go.etcd.io/bbolt"
 )
 
