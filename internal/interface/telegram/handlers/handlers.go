@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
+	"github.com/mymmrac/telego/telegoutil"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/filter"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
@@ -26,6 +29,12 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 		servCtx := service.WithContext(ctx, m.Service)
 		metaCtx := metautil.WithContext(servCtx, m.MetaData)
 		ctx = ctx.WithContext(metaCtx)
+		if !m.checkUserAllowed(update) {
+			if update.Message != nil {
+				utils.ReplyMessage(ctx, *update.Message, "仅允许配置中登记的用户使用该功能")
+			}
+			return nil
+		}
 		return ctx.Next(update)
 	})
 	mg := hg.Group(telegohandler.AnyMessage(), filter.CommandToMe)
@@ -39,6 +48,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(SearchSimilarArtworks, telegohandler.CommandEqual("similar"))
 	mg.HandleMessage(Recommend, telegohandler.CommandEqual("recommend"))
 	mg.HandleMessage(XpProfile, telegohandler.Or(telegohandler.CommandEqual("xp"), telegohandler.CommandEqual("pref")))
+	mg.HandleMessage(R18ModeCmd, telegohandler.CommandEqual("r18mode"))
 	mg.HandleMessage(TaggingPicture, telegohandler.CommandEqual("tagging"))
 
 	// Admin commands
@@ -79,4 +89,41 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 		return ctx.Err()
 	})
 	hg.HandleMessage(GetArtworkInfo)
+}
+
+// checkUserAllowed 白名单检查。仅当配置了 allowed_users (或 admins) 时启用:
+// 未登记的用户(游客)只允许 /start /help /files(获取原图)。
+// 普通非命令消息(闲聊/发图等)不拦截; callback / inline 查询一律按白名单处理。
+func (m HandlerManager) checkUserAllowed(update telego.Update) bool {
+	allowed := m.MetaData.AllowedUsers()
+	if len(allowed) == 0 {
+		return true
+	}
+	var userID int64
+	var cmd string
+	if msg := update.Message; msg != nil && msg.From != nil {
+		userID = msg.From.ID
+		c, _, _ := telegoutil.ParseCommand(msg.Text)
+		cmd = strings.ToLower(c)
+		if cmd == "" {
+			// 非命令消息(如闲聊、发图)不拦截
+			return true
+		}
+	} else if cq := update.CallbackQuery; cq != nil {
+		userID = cq.From.ID
+	} else {
+		// 非用户消息(如 channel post / 无 From)不拦截
+		return true
+	}
+	// 游客允许的命令
+	switch cmd {
+	case "start", "help", "file", "files":
+		return true
+	}
+	for _, id := range allowed {
+		if id == userID {
+			return true
+		}
+	}
+	return false
 }

@@ -17,16 +17,22 @@ import (
 // 搜索多个 tag 会按空格组合 (AND 匹配, 与 XP-Pusher 一致)。返回轻量条目
 // (含 title/tags/封面/收藏数), 便于快速打分; 完整图片信息可再调 GetArtworkInfo。
 func (p *Pixiv) SearchArtworksByTags(ctx context.Context, tags []string, limit int) ([]*dto.FetchedArtwork, error) {
-	return p.searchArtworksByTags(ctx, tags, limit, "date_d")
+	return p.searchArtworksByTags(ctx, tags, limit, "date_d", "all")
 }
 
 // SearchArtworksByTagsOrdered 与 SearchArtworksByTags 相同, 但允许指定排序方式。
 // order: date_d(最新) / popular_desc(热门, 收藏降序)。
 func (p *Pixiv) SearchArtworksByTagsOrdered(ctx context.Context, tags []string, limit int, order string) ([]*dto.FetchedArtwork, error) {
-	return p.searchArtworksByTags(ctx, tags, limit, order)
+	return p.searchArtworksByTags(ctx, tags, limit, order, "all")
 }
 
-func (p *Pixiv) searchArtworksByTags(ctx context.Context, tags []string, limit int, order string) ([]*dto.FetchedArtwork, error) {
+// SearchArtworksByTagsOrderedWithMode 支持指定 R18 过滤模式。
+// r18Mode: all(全部) / safe(全年龄) / r18(仅 R18)。
+func (p *Pixiv) SearchArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode string) ([]*dto.FetchedArtwork, error) {
+	return p.searchArtworksByTags(ctx, tags, limit, order, r18Mode)
+}
+
+func (p *Pixiv) searchArtworksByTags(ctx context.Context, tags []string, limit int, order, r18Mode string) ([]*dto.FetchedArtwork, error) {
 	if len(tags) == 0 {
 		return nil, oops.New("no tags provided for pixiv search")
 	}
@@ -35,6 +41,9 @@ func (p *Pixiv) searchArtworksByTags(ctx context.Context, tags []string, limit i
 	}
 	if order == "" {
 		order = "date_d"
+	}
+	if r18Mode == "" {
+		r18Mode = "all"
 	}
 	// Pixiv 搜索关键词: 多个 tag 用空格分隔 (AND 语义)
 	keyword := strings.Join(tags, " ")
@@ -46,7 +55,7 @@ func (p *Pixiv) searchArtworksByTags(ctx context.Context, tags []string, limit i
 		searchURL := "https://www.pixiv.net/ajax/search/artworks/" + url.PathEscape(keyword) +
 			"?word=" + url.QueryEscape(keyword) +
 			"&order=" + url.QueryEscape(curOrder) +
-			"&mode=all&p=1&s_mode=s_tag&type=all&lang=zh"
+			"&mode=" + url.QueryEscape(r18Mode) + "&p=1&s_mode=s_tag&type=all&lang=zh"
 		artworks, err := p.searchURL(ctx, searchURL, limit)
 		if err == nil {
 			if len(artworks) > 0 || oi == len(orders)-1 {

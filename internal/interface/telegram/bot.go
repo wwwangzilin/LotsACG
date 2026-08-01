@@ -8,6 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoapi"
+	"github.com/mymmrac/telego/telegohandler"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers"
@@ -18,11 +23,6 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	telegoapiwrapper "github.com/wwwangzilin/LotsACG/pkg/telegoapi"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegoapi"
-	"github.com/mymmrac/telego/telegohandler"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
 )
 
 type BotApp struct {
@@ -182,6 +182,10 @@ func Init(ctx context.Context, serv *service.Service, cfg runtimecfg.TelegramCon
 		}
 	}
 	metaopts = append(metaopts, metautil.WithBotID(int64(botId)))
+	// 白名单 = 配置 admins + allowed_users
+	allowedUsers := append([]int64{}, cfg.Admins...)
+	allowedUsers = append(allowedUsers, cfg.AllowedUsers...)
+	metaopts = append(metaopts, metautil.WithAllowedUsers(allowedUsers))
 	meta := metautil.NewMetaData(channelChatID, botUsername, metaopts...)
 
 	artworkInfoQueue := make(chan artworkInfoTask, 100)

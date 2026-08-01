@@ -4,9 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/mymmrac/telego"
 	"github.com/vmihailenco/msgpack/v5"
+	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 )
 
 var (
@@ -50,6 +50,10 @@ var (
 		{
 			Command:     "tagging",
 			Description: "识别图片中的标签",
+		},
+		{
+			Command:     "r18mode",
+			Description: "设置 R18 过滤模式 (on/off/mixed)",
 		},
 	}
 

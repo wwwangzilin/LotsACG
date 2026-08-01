@@ -25,3 +25,9 @@ type ArtworkTagSearcher interface {
 type ArtworkTagSearcherOrdered interface {
 	SearchArtworksByTagsOrdered(ctx context.Context, tags []string, limit int, order string) ([]*dto.FetchedArtwork, error)
 }
+
+// ArtworkTagSearcherOrderedWithMode 可选接口: 在指定排序的基础上额外支持 R18 过滤模式。
+// r18Mode: all(全部) / safe(全年龄) / r18(仅 R18)。
+type ArtworkTagSearcherOrderedWithMode interface {
+	SearchArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode string) ([]*dto.FetchedArtwork, error)
+}

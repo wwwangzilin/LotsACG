@@ -106,6 +106,9 @@ pximg.manyacg.top (主代理) → pixiv.cat → i.muxmus.com → 官方 i.pximg.
 [telegram]
 bot_token = "token"            # Bot Token
 admins = [123456789]           # 你的 Telegram 用户 ID
+# allowed_users 用户白名单(可选): 配置后仅这些用户可使用 bot 的命令,
+# 未登记用户(游客)只能使用 /start /help /files(获取原图)。
+allowed_users = [123456789]
 username = "@yourchannel"      # 频道用户名（如有）
 chat_id = -1001234567890       # 主频道 ID（与 username 二选一）
 
@@ -143,6 +146,9 @@ bot_token = "123456:ABCDEF"
 api_url = ""                      # 可选：自定义 Telegram API 地址
 username = "@lotsacg_bot"
 admins = [123456789]
+# allowed_users 用户白名单(可选): 配置后仅这些用户可使用 bot 的命令,
+# 未登记用户(游客)只能使用 /start /help /files(获取原图)。
+allowed_users = [123456789]
 caption_template = ""
 chat_id = -1001111111111          # 主频道（普通作品）
 

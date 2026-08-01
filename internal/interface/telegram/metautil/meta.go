@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/mymmrac/telego"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 type MetaData struct {
@@ -16,6 +16,7 @@ type MetaData struct {
 	botUsername      string
 	siteUrl          string
 	botId            int64
+	allowedUsers     []int64
 	// should not set manually
 	channelAvailable bool
 }
@@ -42,6 +43,12 @@ func (m *MetaData) SiteURL() string {
 
 func (m *MetaData) BotID() int64 {
 	return m.botId
+}
+
+// AllowedUsers 返回配置中登记的用户白名单 (admins + allowed_users)。
+// 为空表示未启用白名单模式。
+func (m *MetaData) AllowedUsers() []int64 {
+	return m.allowedUsers
 }
 
 type MetaDataCtxKey struct{}
@@ -71,6 +78,13 @@ func WithR18ChannelChatID(id telego.ChatID) Option {
 func WithBotID(id int64) Option {
 	return func(m *MetaData) {
 		m.botId = id
+	}
+}
+
+// WithAllowedUsers 设置登记用户白名单 (admins + allowed_users)。
+func WithAllowedUsers(ids []int64) Option {
+	return func(m *MetaData) {
+		m.allowedUsers = ids
 	}
 }
 

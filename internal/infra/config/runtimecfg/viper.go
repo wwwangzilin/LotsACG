@@ -103,6 +103,7 @@ func loadConfig() Config {
 		"telegram.retry.exponent_base": 1.5,
 		"telegram.retry.start_delay":   3,
 		"telegram.retry.max_delay":     600,
+		"telegram.allowed_users":       []int64{},
 
 		"rest.site.title":        "LotsACG - Kawaii is all you need",
 		"rest.site.desc":         "ACG Image Collector and Gallery Server",

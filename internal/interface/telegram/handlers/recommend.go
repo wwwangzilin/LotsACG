@@ -278,8 +278,9 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 		seen[u] = struct{}{}
 	}
 
-	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品
-	fetched, err := serv.XPDiscover(ctx, pref, profile, 50)
+	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品 (应用用户 R18 模式)
+	r18Mode, _ := service.GetUserR18Mode(ctx, userID)
+	fetched, err := serv.XPDiscover(ctx, pref, profile, 50, r18Mode.ToPixivMode())
 	if err != nil {
 		return nil, 0, oops.Wrapf(err, "failed to discover new artworks")
 	}

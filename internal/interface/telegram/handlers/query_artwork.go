@@ -9,18 +9,19 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegohandler"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/model/query"
+	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegohandler"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
 )
 
 func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
@@ -29,7 +30,17 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 	textArray := strutil.ParseTo2DArray(argText, "|", " ")
 	r18 := cmd == "setu"
 	r18Type := shared.R18TypeNone
-	if r18 {
+	// 用户设置的 R18 模式优先: on=仅R18, off=仅全年龄, mixed=全部
+	if mode, ok := service.GetUserR18Mode(ctx, message.From.ID); ok {
+		switch mode {
+		case service.R18ModeOn:
+			r18Type = shared.R18TypeR18
+		case service.R18ModeOff:
+			r18Type = shared.R18TypeNone
+		default: // mixed
+			r18Type = shared.R18TypeAll
+		}
+	} else if r18 {
 		r18Type = shared.R18TypeR18
 	}
 	serv, err := requireService(ctx)
