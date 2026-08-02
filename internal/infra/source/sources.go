@@ -31,3 +31,11 @@ type ArtworkTagSearcherOrdered interface {
 type ArtworkTagSearcherOrderedWithMode interface {
 	SearchArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode string) ([]*dto.FetchedArtwork, error)
 }
+
+// ArtistArtworkLister 可选接口: 支持根据画师主页链接列出其全部作品链接。
+type ArtistArtworkLister interface {
+	// MatchArtistPageURL 若 text 包含画师主页链接, 返回规范化的主页链接。
+	MatchArtistPageURL(text string) (string, bool)
+	// FetchArtistArtworks 返回画师主页下全部作品的完整链接 (limit<=0 表示全部)。
+	FetchArtistArtworks(ctx context.Context, artistPageURL string, limit int) ([]string, error)
+}

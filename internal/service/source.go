@@ -6,11 +6,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/source"
 	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
-	"github.com/samber/oops"
 )
 
 var urlRegex = regexp.MustCompile(`https?://[^\s<>"']+`)
@@ -97,6 +97,30 @@ func (s *Service) FetchNewArtworks(ctx context.Context, limit int) ([]*dto.Fetch
 		return artworks, oops.Join(errs...)
 	}
 	return artworks, nil
+}
+
+// FindArtistPageURL 返回文本中匹配的画师主页链接 (仅第一个)。
+func (s *Service) FindArtistPageURL(text string) string {
+	for _, sou := range s.sources {
+		if lister, ok := sou.(source.ArtistArtworkLister); ok {
+			if url, ok := lister.MatchArtistPageURL(text); ok {
+				return url
+			}
+		}
+	}
+	return ""
+}
+
+// FetchArtistArtworks 返回指定画师主页下的全部作品完整链接 (limit<=0 表示全部)。
+func (s *Service) FetchArtistArtworks(ctx context.Context, artistPageURL string, limit int) ([]string, error) {
+	for _, sou := range s.sources {
+		if lister, ok := sou.(source.ArtistArtworkLister); ok {
+			if _, ok := lister.MatchArtistPageURL(artistPageURL); ok {
+				return lister.FetchArtistArtworks(ctx, artistPageURL, limit)
+			}
+		}
+	}
+	return nil, oops.New("no artist page url matched")
 }
 
 func (s *Service) PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string {

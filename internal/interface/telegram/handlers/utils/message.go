@@ -6,16 +6,16 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/strutil"
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegohandler"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegohandler"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
 )
 
 func ReplyMessageWithHTML(ctx *telegohandler.Context, message telego.Message, text string) (*telego.Message, error) {
@@ -63,6 +63,30 @@ func FindSourceURLsInMessage(serv *service.Service, message *telego.Message) []s
 		}
 	}
 	return serv.FindSourceURLs(sb.String())
+}
+
+// FindArtistPageURLInMessage 从消息(文本/说明/链接实体)中查找画师主页链接。
+func FindArtistPageURLInMessage(serv *service.Service, message *telego.Message) string {
+	if message == nil {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(message.Text)
+	sb.WriteString(" ")
+	sb.WriteString(message.Caption)
+	for _, entity := range message.Entities {
+		if entity.Type == telego.EntityTypeTextLink {
+			sb.WriteString(entity.URL)
+			sb.WriteString(" ")
+		}
+	}
+	for _, entity := range message.CaptionEntities {
+		if entity.Type == telego.EntityTypeTextLink {
+			sb.WriteString(entity.URL)
+			sb.WriteString(" ")
+		}
+	}
+	return serv.FindArtistPageURL(sb.String())
 }
 
 var tagCharsReplacer = strings.NewReplacer(

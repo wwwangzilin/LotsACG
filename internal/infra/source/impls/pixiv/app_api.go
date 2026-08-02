@@ -245,3 +245,76 @@ func PixivUserID(userID string) (int64, error) {
 	}
 	return id, nil
 }
+
+// appUserIllustResp 用户作品列表 API 响应。
+type appUserIllustResp struct {
+	Illusts []struct {
+		ID int64 `json:"id"`
+	} `json:"illusts"`
+	NextURL string `json:"next_url"`
+	Error   *struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// FetchUserIllusts 获取指定用户的插画作品 ID 列表 (默认全部, 按时间倒序)。
+// limit<=0 表示拉取全部。
+func (a *AppAPIClient) FetchUserIllusts(ctx context.Context, userID string, limit int) ([]int64, error) {
+	if err := a.ensureToken(ctx); err != nil {
+		return nil, err
+	}
+	ids := make([]int64, 0)
+	nextURL := ""
+
+	for {
+		if limit > 0 && len(ids) >= limit {
+			break
+		}
+		request := a.reqClient.R().
+			SetContext(ctx).
+			SetHeader("Authorization", "Bearer "+a.accessToken)
+
+		var resp appUserIllustResp
+		var httpResp *req.Response
+		var err error
+		if nextURL != "" {
+			httpResp, err = request.Get(nextURL)
+		} else {
+			httpResp, err = request.SetQueryParam("user_id", userID).
+				SetQueryParam("type", "illust").
+				Get(appAPIBase + "/v1/user/illusts")
+		}
+		if err != nil {
+			return nil, oops.Wrapf(err, "pixiv user illusts request failed")
+		}
+		body, err := respBodyBytes(httpResp)
+		if err != nil {
+			return nil, oops.Wrapf(err, "pixiv user illusts decompress failed")
+		}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			return nil, oops.Wrapf(err, "pixiv user illusts unmarshal failed")
+		}
+		if httpResp.IsErrorState() {
+			if resp.Error != nil {
+				return nil, oops.Errorf("pixiv user illusts error: %s", resp.Error.Message)
+			}
+			return nil, oops.Errorf("pixiv user illusts http error: %d", httpResp.GetStatusCode())
+		}
+		if len(resp.Illusts) == 0 {
+			break
+		}
+		for _, item := range resp.Illusts {
+			if limit > 0 && len(ids) >= limit {
+				break
+			}
+			if item.ID > 0 {
+				ids = append(ids, item.ID)
+			}
+		}
+		if resp.NextURL == "" {
+			break
+		}
+		nextURL = resp.NextURL
+	}
+	return ids, nil
+}

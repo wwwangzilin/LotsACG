@@ -82,6 +82,10 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 		if update.Message.ViaBot != nil && update.Message.ViaBot.Username == m.BotUsername() {
 			return ctx.Err()
 		}
+		// 画师主页链接: 自动输出该画师全部作品的完整链接 (仅链接, 无说明)
+		if artistURL := utils.FindArtistPageURLInMessage(m.Service, update.Message); artistURL != "" {
+			return handleArtistPageURL(ctx, m, *update.Message, artistURL)
+		}
 		if url := utils.FindSourceURLInMessage(m.Service, update.Message); url != "" {
 			ctx = ctx.WithValue("source_url", url)
 			return ctx.Next(update)

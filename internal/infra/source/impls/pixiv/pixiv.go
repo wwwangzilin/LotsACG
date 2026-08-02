@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/samber/oops"
 	config "github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
@@ -140,4 +141,41 @@ func (p *Pixiv) PrettyFileName(artwork shared.ArtworkLike, picture shared.Pictur
 		return fmt.Sprintf("pixiv_%s_%d%s", pid, picture.GetIndex(), ext)
 	}
 	return fmt.Sprintf("pixiv_%s%s", strutil.MD5Hash(picture.GetOriginal()), ext)
+}
+
+// artistPageURLRegex 匹配 pixiv 画师主页链接, 如:
+// https://www.pixiv.net/users/123456
+// https://www.pixiv.net/en/users/123456/artworks
+var artistPageURLRegex = regexp.MustCompile(`pixiv\.net/(?:[a-z]{2}/)?users/(\d+)`)
+
+// MatchArtistPageURL 若 text 包含 pixiv 画师主页链接, 返回规范化的主页链接。
+func (p *Pixiv) MatchArtistPageURL(text string) (string, bool) {
+	m := artistPageURLRegex.FindStringSubmatch(text)
+	if len(m) < 2 || m[1] == "" {
+		return "", false
+	}
+	return "https://www.pixiv.net/users/" + m[1], true
+}
+
+// FetchArtistArtworks 返回指定画师主页下的全部作品完整链接。
+// limit<=0 表示拉取全部。
+func (p *Pixiv) FetchArtistArtworks(ctx context.Context, artistPageURL string, limit int) ([]string, error) {
+	userID, ok := p.MatchArtistPageURL(artistPageURL)
+	if !ok {
+		return nil, oops.New("not a pixiv artist page url")
+	}
+	cfg := config.Get().XPAIAPI.Pixiv
+	if cfg.RefreshToken == "" {
+		return nil, oops.New("pixiv refresh_token not configured, cannot fetch artist artworks")
+	}
+	client := NewAppAPIClient(cfg.RefreshToken, config.Get().Source.Proxy)
+	ids, err := client.FetchUserIllusts(ctx, userID, limit)
+	if err != nil {
+		return nil, oops.Wrapf(err, "failed to fetch artist artworks")
+	}
+	urls := make([]string, 0, len(ids))
+	for _, id := range ids {
+		urls = append(urls, fmt.Sprintf("https://www.pixiv.net/artworks/%d", id))
+	}
+	return urls, nil
 }
