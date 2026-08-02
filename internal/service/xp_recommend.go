@@ -411,13 +411,26 @@ func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile 
 		}
 	}
 
-	// 3. 兜底: RSS 拉新
+	// 3. 兜底: RSS 拉新 (RSS 不分 R18, 必须按用户模式过滤)
 	if len(collected) == 0 {
 		arts, err := s.FetchNewArtworks(ctx, limit)
 		if err != nil {
 			return nil, oops.Wrapf(err, "failed to fetch new artworks")
 		}
-		addAll(arts)
+		filtered := make([]*dto.FetchedArtwork, 0, len(arts))
+		for _, art := range arts {
+			if art == nil {
+				continue
+			}
+			if r18Mode == "safe" && art.R18 {
+				continue
+			}
+			if r18Mode == "r18" && !art.R18 {
+				continue
+			}
+			filtered = append(filtered, art)
+		}
+		addAll(filtered)
 	}
 
 	if len(collected) > limit {

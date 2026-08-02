@@ -12,6 +12,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
+	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
@@ -280,10 +281,17 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 
 	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品 (应用用户 R18 模式)
 	r18Mode, _ := service.GetUserR18Mode(ctx, userID)
-	fetched, err := serv.XPDiscover(ctx, pref, profile, 50, r18Mode.ToPixivMode())
+	pixivMode := r18Mode.ToPixivMode()
+	fetched, err := serv.XPDiscover(ctx, pref, profile, 50, pixivMode)
 	if err != nil {
 		return nil, 0, oops.Wrapf(err, "failed to discover new artworks")
 	}
+	if len(fetched) == 0 {
+		return nil, 0, nil
+	}
+
+	// 4.5 候选层强过滤 (防御: 搜索/RSS 可能漏网, 保证候选符合用户 R18 模式)
+	fetched = filterFetchedByR18Mode(fetched, pixivMode)
 	if len(fetched) == 0 {
 		return nil, 0, nil
 	}
@@ -297,18 +305,34 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 		return nil, 0, nil
 	}
 
-	best := ranked[0].Artwork
-	bestURL := best.SourceURL
-	bestScore := ranked[0].Score
-
-	// 6. 对选中的作品获取完整详情(含原图), 搜索结果条目只有封面缩略图
-	full, err := serv.FetchArtworkInfo(ctx, bestURL)
-	if err != nil {
-		log.Warn("recommend: failed to fetch full artwork info, fallback to search item", "url", bestURL, "err", err)
-		full = best
+	// 6. 按用户 R18 模式筛选并获取完整详情(含原图)。
+	//    注意: 搜索结果条目用 xRestrict 判 R18, 详情接口用 tag 判 R18,
+	//    两者可能不一致, 因此以详情结果为准, 不符合模式则跳过该候选。
+	var best *dto.FetchedArtwork
+	var bestScore float64
+	for _, candidate := range ranked {
+		art := candidate.Artwork
+		if !artMatchesR18Mode(art.R18, pixivMode) {
+			continue
+		}
+		full, err := serv.FetchArtworkInfo(ctx, art.SourceURL)
+		if err != nil {
+			log.Warn("recommend: failed to fetch full artwork info, fallback to search item", "url", art.SourceURL, "err", err)
+			full = art
+		}
+		if !artMatchesR18Mode(full.R18, pixivMode) {
+			continue
+		}
+		best = full
+		bestScore = candidate.Score
+		break
 	}
+	if best == nil {
+		return nil, 0, nil
+	}
+	bestURL := best.SourceURL
 
-	cached, err := service.ConvertFetchedToCached(full)
+	cached, err := service.ConvertFetchedToCached(best)
 	if err != nil {
 		return nil, 0, oops.Wrapf(err, "failed to convert fetched artwork")
 	}
@@ -316,6 +340,33 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 	session.addSeen(bestURL)
 	_ = saveRecommendationSession(ctx, userID, session)
 	return cached, bestScore, nil
+}
+
+// filterFetchedByR18Mode 按 R18 模式过滤候选列表。
+// pixivMode: all(全部) / safe(全年龄) / r18(仅 R18)。
+func filterFetchedByR18Mode(fetched []*dto.FetchedArtwork, pixivMode string) []*dto.FetchedArtwork {
+	filtered := make([]*dto.FetchedArtwork, 0, len(fetched))
+	for _, art := range fetched {
+		if art == nil {
+			continue
+		}
+		if artMatchesR18Mode(art.R18, pixivMode) {
+			filtered = append(filtered, art)
+		}
+	}
+	return filtered
+}
+
+// artMatchesR18Mode 判断作品的 R18 状态是否符合指定模式。
+func artMatchesR18Mode(isR18 bool, pixivMode string) bool {
+	switch pixivMode {
+	case "safe":
+		return !isR18
+	case "r18":
+		return isR18
+	default: // all
+		return true
+	}
 }
 
 func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {
