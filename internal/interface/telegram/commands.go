@@ -55,6 +55,18 @@ var (
 			Command:     "r18mode",
 			Description: "设置 R18 过滤模式 (on/off/mixed)",
 		},
+		{
+			Command:     "switchrecommend",
+			Description: "切换推荐图源",
+		},
+		{
+			Command:     "groupsearch",
+			Description: "在群组中搜索作品",
+		},
+		{
+			Command:     "downloadzip",
+			Description: "打包下载图片 (zip)",
+		},
 	}
 
 	AdminCommands = []telego.BotCommand{
@@ -113,6 +125,18 @@ var (
 		{
 			Command:     "dump",
 			Description: "导出作品信息",
+		},
+		{
+			Command:     "cancel",
+			Description: "取消当前发布队列",
+		},
+		{
+			Command:     "cd",
+			Description: "取消并删除发布队列",
+		},
+		{
+			Command:     "redescribe",
+			Description: "AI 生成描述并追加到帖子",
 		},
 	}
 )

@@ -7,15 +7,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegohandler"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/infra/tagging"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegohandler"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
 )
 
 func SearchPicture(ctx *telegohandler.Context, message telego.Message) error {
@@ -27,9 +27,17 @@ func SearchPicture(ctx *telegohandler.Context, message telego.Message) error {
 	if err != nil {
 		return err
 	}
+	_, _, args := telegoutil.ParseCommand(message.Text)
 	if message.ReplyToMessage == nil {
+		// 文本参数 → 模糊搜索受支持网站, 返回相关链接
+		if len(args) > 0 {
+			return searchByText(ctx, message, strings.Join(args, " "))
+		}
 		helpText := `
-<b>使用 /search 命令回复一条图片消息以搜索图片来源</b>
+<b>使用 /search 命令回复一条图片消息以搜索图片来源, 或提供关键词在受支持的网站中模糊搜索</b>
+
+命令语法: /search <关键词>
+或: 回复一条图片消息并发送 /search
 `
 		utils.ReplyMessageWithHTML(ctx, message, helpText)
 		return nil
@@ -71,6 +79,63 @@ func SearchPicture(ctx *telegohandler.Context, message telego.Message) error {
 		ChatID:    msg.Chat.ChatID(),
 		MessageID: msg.GetMessageID(),
 		Text:      "未在数据库中找到相似图片",
+	})
+	return nil
+}
+
+// searchByText 按关键词在受支持的网站中模糊搜索, 返回最多 5 个相关链接。
+func searchByText(ctx *telegohandler.Context, message telego.Message, keyword string) error {
+	serv, err := requireService(ctx)
+	if err != nil {
+		return err
+	}
+	msg, err := utils.ReplyMessage(ctx, message, "少女祈祷中...")
+	if err != nil {
+		return oops.Wrapf(err, "reply message failed")
+	}
+	tags := strings.Fields(keyword)
+	if len(tags) == 0 {
+		ctx.Bot().EditMessageText(ctx, &telego.EditMessageTextParams{
+			ChatID:    msg.Chat.ChatID(),
+			MessageID: msg.GetMessageID(),
+			Text:      "请输入搜索关键词",
+		})
+		return nil
+	}
+	fetched, err := serv.SearchNewArtworksByTagsOrderedWithMode(ctx, tags, 5, "popular_desc", "all", "")
+	if err != nil {
+		ctx.Bot().EditMessageText(ctx, &telego.EditMessageTextParams{
+			ChatID:    msg.Chat.ChatID(),
+			MessageID: msg.GetMessageID(),
+			Text:      "搜索失败: " + err.Error(),
+		})
+		return nil
+	}
+	if len(fetched) == 0 {
+		ctx.Bot().EditMessageText(ctx, &telego.EditMessageTextParams{
+			ChatID:    msg.Chat.ChatID(),
+			MessageID: msg.GetMessageID(),
+			Text:      "未找到相关作品",
+		})
+		return nil
+	}
+	var sb strings.Builder
+	shown := 0
+	for _, art := range fetched {
+		if art == nil || art.SourceURL == "" {
+			continue
+		}
+		if shown >= 5 {
+			break
+		}
+		shown++
+		sb.WriteString(fmt.Sprintf("%d. <a href=\"%s\">%s</a>\n", shown, art.SourceURL, utils.EscapeHTML(art.Title)))
+	}
+	ctx.Bot().EditMessageText(ctx, &telego.EditMessageTextParams{
+		ChatID:    msg.Chat.ChatID(),
+		MessageID: msg.GetMessageID(),
+		Text:      sb.String(),
+		ParseMode: telego.ModeHTML,
 	})
 	return nil
 }

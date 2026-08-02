@@ -6,15 +6,15 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/wwwangzilin/LotsACG/internal/shared"
-	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
-	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
 	"github.com/unvgo/ouid"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 func ToggleArtworkR18(ctx *telegohandler.Context, message telego.Message) error {
@@ -50,6 +50,15 @@ func ToggleArtworkR18(ctx *telegohandler.Context, message telego.Message) error 
 	if err := serv.UpdateArtworkR18ByURL(ctx, sourceURL, !artwork.R18); err != nil {
 		utils.ReplyMessage(ctx, message, "更新作品信息失败: "+err.Error())
 		return nil
+	}
+	// 标记为 R18 后, 若 R18 频道已配置且作品已发布, 自动在 R18 频道发布同样的内容
+	if !artwork.R18 {
+		if err := autoPublishToR18Channel(ctx, serv, artwork); err != nil {
+			log.Debug("auto publish to r18 channel skipped", "err", err)
+		} else {
+			utils.ReplyMessage(ctx, message, "该作品 R18 已标记为 true, 并已自动发布到 R18 频道")
+			return nil
+		}
 	}
 	utils.ReplyMessage(ctx, message, "该作品 R18 已标记为 "+strconv.FormatBool(!artwork.R18))
 	return nil

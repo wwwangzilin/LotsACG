@@ -1,12 +1,11 @@
 package handlers
-package handlers
 
 import (
 	"strings"
 
-	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 )
 
 // artistLinkBatchSize 每批发送的链接数量。

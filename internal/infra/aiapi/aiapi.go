@@ -129,6 +129,68 @@ func (c *Client) ExpandTags(ctx context.Context, tags []string, count int) ([]st
 	return parseTagList(content), nil
 }
 
+// chat 执行一次聊天补全, 返回 assistant 文本内容。
+func (c *Client) chat(ctx context.Context, system, user string, temperature float64) (string, error) {
+	if !c.Enabled() {
+		return "", oops.New("ai api not enabled")
+	}
+	req := chatCompletionRequest{
+		Model: c.cfg.Model,
+		Messages: []chatCompletionMessage{
+			{Role: "system", Content: system},
+			{Role: "user", Content: user},
+		},
+		Temperature: temperature,
+	}
+	var resp chatCompletionResponse
+	httpResp, err := c.reqClient.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetSuccessResult(&resp).
+		Post("/chat/completions")
+	if err != nil {
+		return "", oops.Wrapf(err, "ai api request failed")
+	}
+	if httpResp.IsErrorState() {
+		if resp.Error != nil {
+			return "", oops.Errorf("ai api error: %s", resp.Error.Message)
+		}
+		return "", oops.Errorf("ai api http error: %d", httpResp.GetStatusCode())
+	}
+	if len(resp.Choices) == 0 {
+		return "", oops.New("ai api returned no choices")
+	}
+	content := strings.TrimSpace(resp.Choices[0].Message.Content)
+	if content == "" {
+		return "", oops.New("ai api returned empty content")
+	}
+	return content, nil
+}
+
+// GenerateDescription 根据作品标题与标签生成一段自然语言描述。
+func (c *Client) GenerateDescription(ctx context.Context, title string, tags []string) (string, error) {
+	if !c.Enabled() {
+		return "", oops.New("ai api not enabled")
+	}
+	tagList := strings.Join(tags, ", ")
+	if tagList == "" {
+		tagList = "(无)"
+	}
+	prompt := fmt.Sprintf(`请根据以下动漫插画作品的标题和标签, 生成一段简短的中文作品描述(80-150字):
+标题: %s
+标签: %s
+
+要求:
+- 描述作品的内容、风格、画面元素
+- 不要编造不存在的细节, 基于标签合理联想
+- 只输出描述正文, 不要任何前缀或解释`, title, tagList)
+	content, err := c.chat(ctx, "你是一个动漫插画作品描述助手, 只输出描述正文, 不要输出其他内容。", prompt, 0.8)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(content), nil
+}
+
 // parseTagList 解析 AI 返回的标签列表。兼容逗号分隔、换行分隔、以及带编号/引号/方括号的格式。
 func parseTagList(content string) []string {
 	// 去除可能的 markdown 代码块

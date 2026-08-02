@@ -49,6 +49,9 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(Recommend, telegohandler.CommandEqual("recommend"))
 	mg.HandleMessage(XpProfile, telegohandler.Or(telegohandler.CommandEqual("xp"), telegohandler.CommandEqual("pref")))
 	mg.HandleMessage(R18ModeCmd, telegohandler.CommandEqual("r18mode"))
+	mg.HandleMessage(SwitchRecommendSource, telegohandler.CommandEqual("switchrecommend"))
+	mg.HandleMessage(GroupSearch, telegohandler.CommandEqual("groupsearch"))
+	mg.HandleMessage(DownloadZip, telegohandler.CommandEqual("downloadzip"))
 	mg.HandleMessage(TaggingPicture, telegohandler.CommandEqual("tagging"))
 
 	// Admin commands
@@ -65,6 +68,9 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(AutoTaggingArtwork, telegohandler.CommandEqual("autotag"))
 	mg.HandleMessage(ReindexArtworks, telegohandler.CommandEqual("reindex"))
 	mg.HandleMessage(ToggleDupCheck, telegohandler.CommandEqual("dupcheck"))
+	mg.HandleMessage(CancelPost, telegohandler.CommandEqual("cancel"))
+	mg.HandleMessage(CancelAndDeletePost, telegohandler.CommandEqual("cd"))
+	mg.HandleMessage(RedescribeArtwork, telegohandler.CommandEqual("redescribe"))
 
 	hg.HandleCallbackQuery(PostArtworkCallbackQuery, telegohandler.CallbackDataContains("post_artwork"))
 	hg.HandleCallbackQuery(RecommendCallbackQuery, telegohandler.CallbackDataContains("recommend_"))

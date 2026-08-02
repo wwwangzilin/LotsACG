@@ -123,6 +123,14 @@ func (s *Service) FetchArtistArtworks(ctx context.Context, artistPageURL string,
 	return nil, oops.New("no artist page url matched")
 }
 
+// GenerateArtworkDescription 使用 AI 根据作品标签生成中文描述。
+func (s *Service) GenerateArtworkDescription(ctx context.Context, artwork shared.ArtworkLike) (string, error) {
+	if s.aiapi == nil || !s.aiapi.Enabled() {
+		return "", oops.New("ai api not enabled")
+	}
+	return s.aiapi.GenerateDescription(ctx, artwork.GetTitle(), artwork.GetTags())
+}
+
 func (s *Service) PrettyFileName(artwork shared.ArtworkLike, picture shared.PictureLike) string {
 	for _, sou := range s.sources {
 		if _, ok := sou.MatchesSourceURL(artwork.GetSourceURL()); ok {

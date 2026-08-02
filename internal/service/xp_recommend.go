@@ -333,12 +333,13 @@ func (s *Service) buildXPProfileFromBookmarks(ctx context.Context) (map[string]f
 
 // ============ 组合搜索 (移植自 XP-Pusher fetcher) ============
 
-// XPDiscover 从 Pixiv 搜索新作品:
+// XPDiscover 从指定图源搜索新作品:
 // 1. 用 top tag pairs 组合搜索 (AND 语义)
 // 2. 用 profile(收藏夹/偏好) 的 top tags 单 tag 搜索 (热门排序)
 // 3. RSS 兜底
 // r18Mode: all(全部) / safe(全年龄) / r18(仅 R18)。
-func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile map[string]float64, limit int, r18Mode string) ([]*dto.FetchedArtwork, error) {
+// sourceType: 限定搜索的图源 (如 "pixiv"), 空字符串表示全部图源。
+func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile map[string]float64, limit int, r18Mode, sourceType string) ([]*dto.FetchedArtwork, error) {
 	if limit <= 0 {
 		limit = 50
 	}
@@ -370,7 +371,7 @@ func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile 
 			break
 		}
 		pairTags := []string{pair.Tag1, pair.Tag2}
-		arts, err := s.SearchNewArtworksByTagsOrderedWithMode(ctx, pairTags, 10, "date_d", r18Mode)
+		arts, err := s.SearchNewArtworksByTagsOrderedWithMode(ctx, pairTags, 10, "date_d", r18Mode, sourceType)
 		if err != nil {
 			log.Debug("xp pair search failed", "pair", pair.Tag1+"+"+pair.Tag2, "err", err)
 			continue
@@ -403,7 +404,7 @@ func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile 
 			if remaining > 20 {
 				remaining = 20
 			}
-			arts, err := s.SearchNewArtworksByTagsOrderedWithMode(ctx, []string{tw.Tag}, remaining, "popular_desc", r18Mode)
+			arts, err := s.SearchNewArtworksByTagsOrderedWithMode(ctx, []string{tw.Tag}, remaining, "popular_desc", r18Mode, sourceType)
 			if err != nil {
 				continue
 			}
@@ -441,12 +442,13 @@ func (s *Service) XPDiscover(ctx context.Context, pref *UserPreference, profile 
 
 // SearchNewArtworksByTagsOrdered 按 tag 搜索, 支持排序 (date_d / popular_desc)。
 func (s *Service) SearchNewArtworksByTagsOrdered(ctx context.Context, tags []string, limit int, order string) ([]*dto.FetchedArtwork, error) {
-	return s.SearchNewArtworksByTagsOrderedWithMode(ctx, tags, limit, order, "all")
+	return s.SearchNewArtworksByTagsOrderedWithMode(ctx, tags, limit, order, "all", "")
 }
 
-// SearchNewArtworksByTagsOrderedWithMode 按 tag 搜索并支持 R18 过滤模式。
+// SearchNewArtworksByTagsOrderedWithMode 按 tag 搜索并支持 R18 过滤模式与图源限定。
 // r18Mode: all(全部) / safe(全年龄) / r18(仅 R18)。
-func (s *Service) SearchNewArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode string) ([]*dto.FetchedArtwork, error) {
+// sourceType: 仅从指定图源搜索 (如 "pixiv"), 空字符串表示全部图源。
+func (s *Service) SearchNewArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode, sourceType string) ([]*dto.FetchedArtwork, error) {
 	if len(tags) == 0 {
 		return nil, nil
 	}
@@ -459,7 +461,10 @@ func (s *Service) SearchNewArtworksByTagsOrderedWithMode(ctx context.Context, ta
 	artworks := make([]*dto.FetchedArtwork, 0)
 	errs := make([]error, 0)
 	seen := make(map[string]struct{})
-	for _, sou := range s.sources {
+	for st, sou := range s.sources {
+		if sourceType != "" && string(st) != sourceType {
+			continue
+		}
 		// 优先使用支持 R18 模式过滤的源
 		if searcher, ok := sou.(source.ArtworkTagSearcherOrderedWithMode); ok {
 			fetched, err := searcher.SearchArtworksByTagsOrderedWithMode(ctx, tags, limit, order, r18Mode)

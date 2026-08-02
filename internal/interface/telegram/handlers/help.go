@@ -28,6 +28,9 @@ func Help(ctx *telegohandler.Context, message telego.Message) error {
 /recommend - 私聊中智能推荐作品(基于你喜欢/不喜欢的标签偏好)
 /xp (或 /pref) - 查看你的 XP 画像(偏好标签权重)
 /r18mode - 设置 R18 过滤模式 (on/off/mixed)
+/switchrecommend - 切换推荐图源
+/groupsearch - 在群组中搜索作品
+/downloadzip - 打包下载回复图片及之后的多张图片 (zip)
 /tagging - 识别回复图片中的标签
 `
 	helpText += `
@@ -59,6 +62,9 @@ Inline 查询(在任意聊天框中@本bot)支持同样的参数格式
 /recaption - 重新生成作品描述
 /reindex - 重新索引作品
 /dupcheck - 查看或切换图片查重开关 (on/off)
+/cancel - 取消当前发布队列 (保留已发布内容)
+/cd - 取消并删除当前发布队列已发布的内容
+/redescribe - 使用 AI 生成描述并追加到频道帖子下方
 `
 	}
 	commit := version.Commit

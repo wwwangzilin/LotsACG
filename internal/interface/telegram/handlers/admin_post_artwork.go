@@ -5,14 +5,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
-	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/wwwangzilin/LotsACG/internal/shared"
-	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 func PostArtworkCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQuery) error {
@@ -179,7 +179,21 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 	skipCount := 0
 	failCount := 0
 	results := make([]string, 0, len(uniqueSourceURLs))
+
+	// 新建发布队列 (供 /cancel 取消、/cd 取消并删除)
+	queue := &PostQueue{
+		SourceURLs: uniqueSourceURLs,
+		Status:     postQueueStatusPosting,
+		CreatedAt:  time.Now(),
+	}
+	_ = savePostQueue(ctx, queue)
+
 	for idx, sourceURL := range uniqueSourceURLs {
+		// 检查是否被 /cancel 或 /cd 取消
+		if cur, err := loadPostQueue(ctx); err == nil && cur.Status == postQueueStatusCancelled {
+			results = append(results, fmt.Sprintf("队列已取消, 停止于 %d/%d: %s", idx+1, len(uniqueSourceURLs), sourceURL))
+			break
+		}
 		progressText := fmt.Sprintf("正在发布 %d/%d: %s", idx+1, len(uniqueSourceURLs), sourceURL)
 		if msg != nil {
 			ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, progressText))
@@ -218,6 +232,17 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		}
 		successCount++
 		results = append(results, fmt.Sprintf("%d/%d 发布成功: %s / %s", idx+1, len(uniqueSourceURLs), createdArtwork.Title, createdArtwork.GetSourceURL()))
+		// 记录已发布, 供 /cd 删除
+		if cur, err := loadPostQueue(ctx); err == nil {
+			cur.Published = append(cur.Published, sourceURL)
+			_ = savePostQueue(ctx, cur)
+		}
+	}
+
+	// 队列完成 (若未被取消)
+	if cur, err := loadPostQueue(ctx); err == nil && cur.Status != postQueueStatusCancelled {
+		cur.Status = postQueueStatusDone
+		_ = savePostQueue(ctx, cur)
 	}
 
 	finalText := fmt.Sprintf("发布完成: 成功 %d, 跳过 %d, 失败 %d", successCount, skipCount, failCount)

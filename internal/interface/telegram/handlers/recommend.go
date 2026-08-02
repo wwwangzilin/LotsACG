@@ -24,6 +24,8 @@ type recommendationSession struct {
 	SeenSourceURLs   []string `json:"seen_source_urls"`
 	CurrentSourceURL string   `json:"current_source_url"`
 	CurrentTags      []string `json:"current_tags"`
+	// 当前推荐作品的完整数据, 用于推送到群时避免重新 fetch 失败
+	CurrentArtworkData *entity.CachedArtworkData `json:"current_artwork_data,omitempty"`
 }
 
 func Recommend(ctx *telegohandler.Context, message telego.Message) error {
@@ -90,7 +92,7 @@ func RecommendCallbackQuery(ctx *telegohandler.Context, query telego.CallbackQue
 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "当前没有作品可推送", ShowAlert: true, CacheTime: 30})
 			return nil
 		}
-		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), 0, []string{session.CurrentSourceURL})
+		count, err := pushRecommendationSelection(ctx, ctx, serv, meta, query.Message.GetChat().ChatID(), 0, []string{session.CurrentSourceURL}, session)
 		if err != nil {
 			ctx.Bot().AnswerCallbackQuery(ctx, &telego.AnswerCallbackQueryParams{CallbackQueryID: query.ID, Text: "推送失败: " + err.Error(), ShowAlert: true, CacheTime: 30})
 			return nil
@@ -203,6 +205,9 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 	}
 	session.CurrentSourceURL = artwork.GetSourceURL()
 	session.CurrentTags = artwork.GetTags()
+	if cd, ok := artwork.(*entity.CachedArtworkData); ok {
+		session.CurrentArtworkData = cd
+	}
 	if err := saveRecommendationSession(ctx, userID, session); err != nil {
 		return oops.Wrapf(err, "failed to save recommendation session")
 	}
@@ -279,10 +284,11 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 		seen[u] = struct{}{}
 	}
 
-	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品 (应用用户 R18 模式)
+	// 4. 组合搜索 + 单 tag 兜底, 拉取全新作品 (应用用户 R18 模式与图源选择)
 	r18Mode, _ := service.GetUserR18Mode(ctx, userID)
 	pixivMode := r18Mode.ToPixivMode()
-	fetched, err := serv.XPDiscover(ctx, pref, profile, 50, pixivMode)
+	recSource := service.GetUserRecommendSource(ctx, userID)
+	fetched, err := serv.XPDiscover(ctx, pref, profile, 50, pixivMode, recSource)
 	if err != nil {
 		return nil, 0, oops.Wrapf(err, "failed to discover new artworks")
 	}
@@ -369,7 +375,7 @@ func artMatchesR18Mode(isR18 bool, pixivMode string) bool {
 	}
 }
 
-func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string) (int, error) {
+func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Context, serv *service.Service, meta *metautil.MetaData, chatID telego.ChatID, messageID int, sourceURLs []string, session *recommendationSession) (int, error) {
 	if meta.ChannelAvailable() == false {
 		return 0, oops.New("频道未配置")
 	}
@@ -390,13 +396,25 @@ func pushRecommendationSelection(ctx context.Context, tgCtx *telegohandler.Conte
 			}
 			continue
 		}
-		// Artwork not yet created - fetch cached and create
-		cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
-		if err != nil {
+
+		// 优先使用会话中已缓存的完整作品数据 (避免重新 fetch 失败导致没有图片)
+		var artwork *entity.CachedArtworkData
+		if session != nil && session.CurrentArtworkData != nil && session.CurrentArtworkData.SourceURL == sourceURL {
+			artwork = session.CurrentArtworkData
+		} else {
+			cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
+			if err != nil {
+				log.Warn("failed to get or fetch cached artwork for push", "url", sourceURL, "err", err)
+				continue
+			}
+			artwork = cachedArtwork.Artwork.Data()
+		}
+		if artwork == nil || len(artwork.Pictures) == 0 {
+			log.Warn("recommend push: artwork has no pictures", "url", sourceURL)
 			continue
 		}
-		artwork := cachedArtwork.Artwork.Data()
 		if err := utils.PostAndCreateArtwork(ctx, tgCtx.Bot(), serv, meta, artwork, chatID, meta.ChannelChatID(), messageID); err != nil {
+			log.Warn("failed to post and create artwork from recommend", "url", sourceURL, "err", err)
 			continue
 		}
 		count++
