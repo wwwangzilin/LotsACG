@@ -28,6 +28,7 @@ func Help(ctx *telegohandler.Context, message telego.Message) error {
 /recommend - 私聊中智能推荐作品(基于你喜欢/不喜欢的标签偏好)
 /xp (或 /pref) - 查看你的 XP 画像(偏好标签权重)
 /r18mode - 设置 R18 过滤模式 (on/off/mixed)
+/recommendmin - 设置推荐最小收藏数 (0=不限)
 /switchrecommend - 切换推荐图源
 /groupsearch - 在群组中搜索作品
 /downloadzip - 打包下载回复图片及之后的多张图片 (zip)

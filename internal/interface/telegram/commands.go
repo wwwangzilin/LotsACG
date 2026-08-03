@@ -56,6 +56,10 @@ var (
 			Description: "设置 R18 过滤模式 (on/off/mixed)",
 		},
 		{
+			Command:     "recommendmin",
+			Description: "设置推荐最小收藏数 (0=不限)",
+		},
+		{
 			Command:     "switchrecommend",
 			Description: "切换推荐图源",
 		},

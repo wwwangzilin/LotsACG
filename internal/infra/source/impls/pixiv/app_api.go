@@ -258,7 +258,7 @@ type appUserIllustResp struct {
 }
 
 // FetchUserIllusts 获取指定用户的插画作品 ID 列表 (默认全部, 按时间倒序)。
-// limit<=0 表示拉取全部。
+// limit<=0 表示拉取全部。遇到 Pixiv 限流会自动退避重试。
 func (a *AppAPIClient) FetchUserIllusts(ctx context.Context, userID string, limit int) ([]int64, error) {
 	if err := a.ensureToken(ctx); err != nil {
 		return nil, err
@@ -269,6 +269,34 @@ func (a *AppAPIClient) FetchUserIllusts(ctx context.Context, userID string, limi
 	for {
 		if limit > 0 && len(ids) >= limit {
 			break
+		}
+		pageIDs, newNext, err := a.fetchUserIllustsPage(ctx, userID, nextURL)
+		if err != nil {
+			return nil, err
+		}
+		if len(pageIDs) == 0 {
+			break
+		}
+		for _, id := range pageIDs {
+			if limit > 0 && len(ids) >= limit {
+				break
+			}
+			ids = append(ids, id)
+		}
+		if newNext == "" {
+			break
+		}
+		nextURL = newNext
+	}
+	return ids, nil
+}
+
+// fetchUserIllustsPage 拉取一页用户作品, 遇到限流(429 或空消息错误)时退避重试。
+func (a *AppAPIClient) fetchUserIllustsPage(ctx context.Context, userID, nextURL string) ([]int64, string, error) {
+	const maxRetries = 3
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			time.Sleep(time.Duration(attempt*3) * time.Second)
 		}
 		request := a.reqClient.R().
 			SetContext(ctx).
@@ -285,36 +313,42 @@ func (a *AppAPIClient) FetchUserIllusts(ctx context.Context, userID string, limi
 				Get(appAPIBase + "/v1/user/illusts")
 		}
 		if err != nil {
-			return nil, oops.Wrapf(err, "pixiv user illusts request failed")
+			return nil, "", oops.Wrapf(err, "pixiv user illusts request failed")
 		}
 		body, err := respBodyBytes(httpResp)
 		if err != nil {
-			return nil, oops.Wrapf(err, "pixiv user illusts decompress failed")
+			return nil, "", oops.Wrapf(err, "pixiv user illusts decompress failed")
 		}
 		if err := json.Unmarshal(body, &resp); err != nil {
-			return nil, oops.Wrapf(err, "pixiv user illusts unmarshal failed")
+			return nil, "", oops.Wrapf(err, "pixiv user illusts unmarshal failed")
 		}
 		if httpResp.IsErrorState() {
+			msg := ""
 			if resp.Error != nil {
-				return nil, oops.Errorf("pixiv user illusts error: %s", resp.Error.Message)
+				msg = resp.Error.Message
 			}
-			return nil, oops.Errorf("pixiv user illusts http error: %d", httpResp.GetStatusCode())
+			// 限流特征: HTTP 429 或带空消息的 error (Pixiv rate limit 返回空 message)
+			isRateLimit := httpResp.GetStatusCode() == 429 || resp.Error != nil
+			if isRateLimit && attempt < maxRetries {
+				continue // 退避重试
+			}
+			// 附上响应体预览, 便于诊断 Pixiv 返回的具体内容
+			preview := body
+			if len(preview) > 300 {
+				preview = preview[:300]
+			}
+			if resp.Error != nil {
+				return nil, "", oops.Errorf("pixiv user illusts error: %s (status=%d body=%s)", msg, httpResp.GetStatusCode(), string(preview))
+			}
+			return nil, "", oops.Errorf("pixiv user illusts http error: %d (body=%s)", httpResp.GetStatusCode(), string(preview))
 		}
-		if len(resp.Illusts) == 0 {
-			break
-		}
+		pageIDs := make([]int64, 0, len(resp.Illusts))
 		for _, item := range resp.Illusts {
-			if limit > 0 && len(ids) >= limit {
-				break
-			}
 			if item.ID > 0 {
-				ids = append(ids, item.ID)
+				pageIDs = append(pageIDs, item.ID)
 			}
 		}
-		if resp.NextURL == "" {
-			break
-		}
-		nextURL = resp.NextURL
+		return pageIDs, resp.NextURL, nil
 	}
-	return ids, nil
+	return nil, "", oops.New("pixiv user illusts: exhausted retries")
 }

@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
+	"strconv"
+	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/samber/oops"
 	config "github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/infra/source"
 	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
@@ -158,18 +163,34 @@ func (p *Pixiv) MatchArtistPageURL(text string) (string, bool) {
 }
 
 // FetchArtistArtworks 返回指定画师主页下的全部作品完整链接。
-// limit<=0 表示拉取全部。
+// limit<=0 表示拉取全部。优先使用网页版接口 (cookie, 不走 OAuth, 避免 app-api 限流),
+// 失败时回退到 app-api (需要 refresh_token)。结果缓存 30 分钟。
 func (p *Pixiv) FetchArtistArtworks(ctx context.Context, artistPageURL string, limit int) ([]string, error) {
-	userID, ok := p.MatchArtistPageURL(artistPageURL)
-	if !ok {
+	// 从主页链接提取纯 user ID (注意: MatchArtistPageURL 返回的是规范化链接, 不能直接当 ID 用)
+	m := artistPageURLRegex.FindStringSubmatch(artistPageURL)
+	if len(m) < 2 || m[1] == "" {
 		return nil, oops.New("not a pixiv artist page url")
 	}
-	cfg := config.Get().XPAIAPI.Pixiv
-	if cfg.RefreshToken == "" {
-		return nil, oops.New("pixiv refresh_token not configured, cannot fetch artist artworks")
+	userID := m[1]
+
+	// 缓存: 同一画师 30 分钟内直接返回, 避免频繁请求触发限流
+	cacheKey := "pixiv:artist:" + userID
+	if cached, err := kvstor.Get[[]string](ctx, cacheKey); err == nil && len(cached) > 0 {
+		return cached, nil
 	}
-	client := NewAppAPIClient(cfg.RefreshToken, config.Get().Source.Proxy)
-	ids, err := client.FetchUserIllusts(ctx, userID, limit)
+
+	ids, err := p.fetchArtistIllustsViaWeb(ctx, userID)
+	if err != nil || len(ids) == 0 {
+		// 回退到 app-api (需要 refresh_token)
+		cfg := config.Get().XPAIAPI.Pixiv
+		if cfg.RefreshToken != "" {
+			client := NewAppAPIClient(cfg.RefreshToken, config.Get().Source.Proxy)
+			if apiIDs, apiErr := client.FetchUserIllusts(ctx, userID, limit); apiErr == nil && len(apiIDs) > 0 {
+				ids = apiIDs
+				err = nil
+			}
+		}
+	}
 	if err != nil {
 		return nil, oops.Wrapf(err, "failed to fetch artist artworks")
 	}
@@ -177,5 +198,72 @@ func (p *Pixiv) FetchArtistArtworks(ctx context.Context, artistPageURL string, l
 	for _, id := range ids {
 		urls = append(urls, fmt.Sprintf("https://www.pixiv.net/artworks/%d", id))
 	}
+	if len(urls) > 0 {
+		_ = kvstor.SetWithTTL(ctx, cacheKey, urls, 30*time.Minute)
+	}
 	return urls, nil
+}
+
+// artistProfileAllResp 是 pixiv 网页版 profile/all 接口的响应。
+type artistProfileAllResp struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+	Body    struct {
+		Illusts map[string]any `json:"illusts"`
+		Manga   map[string]any `json:"manga"`
+	} `json:"body"`
+}
+
+// fetchArtistIllustsViaWeb 使用网页版 ajax 接口获取用户全部作品 ID (插画 + 漫画)。
+// 使用现有 cookie 客户端, 不依赖 OAuth, 避免 app-api 限流。
+func (p *Pixiv) fetchArtistIllustsViaWeb(ctx context.Context, userID string) ([]int64, error) {
+	var lastErr error
+	for i := 0; i < len(p.reqClients); i++ {
+		client := p.nextClient()
+		resp, err := client.R().
+			SetContext(ctx).
+			SetHeader("Referer", "https://www.pixiv.net/").
+			SetHeader("Accept", "application/json").
+			Get("https://www.pixiv.net/ajax/user/" + userID + "/profile/all?lang=zh")
+		if err != nil {
+			lastErr = oops.Wrapf(err, "pixiv profile/all request failed")
+			continue
+		}
+		body, err := respBodyBytes(resp)
+		if err != nil {
+			lastErr = oops.Wrapf(err, "pixiv profile/all decompress failed")
+			continue
+		}
+		var pr artistProfileAllResp
+		if err := json.Unmarshal(body, &pr); err != nil {
+			lastErr = oops.Wrapf(err, "pixiv profile/all unmarshal failed")
+			continue
+		}
+		if pr.Error {
+			lastErr = oops.Errorf("pixiv profile/all error: %s", pr.Message)
+			continue
+		}
+		idSet := make(map[int64]struct{}, len(pr.Body.Illusts)+len(pr.Body.Manga))
+		for idStr := range pr.Body.Illusts {
+			if id, e := strconv.ParseInt(idStr, 10, 64); e == nil {
+				idSet[id] = struct{}{}
+			}
+		}
+		for idStr := range pr.Body.Manga {
+			if id, e := strconv.ParseInt(idStr, 10, 64); e == nil {
+				idSet[id] = struct{}{}
+			}
+		}
+		ids := make([]int64, 0, len(idSet))
+		for id := range idSet {
+			ids = append(ids, id)
+		}
+		// 按 ID 降序 (最新作品在前)
+		sort.Slice(ids, func(i, j int) bool { return ids[i] > ids[j] })
+		return ids, nil
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, oops.New("no pixiv accounts available")
 }

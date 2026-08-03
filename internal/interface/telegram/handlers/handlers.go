@@ -49,6 +49,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(Recommend, telegohandler.CommandEqual("recommend"))
 	mg.HandleMessage(XpProfile, telegohandler.Or(telegohandler.CommandEqual("xp"), telegohandler.CommandEqual("pref")))
 	mg.HandleMessage(R18ModeCmd, telegohandler.CommandEqual("r18mode"))
+	mg.HandleMessage(RecommendMinBookmarks, telegohandler.CommandEqual("recommendmin"))
 	mg.HandleMessage(SwitchRecommendSource, telegohandler.CommandEqual("switchrecommend"))
 	mg.HandleMessage(GroupSearch, telegohandler.CommandEqual("groupsearch"))
 	mg.HandleMessage(DownloadZip, telegohandler.CommandEqual("downloadzip"))

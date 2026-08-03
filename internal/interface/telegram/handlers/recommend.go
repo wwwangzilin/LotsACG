@@ -302,6 +302,20 @@ func pickScoredRecommendation(ctx context.Context, serv *service.Service, userID
 		return nil, 0, nil
 	}
 
+	// 4.6 应用用户设置的最小收藏数过滤 (0 = 不限制)
+	if minBM := service.GetUserMinBookmarks(ctx, userID); minBM > 0 {
+		kept := make([]*dto.FetchedArtwork, 0, len(fetched))
+		for _, art := range fetched {
+			if art != nil && art.BookmarkCount >= minBM {
+				kept = append(kept, art)
+			}
+		}
+		fetched = kept
+		if len(fetched) == 0 {
+			return nil, 0, nil
+		}
+	}
+
 	// 5. 过滤排序 (匹配度 + 收藏数 + AI 精排)
 	ranked, err := serv.XPFilterAndRank(ctx, fetched, profile, pref, seen)
 	if err != nil {
