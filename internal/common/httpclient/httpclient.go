@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/imroc/req/v3"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
@@ -14,6 +15,21 @@ import (
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 	"golang.org/x/sync/singleflight"
 )
+
+type bytesCounterKey struct{}
+
+// WithBytesCounter 在 context 中携带一个下载字节计数器, 用于统计某次流程(如批量发布)下载的总字节数。
+// 未携带计数器的 context 调用下载不受影响。
+func WithBytesCounter(ctx context.Context, counter *int64) context.Context {
+	return context.WithValue(ctx, bytesCounterKey{}, counter)
+}
+
+// addBytes 将 n 字节累加到 context 携带的计数器中 (无计数器时为空操作)。
+func addBytes(ctx context.Context, n int64) {
+	if counter, ok := ctx.Value(bytesCounterKey{}).(*int64); ok && counter != nil {
+		atomic.AddInt64(counter, n)
+	}
+}
 
 var (
 	defaultClient *req.Client
@@ -49,6 +65,7 @@ func DownloadWithCache(ctx context.Context, url string, client *req.Client) (
 	}
 	cachePath := getCachePath(url)
 	if fi, err := os.Stat(cachePath); err == nil && !fi.IsDir() {
+		addBytes(ctx, fi.Size())
 		return osutil.OpenCache(cachePath)
 	} else if err != nil && !os.IsNotExist(err) {
 		return nil, err
@@ -76,6 +93,9 @@ func DownloadWithCache(ctx context.Context, url string, client *req.Client) (
 	case r := <-ch:
 		if r.Err != nil {
 			return nil, r.Err
+		}
+		if fi, err := os.Stat(cachePath); err == nil {
+			addBytes(ctx, fi.Size())
 		}
 		return osutil.OpenCache(cachePath)
 	case <-ctx.Done():

@@ -3,12 +3,14 @@ package handlers
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegohandler"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
@@ -137,14 +139,26 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 	sourceURLs := make([]string, 0, len(args))
 	if message.ReplyToMessage != nil {
 		sourceURLs = append(sourceURLs, utils.FindSourceURLsInMessage(serv, message.ReplyToMessage)...)
+		// 回复的消息中也可能包含画师主页链接
+		if artistURL := utils.FindArtistPageURLInMessage(serv, message.ReplyToMessage); artistURL != "" {
+			sourceURLs = append(sourceURLs, artistURL)
+		}
 	}
 	for _, arg := range args {
 		if sourceURL := serv.FindSourceURL(arg); sourceURL != "" {
 			sourceURLs = append(sourceURLs, sourceURL)
+			continue
+		}
+		// 画师主页链接: 加入待展开列表 (后续会替换为其全部作品链接)
+		if artistURL := serv.FindArtistPageURL(arg); artistURL != "" {
+			sourceURLs = append(sourceURLs, artistURL)
 		}
 	}
 	if len(sourceURLs) == 0 {
 		sourceURLs = append(sourceURLs, utils.FindSourceURLsInMessage(serv, &message)...)
+		if artistURL := utils.FindArtistPageURLInMessage(serv, &message); artistURL != "" {
+			sourceURLs = append(sourceURLs, artistURL)
+		}
 	}
 	if len(sourceURLs) == 0 {
 		utils.ReplyMessage(ctx, message, "不支持的链接")
@@ -210,25 +224,50 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 	}
 	_ = savePostQueue(ctx, queue)
 
+	// 进度跟踪: 已用时长 + 预计完成用时 (每 1 分钟更新一次), 并统计下载字节数
+	startTime := time.Now()
+	var bytesDown int64
+	postCtx := httpclient.WithBytesCounter(ctx, &bytesDown)
+	progress := &postProgress{total: len(uniqueSourceURLs), start: startTime}
+	stopProgressCh := make(chan struct{})
+	var progressWg sync.WaitGroup
+	if msg != nil {
+		progressWg.Add(1)
+		go func() {
+			defer progressWg.Done()
+			ticker := time.NewTicker(time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-stopProgressCh:
+					return
+				case <-ticker.C:
+					editPostProgress(ctx, msg, progress)
+				}
+			}
+		}()
+	}
+
 	for idx, sourceURL := range uniqueSourceURLs {
 		// 检查是否被 /cancel 或 /cd 取消
-		if cur, err := loadPostQueue(ctx); err == nil && cur.Status == postQueueStatusCancelled {
+		if cur, err := loadPostQueue(postCtx); err == nil && cur.Status == postQueueStatusCancelled {
 			results = append(results, fmt.Sprintf("队列已取消, 停止于 %d/%d: %s", idx+1, len(uniqueSourceURLs), sourceURL))
 			break
 		}
-		progressText := fmt.Sprintf("正在发布 %d/%d: %s", idx+1, len(uniqueSourceURLs), sourceURL)
-		if msg != nil {
-			ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, progressText))
-		}
+		progress.mu.Lock()
+		progress.idx = idx + 1
+		progress.url = sourceURL
+		progress.mu.Unlock()
+		editPostProgress(ctx, msg, progress)
 
-		awEnt, _ := serv.GetArtworkByURL(ctx, sourceURL)
+		awEnt, _ := serv.GetArtworkByURL(postCtx, sourceURL)
 		if awEnt != nil {
 			skipCount++
 			results = append(results, fmt.Sprintf("%d/%d 已存在: %s", idx+1, len(uniqueSourceURLs), sourceURL))
 			continue
 		}
 
-		cachedArtwork, err := serv.GetOrFetchCachedArtwork(ctx, sourceURL)
+		cachedArtwork, err := serv.GetOrFetchCachedArtwork(postCtx, sourceURL)
 		if err != nil {
 			log.Errorf("failed to get or fetch cached artwork: %s", err)
 			failCount++
@@ -241,12 +280,12 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 			continue
 		}
 		artwork := cachedArtwork.Artwork.Data()
-		if err := utils.PostAndCreateArtwork(ctx, ctx.Bot(), serv, meta, artwork, message.GetChat().ChatID(), meta.ChannelChatID(), message.MessageID); err != nil {
+		if err := utils.PostAndCreateArtwork(postCtx, ctx.Bot(), serv, meta, artwork, message.GetChat().ChatID(), meta.ChannelChatID(), message.MessageID); err != nil {
 			failCount++
 			results = append(results, fmt.Sprintf("%d/%d 发布失败: %s\n  原因: %v", idx+1, len(uniqueSourceURLs), sourceURL, err))
 			continue
 		}
-		createdArtwork, err := serv.GetArtworkByURL(ctx, sourceURL)
+		createdArtwork, err := serv.GetArtworkByURL(postCtx, sourceURL)
 		if err != nil {
 			failCount++
 			results = append(results, fmt.Sprintf("%d/%d 发布后查找作品失败: %s", idx+1, len(uniqueSourceURLs), sourceURL))
@@ -255,11 +294,15 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		successCount++
 		results = append(results, fmt.Sprintf("%d/%d 发布成功: %s / %s", idx+1, len(uniqueSourceURLs), createdArtwork.Title, createdArtwork.GetSourceURL()))
 		// 记录已发布, 供 /cd 删除
-		if cur, err := loadPostQueue(ctx); err == nil {
+		if cur, err := loadPostQueue(postCtx); err == nil {
 			cur.Published = append(cur.Published, sourceURL)
-			_ = savePostQueue(ctx, cur)
+			_ = savePostQueue(postCtx, cur)
 		}
 	}
+
+	// 停止进度更新 goroutine
+	close(stopProgressCh)
+	progressWg.Wait()
 
 	// 队列完成 (若未被取消)
 	if cur, err := loadPostQueue(ctx); err == nil && cur.Status != postQueueStatusCancelled {
@@ -267,7 +310,12 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		_ = savePostQueue(ctx, cur)
 	}
 
-	finalText := fmt.Sprintf("发布完成: 成功 %d, 跳过 %d, 失败 %d", successCount, skipCount, failCount)
+	elapsed := time.Since(startTime)
+	finalText := fmt.Sprintf("发布完成: 成功 %d, 跳过 %d, 失败 %d\n总用时: %s", successCount, skipCount, failCount, formatPostDuration(elapsed))
+	if bytesDown > 0 {
+		speedMBps := float64(bytesDown) / 1024 / 1024 / elapsed.Seconds()
+		finalText += fmt.Sprintf("\n平均下载速度: %.2f MB/s (共 %.1f MB)", speedMBps, float64(bytesDown)/1024/1024)
+	}
 	if len(results) > 0 {
 		finalText += "\n" + strings.Join(results, "\n")
 	}
@@ -277,6 +325,57 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		utils.ReplyMessage(ctx, message, finalText)
 	}
 	return nil
+}
+
+// postProgress 记录批量发布的进度状态, 供 1 分钟定时更新预计完成用时。
+type postProgress struct {
+	mu     sync.Mutex // 保护进度状态
+	editMu sync.Mutex // 串行化对进度消息的编辑
+	idx    int
+	total  int
+	url    string
+	start  time.Time
+}
+
+// editPostProgress 编辑进度消息: 当前进度 + 已用时长 + 预计剩余/完成时间。
+func editPostProgress(ctx *telegohandler.Context, msg *telego.Message, p *postProgress) {
+	if msg == nil || p == nil {
+		return
+	}
+	p.editMu.Lock()
+	defer p.editMu.Unlock()
+	p.mu.Lock()
+	idx, total, url, start := p.idx, p.total, p.url, p.start
+	p.mu.Unlock()
+	elapsed := time.Since(start)
+	text := fmt.Sprintf("正在发布 %d/%d", idx, total)
+	if url != "" {
+		text += ": " + url
+	}
+	text += "\n已用时长: " + formatPostDuration(elapsed)
+	if idx > 0 && idx < total {
+		perItem := elapsed / time.Duration(idx)
+		remaining := perItem * time.Duration(total-idx)
+		text += "\n预计剩余: 约 " + formatPostDuration(remaining)
+		text += " (预计完成: " + time.Now().Add(remaining).Format("15:04:05") + ")"
+	}
+	_, _ = ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, text))
+}
+
+// formatPostDuration 将时长格式化为中文可读形式 (如 "3分20秒" / "1小时2分3秒")。
+func formatPostDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	h := int(d / time.Hour)
+	m := int(d % time.Hour / time.Minute)
+	s := int(d % time.Minute / time.Second)
+	switch {
+	case h > 0:
+		return fmt.Sprintf("%d小时%d分%d秒", h, m, s)
+	case m > 0:
+		return fmt.Sprintf("%d分%d秒", m, s)
+	default:
+		return fmt.Sprintf("%d秒", s)
+	}
 }
 
 // func ArtworkPreview(ctx *telegohandler.Context, query telego.CallbackQuery) error {
