@@ -1,20 +1,13 @@
 package service
 
 import (
-	"sort"
-	"strings"
+	"context"
 
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/infra/source"
 	"github.com/wwwangzilin/LotsACG/internal/model/dto"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 )
-
-// normalizeTag 归一化 tag: 小写 + 空格转下划线。
-func normalizeTag(tag string) string {
-	tag = strings.ToLower(strings.TrimSpace(tag))
-	tag = strings.ReplaceAll(tag, " ", "_")
-	return tag
-}
 
 // ConvertFetchedToCached 将 FetchedArtwork 转换为可用于展示/发布的 CachedArtworkData。
 func ConvertFetchedToCached(fetched *dto.FetchedArtwork) (*entity.CachedArtworkData, error) {
@@ -66,56 +59,72 @@ func ConvertFetchedToCached(fetched *dto.FetchedArtwork) (*entity.CachedArtworkD
 	return cached, nil
 }
 
-// TagWeight 表示一个带权重的 tag。
-type TagWeight struct {
-	Tag    string  `json:"tag"`
-	Weight float64 `json:"weight"`
+// SearchNewArtworksByTagsOrdered 按 tag 搜索, 支持排序 (date_d / popular_desc)。
+func (s *Service) SearchNewArtworksByTagsOrdered(ctx context.Context, tags []string, limit int, order string) ([]*dto.FetchedArtwork, error) {
+	return s.SearchNewArtworksByTagsOrderedWithMode(ctx, tags, limit, order, "all", "")
 }
 
-// TopPreferenceTags 从用户 XP 画像中取出权重最高的 n 个 tag, 按权重从高到低排序。
-func TopPreferenceTags(pref *UserPreference, n int) []TagWeight {
-	if pref == nil || n <= 0 {
-		return nil
+// SearchNewArtworksByTagsOrderedWithMode 按 tag 搜索并支持 R18 过滤模式与图源限定。
+// r18Mode: all(全部) / safe(全年龄) / r18(仅 R18)。
+// sourceType: 仅从指定图源搜索 (如 "pixiv"), 空字符串表示全部图源。
+func (s *Service) SearchNewArtworksByTagsOrderedWithMode(ctx context.Context, tags []string, limit int, order, r18Mode, sourceType string) ([]*dto.FetchedArtwork, error) {
+	if len(tags) == 0 {
+		return nil, nil
 	}
-	tws := make([]TagWeight, 0, len(pref.PositiveWeights))
-	for tag, w := range pref.PositiveWeights {
-		if w <= 0 {
+	if limit <= 0 {
+		limit = 20
+	}
+	if r18Mode == "" {
+		r18Mode = "all"
+	}
+	artworks := make([]*dto.FetchedArtwork, 0)
+	errs := make([]error, 0)
+	seen := make(map[string]struct{})
+	for st, sou := range s.sources {
+		if sourceType != "" && string(st) != sourceType {
 			continue
 		}
-		tws = append(tws, TagWeight{Tag: tag, Weight: w})
-	}
-	sort.Slice(tws, func(i, j int) bool {
-		if tws[i].Weight == tws[j].Weight {
-			return tws[i].Tag < tws[j].Tag
-		}
-		return tws[i].Weight > tws[j].Weight
-	})
-	if len(tws) > n {
-		tws = tws[:n]
-	}
-	return tws
-}
-
-// TopProfileTags 从画像中取出权重最高的 n 个 tag, 按权重从高到低排序。
-func TopProfileTags(profile map[string]float64, n int) []TagWeight {
-	if len(profile) == 0 || n <= 0 {
-		return nil
-	}
-	tws := make([]TagWeight, 0, len(profile))
-	for tag, w := range profile {
-		if w <= 0 {
+		// 优先使用支持 R18 模式过滤的源
+		if searcher, ok := sou.(source.ArtworkTagSearcherOrderedWithMode); ok {
+			fetched, err := searcher.SearchArtworksByTagsOrderedWithMode(ctx, tags, limit, order, r18Mode)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			for _, art := range fetched {
+				if art == nil || art.SourceURL == "" {
+					continue
+				}
+				if _, ok := seen[art.SourceURL]; ok {
+					continue
+				}
+				seen[art.SourceURL] = struct{}{}
+				artworks = append(artworks, art)
+			}
 			continue
 		}
-		tws = append(tws, TagWeight{Tag: tag, Weight: w})
-	}
-	sort.Slice(tws, func(i, j int) bool {
-		if tws[i].Weight == tws[j].Weight {
-			return tws[i].Tag < tws[j].Tag
+		searcher, ok := sou.(source.ArtworkTagSearcherOrdered)
+		if !ok {
+			continue
 		}
-		return tws[i].Weight > tws[j].Weight
-	})
-	if len(tws) > n {
-		tws = tws[:n]
+		fetched, err := searcher.SearchArtworksByTagsOrdered(ctx, tags, limit, order)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		for _, art := range fetched {
+			if art == nil || art.SourceURL == "" {
+				continue
+			}
+			if _, ok := seen[art.SourceURL]; ok {
+				continue
+			}
+			seen[art.SourceURL] = struct{}{}
+			artworks = append(artworks, art)
+		}
 	}
-	return tws
+	if len(errs) > 0 {
+		return artworks, oops.Join(errs...)
+	}
+	return artworks, nil
 }

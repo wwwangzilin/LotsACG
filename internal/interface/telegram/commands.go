@@ -60,14 +60,6 @@ var (
 			Description: "查看机器人状态",
 		},
 		{
-			Command:     "recommendmin",
-			Description: "设置推荐最小收藏数 (0=不限)",
-		},
-		{
-			Command:     "switchrecommend",
-			Description: "切换推荐图源",
-		},
-		{
 			Command:     "groupsearch",
 			Description: "在群组中搜索作品",
 		},

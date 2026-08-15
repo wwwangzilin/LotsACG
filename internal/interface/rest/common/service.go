@@ -15,6 +15,8 @@ const (
 
 type TelegramBot interface {
 	SendArtworkInfo(ctx context.Context, sourceUrl string, chatID int64, appendCaption string)
+	// PostArtworkToChannel 将指定来源链接的作品发布到主频道 (供 XP-Pusher 等外部调用)。
+	PostArtworkToChannel(ctx context.Context, sourceURL string) error
 }
 
 func GetState[T any](ctx fiber.Ctx, key string) (T, bool) {

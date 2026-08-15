@@ -46,3 +46,42 @@ func HandleSendArtworkInfoByTelegramBot(ctx fiber.Ctx) error {
 	go bot.SendArtworkInfo(context.Background(), req.SourceURL, req.ChatID, req.AppendCaption)
 	return ctx.JSON(common.NewSuccess("ok"))
 }
+
+// RequestPostArtworkToChannel 由外部 (如 XP-Pusher) 请求将作品发布到主频道。
+type RequestPostArtworkToChannel struct {
+	SourceURL string `json:"source_url" query:"source_url" form:"source_url" validate:"required"`
+}
+
+// HandlePostArtworkToChannel 将指定来源链接的作品发布到主频道。
+// 供 XP-Pusher 的「推送到群」按钮调用。
+func HandlePostArtworkToChannel(ctx fiber.Ctx) error {
+	requestCtx := ctx.RequestCtx()
+	key := ctx.Get("X-API-KEY")
+	if key == "" {
+		return common.NewError(fiber.StatusUnauthorized, "api key is required")
+	}
+	serv := common.MustGetState[*service.Service](ctx, common.StateKeyService)
+	keyEnt, err := serv.GetApiKeyByKey(requestCtx, key)
+	if err != nil {
+		return common.NewError(fiber.StatusUnauthorized, "invalid api key")
+	}
+	if !keyEnt.HasPermission(shared.PermissionPostArtwork) {
+		return common.NewError(fiber.StatusForbidden, "api key does not have permission")
+	}
+	if !keyEnt.CanUse() {
+		return common.NewError(fiber.StatusForbidden, "api key quota exceeded")
+	}
+	bot, ok := common.GetState[common.TelegramBot](ctx, common.StateKeyTelegramBot)
+	if !ok {
+		return fiber.ErrInternalServerError
+	}
+	req := new(RequestPostArtworkToChannel)
+	if err := ctx.Bind().All(req); err != nil {
+		return err
+	}
+	serv.IncreaseApiKeyUsed(requestCtx, key)
+	if err := bot.PostArtworkToChannel(context.Background(), req.SourceURL); err != nil {
+		return common.NewError(fiber.StatusInternalServerError, "post artwork to channel failed: "+err.Error())
+	}
+	return ctx.JSON(common.NewSuccess("ok"))
+}

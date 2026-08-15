@@ -32,6 +32,9 @@ type Config struct {
 	Scheduler SchedulerConfig `toml:"scheduler" mapstructure:"scheduler" json:"scheduler" yaml:"scheduler"`
 	Imseek    ImseekConfig    `toml:"imseek" mapstructure:"imseek" json:"imseek" yaml:"imseek"`
 	App       AppConfig       `toml:"app" mapstructure:"app" json:"app" yaml:"app"`
+
+	// XP-Pusher (Python) 进程管理
+	XPPusher XPPusherConfig `toml:"xppusher" mapstructure:"xppusher" json:"xppusher" yaml:"xppusher"`
 }
 
 type KVDBConfig struct {

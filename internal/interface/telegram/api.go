@@ -8,6 +8,7 @@ import (
 	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
+	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
 
 func (b *BotApp) PostAndCreateArtwork(ctx context.Context, artwork *entity.CachedArtworkData) error {
@@ -40,6 +41,25 @@ func (b *BotApp) SendArtworkInfo(ctx context.Context, sourceUrl string, chatID i
 		chatID:        chatID,
 		appendCaption: appendCaption,
 	}
+}
+
+// PostArtworkToChannel 将指定来源链接的作品发布到主频道 (供 XP-Pusher 等外部调用)。
+func (b *BotApp) PostArtworkToChannel(ctx context.Context, sourceURL string) error {
+	cachedArtwork, err := b.serv.GetOrFetchCachedArtwork(ctx, sourceURL)
+	if err != nil {
+		return oops.Wrapf(err, "failed to get or fetch cached artwork")
+	}
+	if cachedArtwork.Status != shared.ArtworkStatusCached {
+		return oops.New("artwork already posted or being posted")
+	}
+	artwork := cachedArtwork.Artwork.Data()
+	if artwork == nil || len(artwork.Pictures) == 0 {
+		return oops.New("artwork has no pictures")
+	}
+	if err := utils.PostAndCreateArtwork(ctx, b.Bot(), b.serv, b.meta, artwork, telego.ChatID{}, b.meta.ChannelChatID(), 0); err != nil {
+		return oops.Wrapf(err, "failed to post artwork to channel")
+	}
+	return nil
 }
 
 // SendArtworkNotification 实现 scheduler.ArtworkNotifier: 向用户推送新作品 (画师关注/标签订阅)。

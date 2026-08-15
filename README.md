@@ -28,31 +28,25 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
 
 本 Fork 在保留上游全部功能的基础上，新增了以下内容：
 
-### 🎯 智能推荐系统 `/recommend`
+### 🎯 智能推荐：完全交给 [Pixiv-XP-Pusher](https://github.com/bwwq/Pixiv-XP-Pusher)（原始 Python）
 
-在**私聊**中智能推荐作品，完整移植 [Pixiv-XP-Pusher](https://github.com/krau/Pixiv-XP-Pusher) 的推荐算法：
+推荐逻辑**不在此仓库重复实现**，100% 由原始 Python 项目负责，逻辑与上游完全一致、互不干扰：
 
-- **XP 画像构建**：TF-IDF + 时间衰减权重算法，结合你的点赞/点踩偏好 + 群历史记录
-- **Tag 权重系统**：从画像中提取高权重标签 + 常用组合（co-occurrence），按权重从高到低推荐
-- **组合搜索**：用 top tag 组合在 Pixiv 搜索全新作品（AND 语义），单 tag 兜底 + RSS 拉新
-- **综合排序**：匹配度评分（移植 calculate_match_score）+ 收藏数归一化
-- **AI 精排**：可接入任意 OpenAI 兼容 API，用 LLM 对候选二次精排（喜爱概率）
-- **Pixiv 全新作品**：推荐始终来自 Pixiv 新图，排除已发布/已看过的内容
-- **匹配度展示**：每条推荐直接显示匹配百分比
-- **推送到群**：每个推荐作品都带「📤 推送到群」按钮，一键发布到你的频道
+- `/xppusher` — 内置管理 XP-Pusher (Python) 进程：`start` / `stop` / `restart` / `status` / `key`
+- 两者完全分离：XP-Pusher 用自己的 bot 与配置独立运行推荐
+- **📤 推送到群**：XP-Pusher 推荐消息上新增「推送到群」按钮，点击时才调用 LotsACG 把作品发布到主频道
+- `/xppusher key` 生成 API Key 填入 XP-Pusher 的 `config.yaml`（`lotsacg.url` / `lotsacg.api_key`）即可打通
 
 ```text
-/recommend → 构建 XP 画像 (TF-IDF + 时间衰减)
-          → 组合搜索 + 单 tag 兜底 → Pixiv 新图
-          → 匹配度 + 收藏数 + AI 精排
-          → 展示最优推荐 (👍/👎/⏭️/📤 推送到群)
+XP-Pusher (Python, 独立 bot) → 按你的 XP 个性化推荐
+   └─ 推荐消息带「📤 推送到群」按钮
+        └─ 点击 → 调 LotsACG REST /api/v1/bot/post_artwork → 发布到频道
 ```
 
 ### 🤖 AI API 接入 `[aiapi]`
 
 - 支持任意 **OpenAI 兼容**接口（OpenAI / DeepSeek / Moonshot / 本地 Ollama 等）
-- 自动为推荐生成关联/相似的 Pixiv 搜索标签
-- 未配置时推荐功能降级为仅使用偏好标签，不影响使用
+- 用于 AI 自动打标、AI 重新生成描述等
 
 ### 🖼️ Pixiv 图片多代理下载
 
@@ -363,6 +357,13 @@ url = "https://example.com"
 [scheduler]
 watch_interval = 600
 
+# XP-Pusher (Python) 进程管理: /xppusher start|stop|restart|status|key
+[xppusher]
+dir = "D:/projects/xp/Pixiv-XP-Pusher"   # XP-Pusher 项目目录
+# python = ""                              # 可选: 指定解释器; 默认自动选可用的 venv/系统 python
+# command = "main.py"
+# args = ""                                # 可选附加参数, 如 "--once"
+
 [log]
 level = "info"
 file_level = "info"
@@ -384,11 +385,7 @@ file = "logs/lotsacg.log"
 | `/files` | 获取作品原图 |
 | `/hybrid` | 混合搜索 |
 | `/similar` | 搜索相似作品 |
-| `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品搜索，只推荐新图） |
-| `/xp` 或 `/pref` | 查看你的 XP 画像（偏好标签权重） |
 | `/r18mode` | 设置 R18 过滤模式 (on/off/mixed) |
-| `/recommendmin` | 设置推荐最小收藏数 (0=不限) |
-| `/switchrecommend` | 切换推荐图源 |
 | `/groupsearch` | 在群组中搜索作品 |
 | `/downloadzip` | 打包下载回复图片 (zip) |
 | `/tagging` | 识别回复图片中的标签 |
@@ -396,7 +393,7 @@ file = "logs/lotsacg.log"
 | `/sub` `/unsub` `/sublist` | 订阅标签 / 取消订阅 / 查看订阅（新作自动推送） |
 | `/status` | 查看机器人状态（作品数 / 队列 / 版本等） |
 
-**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post`（批量发布，支持画师主页展开）`/cancel` `/cd` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck` `/redescribe` `/update`
+**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post`（批量发布，支持画师主页展开）`/cancel` `/cd` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck` `/redescribe` `/update` `/xppusher`（管理 XP-Pusher 进程）
 
 ---
 

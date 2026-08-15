@@ -34,5 +34,6 @@ func Register(router fiber.Router, serv *service.Service, cfg runtimecfg.RestCon
 
 	tgbotGroup := router.Group("/bot")
 	tgbotGroup.Get("/send_artwork_info", HandleSendArtworkInfoByTelegramBot)
+	tgbotGroup.Post("/post_artwork", HandlePostArtworkToChannel)
 	tgbotGroup.Post("/send_artwork_info", HandleSendArtworkInfoByTelegramBot)
 }

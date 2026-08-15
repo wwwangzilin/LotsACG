@@ -25,12 +25,8 @@ func Help(ctx *telegohandler.Context, message telego.Message) error {
 /files (或 /file) - 获取作品原图
 /hybrid - 混合搜索作品
 /similar - 搜索相似作品
-/recommend - 私聊中智能推荐作品(基于你喜欢/不喜欢的标签偏好)
 /status - 查看机器人状态 (作品数/队列/版本等)
-/xp (或 /pref) - 查看你的 XP 画像(偏好标签权重)
 /r18mode - 设置 R18 过滤模式 (on/off/mixed)
-/recommendmin - 设置推荐最小收藏数 (0=不限)
-/switchrecommend - 切换推荐图源
 /groupsearch - 在群组中搜索作品
 /downloadzip - 打包下载回复图片及之后的多张图片 (zip)
 /tagging - 识别回复图片中的标签
@@ -74,6 +70,7 @@ Inline 查询(在任意聊天框中@本bot)支持同样的参数格式
 /cd - 取消并删除当前发布队列已发布的内容
 /redescribe - 使用 AI 生成描述并追加到频道帖子下方
 /update - 检查并自动更新到最新版本
+/xppusher - 管理 XP-Pusher (Python) 进程: start/stop/restart/status/key
 `
 	}
 	commit := version.Commit
