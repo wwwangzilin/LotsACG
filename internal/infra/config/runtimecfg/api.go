@@ -6,6 +6,10 @@ type RestConfig struct {
 	Base             string            `toml:"base" mapstructure:"base" json:"base" yaml:"base"` // https://example.com/some-reserve-path
 	GeoIPDB          string            `toml:"geoip_db" mapstructure:"geoip_db" json:"geoip_db" yaml:"geoip_db"`
 	StoragePathRules []StoragePathRule `toml:"storage_path_rule" mapstructure:"storage_path_rule" json:"storage_path_rule" yaml:"storage_path_rule"`
+	// WebDir 内置 Web 前端 (ManyACG/web 构建产物) 的静态目录, 为空则不托管前端
+	WebDir string `toml:"web_dir" mapstructure:"web_dir" json:"web_dir" yaml:"web_dir"`
+	// PublicURL Web 前端的对外访问地址, 用于启动日志展示; 为空则用 http://<addr>
+	PublicURL string `toml:"public_url" mapstructure:"public_url" json:"public_url" yaml:"public_url"`
 	// rate limit
 	Limit  LimiterConfig   `toml:"limit" mapstructure:"limit" json:"limit" yaml:"limit"`
 	Cache  RestCacheConfig `toml:"cache" mapstructure:"cache" json:"cache" yaml:"cache"`

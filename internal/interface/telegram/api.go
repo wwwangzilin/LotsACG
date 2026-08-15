@@ -3,11 +3,11 @@ package telegram
 import (
 	"context"
 
-	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
-	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 )
 
 func (b *BotApp) PostAndCreateArtwork(ctx context.Context, artwork *entity.CachedArtworkData) error {
@@ -40,4 +40,20 @@ func (b *BotApp) SendArtworkInfo(ctx context.Context, sourceUrl string, chatID i
 		chatID:        chatID,
 		appendCaption: appendCaption,
 	}
+}
+
+// SendArtworkNotification 实现 scheduler.ArtworkNotifier: 向用户推送新作品 (画师关注/标签订阅)。
+func (b *BotApp) SendArtworkNotification(ctx context.Context, userID int64, sourceURL string) error {
+	b.SendArtworkInfo(ctx, sourceURL, userID, "")
+	return nil
+}
+
+// SendTextToUser 向指定用户发送一条文本消息。
+func (b *BotApp) SendTextToUser(ctx context.Context, userID int64, text string) error {
+	_, err := b.Bot().SendMessage(ctx, &telego.SendMessageParams{
+		ChatID:    telegoutil.ID(userID),
+		Text:      text,
+		ParseMode: telego.ModeHTML,
+	})
+	return err
 }

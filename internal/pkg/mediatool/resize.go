@@ -79,7 +79,7 @@ func CompressImg(inputPath, outputPath, format string, maxEdgeLength int) error 
 	}
 	if ffmpegAvailable {
 		log.Debug("compressing image", "method", "ffmpeg", "input", inputPath, "output", outputPath, "format", format)
-		err := compressImageByFFmpeg(inputPath, outputPath, maxEdgeLength)
+		err := compressImageByFFmpeg(inputPath, outputPath, maxEdgeLength, 0)
 		if err != nil {
 			return fmt.Errorf("failed to compress image with ffmpeg: %w", err)
 		}
@@ -87,7 +87,7 @@ func CompressImg(inputPath, outputPath, format string, maxEdgeLength int) error 
 	}
 	if _, ok := nativeFormat[format]; ok {
 		log.Debug("compressing image", "method", "native", "input", inputPath, "output", outputPath, "format", format)
-		err := compressImageNative(inputPath, outputPath, format, maxEdgeLength)
+		err := compressImageNative(inputPath, outputPath, format, maxEdgeLength, 0)
 		if err != nil {
 			return fmt.Errorf("failed to compress image with native: %w", err)
 		}
@@ -119,7 +119,7 @@ func CompressImgForTelegram(input []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to write temp file: %w", err)
 	}
 	if ffmpegAvailable {
-		err = compressImageByFFmpeg(tmpFile.Name(), distFile.Name(), TelegramMaxPhotoSideLength)
+		err = compressImageByFFmpeg(tmpFile.Name(), distFile.Name(), TelegramMaxPhotoSideLength, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compress image by ffmpeg: %w", err)
 		}
@@ -129,7 +129,7 @@ func CompressImgForTelegram(input []byte) ([]byte, error) {
 		}
 		return result, nil
 	}
-	err = compressImageNative(tmpFile.Name(), distFile.Name(), "jpeg", TelegramMaxPhotoSideLength)
+	err = compressImageNative(tmpFile.Name(), distFile.Name(), "jpeg", TelegramMaxPhotoSideLength, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compress image natively: %w", err)
 	}
@@ -141,6 +141,19 @@ func CompressImgForTelegram(input []byte) ([]byte, error) {
 }
 
 func CompressImgForTelegramFromFile(filePath string) (*osutil.TempFile, error) {
+	return CompressImgForTelegramFromFileLevel(filePath, 0)
+}
+
+// CompressImgForTelegramFromFileLevel 按指定力度压缩图片供 Telegram 上传。
+// level 越大压缩越狠 (边长更小、画质更低), 用于 "file is too big" 时逐步降级重试。
+func CompressImgForTelegramFromFileLevel(filePath string, level int) (*osutil.TempFile, error) {
+	if level < 0 {
+		level = 0
+	}
+	if level >= len(TelegramCompressLevels) {
+		level = len(TelegramCompressLevels) - 1
+	}
+	lv := TelegramCompressLevels[level]
 	outputPath := filepath.Join(runtimecfg.Get().Storage.CacheDir, "compress", fmt.Sprintf("tg_%s_%d.jpg", strutil.MD5Hash(filePath), rand.Int()))
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return nil, fmt.Errorf("failed to create compress directory: %w", err)
@@ -157,7 +170,7 @@ func CompressImgForTelegramFromFile(filePath string) (*osutil.TempFile, error) {
 		return &osutil.TempFile{File: f}, nil
 	}
 	if ffmpegAvailable {
-		err := compressImageByFFmpeg(filePath, outputPath, TelegramMaxPhotoSideLength)
+		err := compressImageByFFmpeg(filePath, outputPath, lv.MaxEdge, lv.FFmpegQ)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +180,7 @@ func CompressImgForTelegramFromFile(filePath string) (*osutil.TempFile, error) {
 		}
 		return &osutil.TempFile{File: f}, nil
 	}
-	err := compressImageNative(filePath, outputPath, "jpeg", TelegramMaxPhotoSideLength)
+	err := compressImageNative(filePath, outputPath, "jpeg", lv.MaxEdge, lv.NativeQ)
 	if err != nil {
 		return nil, err
 	}

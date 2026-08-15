@@ -8,6 +8,7 @@ import (
 
 	"github.com/duke-git/lancet/v2/slice"
 	"github.com/duke-git/lancet/v2/validator"
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/infra/search"
 	"github.com/wwwangzilin/LotsACG/internal/model/command"
 	"github.com/wwwangzilin/LotsACG/internal/model/converter"
@@ -17,7 +18,6 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/repo"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
-	"github.com/unvgo/ouid"
 	"gorm.io/datatypes"
 )
 
@@ -334,4 +334,9 @@ func (s *Service) ReIndexArtworks(ctx context.Context, ids []ouid.OUID) error {
 
 func (s *Service) CountArtworks(ctx context.Context, r18 shared.R18Type) (int64, error) {
 	return s.repos.Artwork().CountArtworks(ctx, r18)
+}
+
+// CountCachedArtworks 返回缓存作品总数。
+func (s *Service) CountCachedArtworks(ctx context.Context) (int64, error) {
+	return s.repos.CachedArtwork().CountCachedArtwork(ctx)
 }

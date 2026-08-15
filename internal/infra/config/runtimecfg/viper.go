@@ -63,6 +63,9 @@ type SchedulerConfig struct {
 	Enable   bool `toml:"enable" mapstructure:"enable" json:"enable" yaml:"enable"`
 	Interval uint `toml:"interval" mapstructure:"interval" json:"interval" yaml:"interval"`
 	Limit    int  `toml:"limit" mapstructure:"limit" json:"limit" yaml:"limit"` // 0 or negative means no limit
+
+	// WatchInterval 画师关注/标签订阅的监控检查间隔 (秒), 0 表示不启用监控
+	WatchInterval uint `toml:"watch_interval" mapstructure:"watch_interval" json:"watch_interval" yaml:"watch_interval"`
 }
 
 type AppConfig struct {
@@ -133,6 +136,9 @@ func loadConfig() Config {
 		"aiapi.base_url":       "https://api.openai.com/v1",
 		"aiapi.model":          "gpt-4o-mini",
 		"aiapi.recommend_tags": 12,
+		"aiapi.auto_tag":       false,
+
+		"scheduler.watch_interval": 600,
 
 		"xpaiapi.enabled":              false,
 		"xpaiapi.provider":             "openai",

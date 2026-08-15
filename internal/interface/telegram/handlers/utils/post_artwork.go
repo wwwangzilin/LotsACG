@@ -8,6 +8,10 @@ import (
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/source/impls/pixiv"
@@ -21,10 +25,6 @@ import (
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
-	"github.com/unvgo/ouid"
 )
 
 func doPostAndCreateArtwork(
@@ -253,64 +253,10 @@ func doPostAndCreateArtwork(
 		}
 	}
 
-	if serv.ShouldTagNewArtwork() {
+	if serv.ShouldTagNewArtwork() || serv.ShouldAIAutoTag() {
 		editReplyMarkupText("正在推理作品标签...")
-		log.Info("predicting artwork tags before creation", "url", artwork.SourceURL, "title", artwork.Title)
-		predictedTags := make([]string, 0)
-		for i, pic := range artwork.Pictures {
-			err := func() error {
-				if detail := pic.StorageInfo.Original; detail != nil {
-					file, err := serv.StorageGetFile(ctx, *detail)
-					if err != nil {
-						return oops.Wrapf(err, "failed to get stored file for tagging")
-					}
-					defer file.Close()
-					result, err := serv.Tagger().Predict(ctx, file)
-					if err != nil {
-						return oops.Wrapf(err, "failed to predict tags")
-					}
-					for tag := range result {
-						predictedTags = append(predictedTags, tag)
-					}
-					return nil
-				}
-				file, err := httpclient.DownloadWithCache(ctx, pic.Original, nil)
-				if err != nil {
-					return oops.Wrapf(err, "failed to download picture for tagging")
-				}
-				defer file.Close()
-				result, err := serv.Tagger().Predict(ctx, file)
-				if err != nil {
-					return oops.Wrapf(err, "failed to predict tags")
-				}
-				for tag := range result {
-					predictedTags = append(predictedTags, tag)
-				}
-				return nil
-			}()
-			if err != nil {
-				log.Error("failed to predict tags for picture", "err", err, "index", i, "url", pic.Original)
-			}
-		}
-		if len(predictedTags) > 0 {
-			merged := make(map[string]struct{}, len(artwork.Tags)+len(predictedTags))
-			for _, t := range artwork.Tags {
-				merged[t] = struct{}{}
-			}
-			for _, t := range predictedTags {
-				merged[t] = struct{}{}
-			}
-			newTags := make([]string, 0, len(merged))
-			for t := range merged {
-				if t != "" {
-					newTags = append(newTags, t)
-				}
-			}
-			artwork.Tags = newTags
-			log.Info("predicted tags merged", "url", artwork.SourceURL, "predicted", len(predictedTags), "total", len(newTags))
-		}
-		if err := serv.UpdateCachedArtwork(ctx, artwork); err != nil {
-			log.Warn("failed to update cached artwork after tagging", "err", err)
+		if err := serv.AutoTagCachedArtwork(ctx, artwork); err != nil {
+			log.Warn("auto tagging failed", "url", artwork.SourceURL, "err", err)
 		}
 	}
 

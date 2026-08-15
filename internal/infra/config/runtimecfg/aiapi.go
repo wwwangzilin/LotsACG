@@ -9,4 +9,7 @@ type AIAPIConfig struct {
 
 	// RecommendTags 一次请求最多生成的关联 tag 数量
 	RecommendTags int `toml:"recommend_tags" mapstructure:"recommend_tags" json:"recommend_tags" yaml:"recommend_tags"`
+
+	// AutoTag 是否在新作品入库时使用 AI 自动生成/补充标签
+	AutoTag bool `toml:"auto_tag" mapstructure:"auto_tag" json:"auto_tag" yaml:"auto_tag"`
 }

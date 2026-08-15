@@ -13,7 +13,7 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-func compressImageNative(inputPath, outputPath, format string, maxEdgeLength int) error {
+func compressImageNative(inputPath, outputPath, format string, maxEdgeLength, quality int) error {
 	imgFile, err := os.Open(inputPath)
 	if err != nil {
 		return fmt.Errorf("failed to open input file: %w", err)
@@ -60,7 +60,11 @@ func compressImageNative(inputPath, outputPath, format string, maxEdgeLength int
 
 	switch format {
 	case "jpeg", "jpg":
-		opts := &jpeg.Options{Quality: 85}
+		q := quality
+		if q <= 0 {
+			q = 85
+		}
+		opts := &jpeg.Options{Quality: q}
 		if err := jpeg.Encode(outFile, dstImg, opts); err != nil {
 			return fmt.Errorf("failed to encode JPEG: %w", err)
 		}

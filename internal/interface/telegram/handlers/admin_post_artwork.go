@@ -151,6 +151,28 @@ func PostArtworkCommand(ctx *telegohandler.Context, message telego.Message) erro
 		return nil
 	}
 
+	// 展开画师主页链接: 将作者主页替换为其全部作品链接
+	expanded := make([]string, 0, len(sourceURLs)*2)
+	for _, sourceURL := range sourceURLs {
+		if serv.FindArtistPageURL(sourceURL) != "" {
+			urls, err := serv.FetchArtistArtworks(ctx, sourceURL, 0)
+			if err != nil {
+				log.Warnf("post: failed to fetch artist artworks for %s: %v", sourceURL, err)
+				utils.ReplyMessage(ctx, message, "获取画师作品失败: "+err.Error())
+				return nil
+			}
+			if len(urls) == 0 {
+				utils.ReplyMessage(ctx, message, "该画师暂无作品")
+				return nil
+			}
+			log.Info("post: expand artist page", "url", sourceURL, "count", len(urls))
+			expanded = append(expanded, urls...)
+		} else {
+			expanded = append(expanded, sourceURL)
+		}
+	}
+	sourceURLs = expanded
+
 	seen := make(map[string]struct{}, len(sourceURLs))
 	uniqueSourceURLs := make([]string, 0, len(sourceURLs))
 	for _, sourceURL := range sourceURLs {

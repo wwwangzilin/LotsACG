@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/metautil"
 	"github.com/wwwangzilin/LotsACG/internal/pkg/mediatool"
@@ -12,9 +15,6 @@ import (
 	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/osutil"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
 )
 
 type MediaResultType uint
@@ -64,14 +64,9 @@ func SendArtworkMediaGroup(
 	results := make([]MediaGroupResultMessage, 0, len(items))
 
 	if len(items) <= 10 {
-		inputs, err := ArtworkInputMedias(ctx, serv, meta, artwork, caption, items, 0, len(items))
+		msgs, err := sendMediaGroupWithCompressRetry(ctx, bot, serv, meta, chatID, artwork, caption, items, 0, len(items), nil)
 		if err != nil {
-			return nil, oops.Wrapf(err, "failed to create input medias")
-		}
-		defer inputs.Close()
-		msgs, err := bot.SendMediaGroup(ctx, telegoutil.MediaGroup(chatID, inputs.Value...))
-		if err != nil {
-			return nil, oops.Wrapf(err, "failed to send media group")
+			return nil, err
 		}
 		for i, msg := range msgs {
 			result := MediaGroupResultMessage{
@@ -93,21 +88,16 @@ func SendArtworkMediaGroup(
 	messages := make([]telego.Message, len(items))
 	for i := 0; i < len(items); i += 10 {
 		end := min(i+10, len(items))
-		inputs, err := ArtworkInputMedias(ctx, serv, meta, artwork, caption, items, i, end)
-		if err != nil {
-			return nil, oops.Wrapf(err, "failed to create input medias")
-		}
-		defer inputs.Close()
-		mediaGroup := telegoutil.MediaGroup(chatID, inputs.Value...)
+		var replyTo *telego.ReplyParameters
 		if i > 0 {
-			mediaGroup = mediaGroup.WithReplyParameters(&telego.ReplyParameters{
+			replyTo = &telego.ReplyParameters{
 				ChatID:    chatID,
 				MessageID: messages[i-1].MessageID,
-			})
+			}
 		}
-		msgs, err := bot.SendMediaGroup(ctx, mediaGroup)
+		msgs, err := sendMediaGroupWithCompressRetry(ctx, bot, serv, meta, chatID, artwork, caption, items, i, end, replyTo)
 		if err != nil {
-			return nil, oops.Wrapf(err, "failed to send media group")
+			return nil, err
 		}
 		copy(messages[i:], msgs)
 	}
@@ -127,6 +117,44 @@ func SendArtworkMediaGroup(
 	}
 
 	return results, nil
+}
+
+// sendMediaGroupWithCompressRetry 发送媒体组; 若遇到 Telegram "file is too big" 错误,
+// 逐级加大图片压缩力度 (缩小边长+降低画质) 后重试上传。
+func sendMediaGroupWithCompressRetry(
+	ctx context.Context,
+	bot *telego.Bot,
+	serv *service.Service,
+	meta *metautil.MetaData,
+	chatID telego.ChatID,
+	artwork shared.ArtworkLike,
+	caption string,
+	items []MediaItem,
+	start, end int,
+	replyTo *telego.ReplyParameters,
+) ([]telego.Message, error) {
+	levels := len(mediatool.TelegramCompressLevels)
+	for level := 0; level < levels; level++ {
+		inputs, err := ArtworkInputMedias(ctx, serv, meta, artwork, caption, items, start, end, level)
+		if err != nil {
+			return nil, oops.Wrapf(err, "failed to create input medias")
+		}
+		mediaGroup := telegoutil.MediaGroup(chatID, inputs.Value...)
+		if replyTo != nil {
+			mediaGroup = mediaGroup.WithReplyParameters(replyTo)
+		}
+		msgs, err := bot.SendMediaGroup(ctx, mediaGroup)
+		_ = inputs.Close()
+		if err != nil {
+			if IsFileTooBigError(err) && level < levels-1 {
+				log.Warn("file too big, recompressing and retrying", "level", level+1, "url", artwork.GetSourceURL())
+				continue
+			}
+			return nil, oops.Wrapf(err, "failed to send media group")
+		}
+		return msgs, nil
+	}
+	return nil, oops.New("failed to send media group after recompression")
 }
 
 type SendOption struct {
@@ -181,6 +209,7 @@ func ArtworkInputMedias(
 	caption string,
 	items []MediaItem,
 	start, end int,
+	compressLevel int,
 ) (*ioutil.Closer[[]telego.InputMedia], error) {
 	if start < 0 || end > len(items) || start >= end {
 		return nil, oops.Errorf("invalid start or end index: %d, %d, len=%d", start, end, len(items))
@@ -207,7 +236,7 @@ func ArtworkInputMedias(
 							return oops.Wrapf(err, "failed to get file from storage")
 						}
 						defer file.Close()
-						compressed, err := mediatool.CompressImgForTelegramFromFile(file.Name())
+						compressed, err := mediatool.CompressImgForTelegramFromFileLevel(file.Name(), compressLevel)
 						if err != nil {
 							return oops.Wrapf(err, "failed to compress image")
 						}
@@ -219,7 +248,7 @@ func ArtworkInputMedias(
 							return oops.Wrapf(err, "failed to download file: %s", picture.GetOriginal())
 						}
 						defer file.Close()
-						compressed, err := mediatool.CompressImgForTelegramFromFile(file.Name())
+						compressed, err := mediatool.CompressImgForTelegramFromFileLevel(file.Name(), compressLevel)
 						if err != nil {
 							return oops.Wrapf(err, "failed to compress image")
 						}

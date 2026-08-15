@@ -21,6 +21,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
+	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
 )
 
@@ -28,10 +29,12 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 	cmd, _, args := telegoutil.ParseCommand(message.Text)
 	argText := strings.ReplaceAll(strings.Join(args, " "), "\\", "")
 	textArray := strutil.ParseTo2DArray(argText, "|", " ")
-	r18 := cmd == "setu"
 	r18Type := shared.R18TypeNone
-	// 用户设置的 R18 模式优先: on=仅R18, off=仅全年龄, mixed=全部
-	if mode, ok := service.GetUserR18Mode(ctx, message.From.ID); ok {
+	if cmd == "setu" {
+		// /setu 始终输出 R18 (不推荐模式设置影响)
+		r18Type = shared.R18TypeR18
+	} else if mode, ok := service.GetUserR18Mode(ctx, message.From.ID); ok {
+		// /random 受用户 R18 模式影响: on=仅R18, off=仅全年龄, mixed=全部
 		switch mode {
 		case service.R18ModeOn:
 			r18Type = shared.R18TypeR18
@@ -40,8 +43,6 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 		default: // mixed
 			r18Type = shared.R18TypeAll
 		}
-	} else if r18 {
-		r18Type = shared.R18TypeR18
 	}
 	serv, err := requireService(ctx)
 	if err != nil {
@@ -78,25 +79,25 @@ func RandomPicture(ctx *telegohandler.Context, message telego.Message) error {
 	if err != nil {
 		return err
 	}
-	file, err := utils.GetPicturePhotoInputFile(ctx, serv, meta, picture)
-	if err != nil {
-		utils.ReplyMessage(ctx, message, "获取图片失败")
-		return oops.Wrapf(err, "failed to get picture input file")
-	}
-	defer file.Close()
 	aw := artwork[0]
-	photo := telegoutil.
-		Photo(message.Chat.ChatID(), file.Value).
-		WithCaption(fmt.Sprintf("<a href=\"%s\">%s</a>", aw.SourceURL, utils.EscapeHTML(aw.Title))).
-		WithParseMode(telego.ModeHTML).
-		WithReplyParameters(&telego.ReplyParameters{
-			MessageID: message.MessageID,
-		}).
-		WithReplyMarkup(telegoutil.InlineKeyboard(utils.GetPostedArtworkInlineKeyboardButton(aw, meta)))
-	if aw.R18 {
-		photo.WithHasSpoiler()
-	}
-	photoMessage, err := ctx.Bot().SendPhoto(ctx, photo)
+	photoMessage, err := utils.SendPhotoWithCompressRetry(ctx, ctx.Bot(), func(level int) (*ioutil.Closer[telego.InputFile], *telego.SendPhotoParams, error) {
+		file, err := utils.GetPicturePhotoInputFileWithLevel(ctx, serv, meta, picture, level)
+		if err != nil {
+			return nil, nil, oops.Wrapf(err, "failed to get picture input file")
+		}
+		photo := telegoutil.
+			Photo(message.Chat.ChatID(), file.Value).
+			WithCaption(fmt.Sprintf("<a href=\"%s\">%s</a>", aw.SourceURL, utils.EscapeHTML(aw.Title))).
+			WithParseMode(telego.ModeHTML).
+			WithReplyParameters(&telego.ReplyParameters{
+				MessageID: message.MessageID,
+			}).
+			WithReplyMarkup(telegoutil.InlineKeyboard(utils.GetPostedArtworkInlineKeyboardButton(aw, meta)))
+		if aw.R18 {
+			photo = photo.WithHasSpoiler()
+		}
+		return file, photo, nil
+	})
 	if err != nil {
 		utils.ReplyMessage(ctx, message, "发送图片失败")
 		return oops.Wrapf(err, "failed to send photo message")

@@ -56,6 +56,10 @@ var (
 			Description: "设置 R18 过滤模式 (on/off/mixed)",
 		},
 		{
+			Command:     "status",
+			Description: "查看机器人状态",
+		},
+		{
 			Command:     "recommendmin",
 			Description: "设置推荐最小收藏数 (0=不限)",
 		},
@@ -70,6 +74,30 @@ var (
 		{
 			Command:     "downloadzip",
 			Description: "打包下载图片 (zip)",
+		},
+		{
+			Command:     "follow",
+			Description: "关注画师, 新作品自动推送",
+		},
+		{
+			Command:     "unfollow",
+			Description: "取消关注画师",
+		},
+		{
+			Command:     "followlist",
+			Description: "查看关注的画师",
+		},
+		{
+			Command:     "sub",
+			Description: "订阅标签, 新作品自动推送",
+		},
+		{
+			Command:     "unsub",
+			Description: "取消订阅标签",
+		},
+		{
+			Command:     "sublist",
+			Description: "查看订阅的标签",
 		},
 	}
 
@@ -141,6 +169,10 @@ var (
 		{
 			Command:     "redescribe",
 			Description: "AI 生成描述并追加到帖子",
+		},
+		{
+			Command:     "update",
+			Description: "检查并自动更新到最新版本",
 		},
 	}
 )

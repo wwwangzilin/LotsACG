@@ -19,6 +19,8 @@ type XPAIAPIConfig struct {
 	ScanLimit int `toml:"scan_limit" mapstructure:"scan_limit" json:"scan_limit" yaml:"scan_limit"`
 	// DiscoveryRate 探索率 (0~1): 推荐中随机探索新风格的比例
 	DiscoveryRate float64 `toml:"discovery_rate" mapstructure:"discovery_rate" json:"discovery_rate" yaml:"discovery_rate"`
+	// AutoTag 是否在新作品入库时使用 AI 自动生成/补充标签
+	AutoTag bool `toml:"auto_tag" mapstructure:"auto_tag" json:"auto_tag" yaml:"auto_tag"`
 	// Pixiv Pixiv 账号配置 (用于访问收藏夹构建画像)
 	Pixiv XPPixivConfig `toml:"pixiv" mapstructure:"pixiv" json:"pixiv" yaml:"pixiv"`
 }

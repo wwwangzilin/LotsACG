@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/unvgo/ouid"
+	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 )
 
 type CachedArtwork interface {
@@ -13,4 +13,5 @@ type CachedArtwork interface {
 	DeleteCachedArtworkByID(ctx context.Context, id ouid.OUID) error
 	GetCachedArtworkByURL(ctx context.Context, url string) (*entity.CachedArtwork, error)
 	SaveCachedArtwork(ctx context.Context, artwork *entity.CachedArtwork) (*entity.CachedArtwork, error)
+	CountCachedArtwork(ctx context.Context) (int64, error)
 }

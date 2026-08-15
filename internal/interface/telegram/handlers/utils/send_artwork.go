@@ -7,6 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/mymmrac/telego"
+	"github.com/mymmrac/telego/telegoutil"
+	"github.com/samber/oops"
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
@@ -19,13 +23,14 @@ import (
 	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/osutil"
-	"github.com/mymmrac/telego"
-	"github.com/mymmrac/telego/telegoutil"
-	"github.com/samber/oops"
-	"github.com/unvgo/ouid"
 )
 
 func GetPicturePhotoInputFile(ctx context.Context, serv *service.Service, meta *metautil.MetaData, picture shared.PictureLike) (*ioutil.Closer[telego.InputFile], error) {
+	return GetPicturePhotoInputFileWithLevel(ctx, serv, meta, picture, 0)
+}
+
+// GetPicturePhotoInputFileWithLevel 获取图片的 Telegram InputFile, 按 compressLevel 控制压缩力度。
+func GetPicturePhotoInputFileWithLevel(ctx context.Context, serv *service.Service, meta *metautil.MetaData, picture shared.PictureLike, compressLevel int) (*ioutil.Closer[telego.InputFile], error) {
 	if id := picture.GetTelegramInfo().PhotoFileID(meta.BotID()); id != "" {
 		return ioutil.NewCloser(telegoutil.FileFromID(id), nil), nil
 	}
@@ -36,7 +41,7 @@ func GetPicturePhotoInputFile(ctx context.Context, serv *service.Service, meta *
 			return nil, oops.Wrapf(err, "failed to get file from storage")
 		}
 		defer file.Close()
-		compressed, err := mediatool.CompressImgForTelegramFromFile(file.Name())
+		compressed, err := mediatool.CompressImgForTelegramFromFileLevel(file.Name(), compressLevel)
 		if err != nil {
 			return nil, oops.Wrapf(err, "failed to compress image")
 		}
@@ -47,7 +52,7 @@ func GetPicturePhotoInputFile(ctx context.Context, serv *service.Service, meta *
 		return nil, oops.Wrapf(err, "failed to download file: %s", picture.GetOriginal())
 	}
 	defer file.Close()
-	compressed, err := mediatool.CompressImgForTelegramFromFile(file.Name())
+	compressed, err := mediatool.CompressImgForTelegramFromFileLevel(file.Name(), compressLevel)
 	if err != nil {
 		return nil, oops.Wrapf(err, "failed to compress image")
 	}
@@ -118,9 +123,19 @@ func GetMediaInputMedia(ctx context.Context,
 	meta *metautil.MetaData,
 	artwork shared.ArtworkLike,
 	media shared.MediaLike) (*ioutil.Closer[telego.InputMedia], error) {
+	return GetMediaInputMediaWithLevel(ctx, serv, meta, artwork, media, 0)
+}
+
+// GetMediaInputMediaWithLevel 获取媒体的 Telegram InputMedia, 按 compressLevel 控制图片压缩力度。
+func GetMediaInputMediaWithLevel(ctx context.Context,
+	serv *service.Service,
+	meta *metautil.MetaData,
+	artwork shared.ArtworkLike,
+	media shared.MediaLike,
+	compressLevel int) (*ioutil.Closer[telego.InputMedia], error) {
 	switch m := media.(type) {
 	case shared.PictureLike:
-		closer, err := GetPicturePhotoInputFile(ctx, serv, meta, m)
+		closer, err := GetPicturePhotoInputFileWithLevel(ctx, serv, meta, m, compressLevel)
 		if err != nil {
 			return nil, err
 		}
@@ -303,38 +318,36 @@ func SendArtworkInfo(ctx context.Context,
 	if err != nil {
 		return oops.Wrapf(err, "failed to create artwork info reply markup")
 	}
-	inputMedia, err := GetMediaInputMedia(ctx, serv, meta, artwork, artwork.FirstMedia())
-	if err != nil {
-		return oops.Wrapf(err, "failed to get picture preview input file")
-	}
-	defer func() {
-		err := inputMedia.Close()
+	buildInputMedia := func(level int) (*ioutil.Closer[telego.InputMedia], telego.InputMedia, *telego.InputMediaPhoto, *telego.InputMediaVideo, error) {
+		inputMedia, err := GetMediaInputMediaWithLevel(ctx, serv, meta, artwork, artwork.FirstMedia(), level)
 		if err != nil {
-			log.Errorf("failed to close input file: %s", err)
+			return nil, nil, nil, nil, oops.Wrapf(err, "failed to get picture preview input file")
 		}
-	}()
-	media := inputMedia.Value
-	// golang's type assertion is so annoying
-	var mediaPhoto *telego.InputMediaPhoto
-	var mediaVideo *telego.InputMediaVideo
-	switch m := media.(type) {
-	case *telego.InputMediaPhoto:
-		m.WithCaption(caption).WithParseMode(telego.ModeHTML)
-		if artwork.GetR18() {
-			m.WithHasSpoiler()
+		media := inputMedia.Value
+		// golang's type assertion is so annoying
+		var mediaPhoto *telego.InputMediaPhoto
+		var mediaVideo *telego.InputMediaVideo
+		switch m := media.(type) {
+		case *telego.InputMediaPhoto:
+			m.WithCaption(caption).WithParseMode(telego.ModeHTML)
+			if artwork.GetR18() {
+				m.WithHasSpoiler()
+			}
+			media = m
+			mediaPhoto = m
+		case *telego.InputMediaVideo:
+			m.WithCaption(caption).WithParseMode(telego.ModeHTML)
+			if artwork.GetR18() {
+				m.WithHasSpoiler()
+			}
+			m.WithSupportsStreaming()
+			media = m
+			mediaVideo = m
+		default:
+			_ = inputMedia.Close()
+			return nil, nil, nil, nil, oops.New("unsupported media type")
 		}
-		media = m
-		mediaPhoto = m
-	case *telego.InputMediaVideo:
-		m.WithCaption(caption).WithParseMode(telego.ModeHTML)
-		if artwork.GetR18() {
-			m.WithHasSpoiler()
-		}
-		m.WithSupportsStreaming()
-		media = m
-		mediaVideo = m
-	default:
-		return oops.New("unsupported media type")
+		return inputMedia, media, mediaPhoto, mediaVideo, nil
 	}
 
 	updateMediaFileID := func(msg *telego.Message) error {
@@ -455,47 +468,65 @@ func SendArtworkInfo(ctx context.Context,
 		return nil
 	}
 
-	if waitMsg != nil {
-		editReq := telegoutil.EditMessageMedia(chatID, waitMsg.MessageID, media).WithReplyMarkup(replyMarkup)
-		msg, err := bot.EditMessageMedia(ctx, editReq)
+	// 发送媒体 (图片/视频/ugoira), 遇到 Telegram "file is too big" 时逐级加强压缩重试
+	levels := len(mediatool.TelegramCompressLevels)
+	for level := 0; level < levels; level++ {
+		inputMedia, media, mediaPhoto, mediaVideo, err := buildInputMedia(level)
 		if err != nil {
-			return oops.Wrapf(err, "failed to send artwork info media")
+			return err
 		}
-		return updateMediaFileID(msg)
+		var sendErr error
+		if waitMsg != nil {
+			editReq := telegoutil.EditMessageMedia(chatID, waitMsg.MessageID, media).WithReplyMarkup(replyMarkup)
+			var msg *telego.Message
+			msg, sendErr = bot.EditMessageMedia(ctx, editReq)
+			if sendErr == nil {
+				_ = inputMedia.Close()
+				return updateMediaFileID(msg)
+			}
+		} else if mediaPhoto != nil {
+			sendPhoto := telegoutil.Photo(chatID, mediaPhoto.Media).
+				WithCaption(mediaPhoto.Caption).
+				WithParseMode(telego.ModeHTML).
+				WithReplyParameters(opts.ReplyParameters).
+				WithReplyMarkup(replyMarkup)
+			if artwork.GetR18() {
+				sendPhoto = sendPhoto.WithHasSpoiler()
+			}
+			var msg *telego.Message
+			msg, sendErr = bot.SendPhoto(ctx, sendPhoto)
+			if sendErr == nil {
+				_ = inputMedia.Close()
+				return updateMediaFileID(msg)
+			}
+		} else if mediaVideo != nil {
+			sendVideo := telegoutil.Video(chatID, mediaVideo.Media).
+				WithCaption(mediaVideo.Caption).
+				WithParseMode(telego.ModeHTML).
+				WithReplyParameters(opts.ReplyParameters).
+				WithReplyMarkup(replyMarkup).
+				WithSupportsStreaming()
+			if artwork.GetR18() {
+				sendVideo = sendVideo.WithHasSpoiler()
+			}
+			var msg *telego.Message
+			msg, sendErr = bot.SendVideo(ctx, sendVideo)
+			if sendErr == nil {
+				_ = inputMedia.Close()
+				return updateMediaFileID(msg)
+			}
+		} else {
+			_ = inputMedia.Close()
+			return nil
+		}
+		_ = inputMedia.Close()
+		if IsFileTooBigError(sendErr) && level < levels-1 {
+			log.Warn("file too big, recompressing and retrying", "level", level+1, "url", sourceUrl)
+			continue
+		}
+		return oops.Wrapf(sendErr, "failed to send artwork info")
 	}
-	if mediaPhoto != nil {
-		sendPhoto := telegoutil.Photo(chatID, mediaPhoto.Media).
-			WithCaption(mediaPhoto.Caption).
-			WithParseMode(telego.ModeHTML).
-			WithReplyParameters(opts.ReplyParameters).
-			WithReplyMarkup(replyMarkup)
-		if artwork.GetR18() {
-			sendPhoto = sendPhoto.WithHasSpoiler()
-		}
-		msg, err := bot.SendPhoto(ctx, sendPhoto)
-		if err != nil {
-			return oops.Wrapf(err, "failed to send artwork info photo")
-		}
-		return updateMediaFileID(msg)
-	}
-	if mediaVideo != nil {
-		sendVideo := telegoutil.Video(chatID, mediaVideo.Media).
-			WithCaption(mediaVideo.Caption).
-			WithParseMode(telego.ModeHTML).
-			WithReplyParameters(opts.ReplyParameters).
-			WithReplyMarkup(replyMarkup).
-			WithSupportsStreaming()
-		if artwork.GetR18() {
-			sendVideo = sendVideo.WithHasSpoiler()
-		}
-		msg, err := bot.SendVideo(ctx, sendVideo)
-		if err != nil {
-			return oops.Wrapf(err, "failed to send artwork info video")
-		}
-		return updateMediaFileID(msg)
-	}
-
-	return nil
+	return oops.New("failed to send artwork info after recompression")
 }
 
 func GetPictureDocumentInputFile(ctx context.Context, serv *service.Service, meta *metautil.MetaData, artwork shared.ArtworkLike, picture shared.PictureLike) (*ioutil.Closer[telego.InputFile], error) {

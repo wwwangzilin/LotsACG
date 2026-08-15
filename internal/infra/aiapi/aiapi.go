@@ -200,6 +200,33 @@ func (c *Client) GenerateDescription(ctx context.Context, title string, tags []s
 	return strings.TrimSpace(content), nil
 }
 
+// GenerateTags 根据作品标题与已有标签生成一组合理的 Pixiv 展示/搜索标签。
+func (c *Client) GenerateTags(ctx context.Context, title string, existingTags []string) ([]string, error) {
+	if !c.Enabled() {
+		return nil, oops.New("ai api not enabled")
+	}
+	tagList := strings.Join(existingTags, ", ")
+	if tagList == "" {
+		tagList = "(无)"
+	}
+	prompt := fmt.Sprintf(`你是一名动漫插画(Pixiv)标签专家。根据作品标题与已有标签, 补充 8-15 个合理的 Pixiv 标签。
+要求:
+- 标签可以是角色属性、服装、场景、风格、题材等
+- 尽量使用 Pixiv 上常见的日文或英文标签, 也可以保留中文
+- 不要包含 R-18 相关标签
+- 只输出标签列表, 每个标签一行, 不要编号, 不要解释
+
+标题: %s
+已有标签: %s
+
+补充标签:`, title, tagList)
+	content, err := c.chat(ctx, "你是一个帮助生成动漫插画标签的助手, 只输出标签列表, 不要输出其他内容。", prompt, 0.7)
+	if err != nil {
+		return nil, err
+	}
+	return parseTagList(content), nil
+}
+
 // parseTagList 解析 AI 返回的标签列表。兼容逗号分隔、换行分隔、以及带编号/引号/方括号的格式。
 func parseTagList(content string) []string {
 	// 去除可能的 markdown 代码块

@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/wwwangzilin/LotsACG/internal/common/version"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/spf13/cobra"
+	"github.com/wwwangzilin/LotsACG/internal/common/version"
 )
 
 var updateCmd = &cobra.Command{
@@ -25,7 +25,7 @@ func init() {
 
 func Update() {
 	v := semver.MustParse(strings.TrimPrefix(version.Version, "v"))
-	release, found, err := selfupdate.DetectLatest("krau/LotsACG")
+	release, found, err := selfupdate.DetectLatest("wwwangzilin/LotsACG")
 	if err != nil {
 		log.Println("Error occurred while detecting version:", err)
 		return
@@ -47,7 +47,7 @@ func Update() {
 		log.Printf("New major version %s detected. Please check the release note and upgrade manually if necessary.\n", release.Version)
 		return
 	}
-	latest, err := selfupdate.UpdateSelf(v, "krau/LotsACG")
+	latest, err := selfupdate.UpdateSelf(v, "wwwangzilin/LotsACG")
 	if err != nil {
 		log.Println("Binary update failed:", err)
 		return

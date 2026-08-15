@@ -5,6 +5,7 @@ type TelegramConfig struct {
 	APIURL          string  `toml:"api_url" mapstructure:"api_url" json:"api_url" yaml:"api_url"`
 	Username        string  `toml:"username" mapstructure:"username" json:"username" yaml:"username"`
 	CaptionTemplate string  `toml:"caption_template" mapstructure:"caption_template" json:"caption_template" yaml:"caption_template"`
+	Proxy           string  `toml:"proxy" mapstructure:"proxy" json:"proxy" yaml:"proxy"`
 	Admins          []int64 `toml:"admins" mapstructure:"admins" json:"admins" yaml:"admins"`
 	// AllowedUsers 配置中登记的用户白名单。仅当非空时启用白名单模式:
 	// 未登记的用户(游客)只允许 /start /help 和 /files(获取原图)。

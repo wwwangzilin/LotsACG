@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
-	"github.com/unvgo/ouid"
 	"gorm.io/gorm"
 )
 
@@ -62,6 +62,16 @@ func (d *DB) SaveCachedArtwork(ctx context.Context, artwork *entity.CachedArtwor
 
 func (d *DB) ResetPostingCachedArtworkStatus(ctx context.Context) error {
 	return d.db.WithContext(ctx).Model(&entity.CachedArtwork{}).Where("status = ?", shared.ArtworkStatusPosting).Update("status", shared.ArtworkStatusCached).Error
+}
+
+// CountCachedArtwork 返回缓存作品总数。
+func (d *DB) CountCachedArtwork(ctx context.Context) (int64, error) {
+	var count int64
+	err := d.db.WithContext(ctx).Model(&entity.CachedArtwork{}).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // GetCachedArtworkByID implements repo.CachedArtwork.

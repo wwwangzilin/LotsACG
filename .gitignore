@@ -22,4 +22,10 @@ LotsACG
 LotsACG.exe
 .codegraph/
 LotsACG_new.exe
+# web frontend build artifacts
+web/node_modules/
+web/.output/
+web/.nuxt/
+web/.env
+web-dist/
 

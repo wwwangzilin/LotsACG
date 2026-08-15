@@ -120,6 +120,10 @@ func (r *Runtime) Start(ctx context.Context, stop func()) error {
 		go botapp.Run(ctx, r.service)
 		r.poster = botapp
 		r.tgbot = botapp
+		// 画师关注 & 标签订阅监控 (watch_interval>0 时启用)
+		if r.cfg.Scheduler.WatchInterval > 0 {
+			go scheduler.StartFollowWatcher(ctx, r.service, botapp, time.Duration(r.cfg.Scheduler.WatchInterval)*time.Second)
+		}
 	}
 
 	if r.cfg.Scheduler.Enable && r.poster != nil {
@@ -137,6 +141,13 @@ func (r *Runtime) Start(ctx context.Context, stop func()) error {
 		}
 		go func() {
 			log.Info("Starting RESTful API server", "addr", r.cfg.Rest.Addr)
+			if r.cfg.Rest.WebDir != "" {
+				webURL := r.cfg.Rest.PublicURL
+				if webURL == "" {
+					webURL = "http://" + r.cfg.Rest.Addr
+				}
+				log.Info("Web frontend is available at", "url", webURL)
+			}
 			if err := restApp.Run(ctx); err != nil {
 				log.Error(err)
 				stop()

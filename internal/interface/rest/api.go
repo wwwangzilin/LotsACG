@@ -3,6 +3,9 @@ package rest
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -14,6 +17,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
 	"github.com/wwwangzilin/LotsACG/internal/interface/rest/handlers"
@@ -98,6 +102,32 @@ func New(ctx context.Context, serv *service.Service, cfg runtimecfg.RestConfig, 
 
 	v1group := app.Group("/api/v1")
 	handlers.Register(v1group, serv, cfg)
+
+	// 内置 Web 前端 (ManyACG/web 构建产物), 与 API 同源托管
+	if cfg.WebDir != "" {
+		indexPath := filepath.Join(cfg.WebDir, "index.html")
+		if _, err := os.Stat(indexPath); err == nil {
+			// 与 nuxt.config 中 routeRules 一致的重定向
+			app.Get("/setu", func(c fiber.Ctx) error {
+				return c.Redirect().To("/api/v1/artwork/random/preview")
+			})
+			app.Get("/sese", func(c fiber.Ctx) error {
+				return c.Redirect().To("/api/v1/picture/random")
+			})
+			app.Get("/atom.xml", func(c fiber.Ctx) error {
+				return c.Redirect().To("/api/v1/atom")
+			})
+			// 静态文件 (未命中的路径会继续向下匹配)
+			app.Use(static.New(cfg.WebDir))
+			// SPA 兜底: 非 /api/ 的 GET 请求返回 index.html, 交给前端路由
+			app.Get("*", func(c fiber.Ctx) error {
+				if strings.HasPrefix(c.Path(), "/api/") {
+					return c.Next()
+				}
+				return c.SendFile(indexPath)
+			})
+		}
+	}
 
 	restApp := &RestApp{
 		fiberApp: app,

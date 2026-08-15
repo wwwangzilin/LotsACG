@@ -16,6 +16,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/ioutil"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
@@ -222,32 +223,33 @@ func sendRecommendation(ctx context.Context, tgCtx *telegohandler.Context, chatI
 		_, err := tgCtx.Bot().SendMessage(ctx, telegoutil.Message(chatID, "这篇作品暂时没有图片可展示").WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID}))
 		return err
 	}
-	file, err := utils.GetPicturePhotoInputFile(ctx, serv, meta, picLike)
-	if err != nil {
-		return oops.Wrapf(err, "failed to get photo input file")
-	}
-	defer file.Close()
-	caption := fmt.Sprintf("%s\n\n匹配度: %.0f%%", utils.ArtworkHTMLCaption(artwork), score*100)
-	photo := telegoutil.Photo(chatID, file.Value).
-		WithCaption(caption).
-		WithParseMode(telego.ModeHTML).
-		WithReplyMarkup(telegoutil.InlineKeyboard(
-			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("👍 喜欢").WithCallbackData("recommend_like"),
-				telegoutil.InlineKeyboardButton("👎 不喜欢").WithCallbackData("recommend_dislike"),
-			),
-			telegoutil.InlineKeyboardRow(
-				telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
-				telegoutil.InlineKeyboardButton("📤 推送到群").WithCallbackData("recommend_push_current"),
-			),
-		))
-	if replyToMessageID != 0 {
-		photo = photo.WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID})
-	}
-	if artwork.GetR18() {
-		photo = photo.WithHasSpoiler()
-	}
-	_, err = tgCtx.Bot().SendPhoto(ctx, photo)
+	_, err = utils.SendPhotoWithCompressRetry(ctx, tgCtx.Bot(), func(level int) (*ioutil.Closer[telego.InputFile], *telego.SendPhotoParams, error) {
+		file, err := utils.GetPicturePhotoInputFileWithLevel(ctx, serv, meta, picLike, level)
+		if err != nil {
+			return nil, nil, oops.Wrapf(err, "failed to get photo input file")
+		}
+		caption := fmt.Sprintf("%s\n\n匹配度: %.0f%%", utils.ArtworkHTMLCaption(artwork), score*100)
+		photo := telegoutil.Photo(chatID, file.Value).
+			WithCaption(caption).
+			WithParseMode(telego.ModeHTML).
+			WithReplyMarkup(telegoutil.InlineKeyboard(
+				telegoutil.InlineKeyboardRow(
+					telegoutil.InlineKeyboardButton("👍 喜欢").WithCallbackData("recommend_like"),
+					telegoutil.InlineKeyboardButton("👎 不喜欢").WithCallbackData("recommend_dislike"),
+				),
+				telegoutil.InlineKeyboardRow(
+					telegoutil.InlineKeyboardButton("⏭️ 下一个").WithCallbackData("recommend_next"),
+					telegoutil.InlineKeyboardButton("📤 推送到群").WithCallbackData("recommend_push_current"),
+				),
+			))
+		if replyToMessageID != 0 {
+			photo = photo.WithReplyParameters(&telego.ReplyParameters{MessageID: replyToMessageID})
+		}
+		if artwork.GetR18() {
+			photo = photo.WithHasSpoiler()
+		}
+		return file, photo, nil
+	})
 	return err
 }
 

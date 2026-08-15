@@ -69,7 +69,7 @@ func TestCompressImageNative(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := compressImageNative(tt.input, tt.output, tt.format, tt.maxEdgeLength)
+			err := compressImageNative(tt.input, tt.output, tt.format, tt.maxEdgeLength, 0)
 			if err != nil {
 				t.Fatalf("compressImageNative() error = %v", err)
 			}
