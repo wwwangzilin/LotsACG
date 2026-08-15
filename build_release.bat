@@ -17,7 +17,7 @@ REM ============================================================
 
 REM ---- Version: arg %1, default v26.0.0.4 ----
 if "%~1"=="" (
-    set "VERSION=v26.0.0.4"
+    set "VERSION=v26.2.3.0"
 ) else (
     set "VERSION=%~1"
 )
@@ -60,21 +60,27 @@ goto :done
 :publish
 where gh >nul 2>&1
 if errorlevel 1 goto :nogh
+echo [release] pushing tag %VERSION% ...
+git tag %VERSION% origin/HEAD 2>nul
+if errorlevel 1 echo [release] tag %VERSION% already exists, reusing
+git push origin %VERSION%
 echo [release] creating GitHub release %VERSION% ...
-gh release create %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --title "%VERSION%" --notes "Release %VERSION%"
+REM 必须显式 --repo (本地有 upstream 远程时 gh 会误判目标仓库)
+gh release create %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --repo wwwangzilin/LotsACG --title "%VERSION%" --notes "Release %VERSION%"
 if errorlevel 1 goto :upload
 echo [release] published %VERSION%
 goto :done
 
 :upload
 echo [release] release may already exist, uploading assets...
-gh release upload %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --clobber
+gh release upload %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --repo wwwangzilin/LotsACG --clobber
 goto :done
 
 :nogh
 echo.
 echo [release] GitHub CLI (gh) not found, publish manually:
-echo   gh release create %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --title "%VERSION%" --notes "Release %VERSION%"
+echo   git tag %VERSION% origin/HEAD ^&^& git push origin %VERSION%
+echo   gh release create %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --repo wwwangzilin/LotsACG --title "%VERSION%" --notes "Release %VERSION%"
 goto :done
 
 :fail
