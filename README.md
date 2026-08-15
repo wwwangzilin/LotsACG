@@ -78,10 +78,45 @@ pximg.manyacg.top (主代理) → pixiv.cat → i.muxmus.com → 官方 i.pximg.
 - 补全了所有支持的指令说明（普通用户 + 管理员指令）
 - 显示版本号、构建日期、Git 提交号
 
+### � 画师关注 `/follow`
+
+- 私聊里用 `/follow <pixiv画师主页链接>` 关注画师，画师发布**新作品时自动推送**给你（图片+说明）
+- `/unfollow` 取消关注，`/followlist` 查看已关注的画师
+- 首次关注自动设置基线，**不会**把历史作品全部推给你
+- 由内置监控器按 `[scheduler] watch_interval` 秒间隔定时检查
+
+### 🏷️ 标签订阅 `/sub`
+
+- `/sub <标签>` 订阅标签，有该标签的**新作品时自动推送**到私聊
+- `/unsub` 取消订阅，`/sublist` 查看已订阅的标签
+- 首次订阅自动设置基线，只推送之后的新作品
+
+### 🌐 内置 Web 前端（ManyACG/web）
+
+- 直接把配套的 [ManyACG/web](https://github.com/ManyACG/web) 前端缝进 REST 服务器，与 API **同源托管**在 `/`
+- 启动时日志会打印 Web 访问链接（`[rest] public_url`）
+- 前端路由（`/about`、`/tag/xxx`、`/artist/xxx` 等）自动 SPA 兜底；`/setu` `/sese` `/atom.xml` 自动重定向到对应 API
+- 构建：`scripts/build_web.bat [API_BASE]`（或 `build_web.sh`），产物输出到 `web-dist/`，由 `[rest] web_dir` 指定
+
+### ✨ AI 自动打标流水线
+
+- 新作品入库时自动打标：图片 tagger（konatagger，`[tagging] tagnew`）+ **AI 标签**（`[aiapi]`/`[xpaiapi]` 的 `auto_tag = true`）
+- AI 根据标题 + 已有标签自动补充 8-15 个 Pixiv 标签，大幅减少手动 `/autotag`
+
+### 📤 批量发布队列 `/post`
+
+- `/post` 支持作品链接、回复消息，以及**画师主页链接**（自动展开为该画师全部作品）批量排队发布
+- 发布过程中实时显示进度 + **预计完成用时**（每 1 分钟刷新），完成后显示**总用时**与**平均下载速度**
+- `/cancel` 取消队列（保留已发布内容），`/cd` 取消并删除已发布内容
+
 ### 🛠️ 其他改进
 
 - **上传稳定性修复**：解决发送图片时 `io pipe closed` 错误
-- **构建脚本**：提供 Windows `build.bat`，自动填写版本号与 Git 提交
+- **超大图自动降级**：Telegram 返回 `file is too big` 时自动加强压缩（缩小边长 + 降低画质）继续重试上传
+- **R18 策略**：`/setu` 始终输出 R18；`/r18mode`（on/off/mixed）控制 `/random` 与推荐的 R18 过滤
+- **自更新 `/update`**：从 GitHub Release 检测新版本，确认后自动下载替换并重启，失败自动回退旧版本
+- **`/status`**：一键查看机器人状态（作品数 / 队列 / 版本 / 构建时间等）
+- **构建/发布脚本**：`build_release.bat [版本] publish` 一键构建并发布 GitHub Release（配合 `/update` 自更新）
 - **本地特征搜索 (imseek)**：内置 ORB 特征点以图搜图引擎（无需外部服务）
 
 ---
@@ -199,6 +234,7 @@ base_url = "https://api.openai.com/v1"   # 或 DeepSeek/Ollama 等
 api_key = ""
 model = "gpt-4o-mini"
 recommend_tags = 12               # 每次推荐生成的关联 tag 数量
+auto_tag = false                  # 是否在新作品入库时用 AI 自动补充标签
 
 # ── XP 画像 AI API（可选，参考 Pixiv-XP-Pusher）──
 # 与 [aiapi] 二选一；若 [aiapi] 未启用会自动使用此配置
@@ -210,6 +246,7 @@ base_url = "https://api.openai.com/v1"
 model = "gpt-4o-mini"
 scan_limit = 2000                 # 构建画像时扫描的作品数量上限
 discovery_rate = 0.1              # 探索率 (0~1)：推荐中随机探索新风格的比例
+auto_tag = false                  # 是否在新作品入库时用 AI 自动补充标签（[aiapi] 未启用时生效）
 
 [xpaiapi.embedding]
 model = "text-embedding-3-small"
@@ -310,6 +347,8 @@ tagnew = false                   # 是否自动为新作品打标签
 [rest]
 enable = false                   # 是否启用 Web 网站/API
 addr = ":8080"
+web_dir = "web-dist"              # 内置 Web 前端 (ManyACG/web 构建产物) 静态目录, 为空则不托管前端
+public_url = "http://127.0.0.1:8080"  # Web 前端对外访问地址 (用于启动日志打印)
 [rest.site]
 title = "LotsACG - Kawaii is all you need"
 desc = "ACG Image Collector and Gallery Server"
@@ -319,6 +358,10 @@ url = "https://example.com"
 # enable = true
 # expiration = 60
 # max = 100
+
+# 画师关注 / 标签订阅 的监控检查间隔 (秒), 0=不启用监控
+[scheduler]
+watch_interval = 600
 
 [log]
 level = "info"
@@ -334,17 +377,26 @@ file = "logs/lotsacg.log"
 | --- | --- |
 | `/start` | 开始使用 |
 | `/help` | 显示完整帮助 |
-| `/random` 或 `/setu` | 随机图片（支持 `或\|与` 逻辑标签筛选） |
-| `/search` | 以图搜图 |
+| `/setu` | 随机图片（**始终 R18**） |
+| `/random` | 随机全年龄图片（支持 `或\|与` 逻辑标签筛选） |
+| `/search` | 文本/以图搜索 |
 | `/info` | 发送作品图片和信息 |
 | `/files` | 获取作品原图 |
 | `/hybrid` | 混合搜索 |
 | `/similar` | 搜索相似作品 |
 | `/recommend` | **私聊**智能推荐（XP 画像 + AI 关联标签 + Pixiv 全新作品搜索，只推荐新图） |
 | `/xp` 或 `/pref` | 查看你的 XP 画像（偏好标签权重） |
+| `/r18mode` | 设置 R18 过滤模式 (on/off/mixed) |
+| `/recommendmin` | 设置推荐最小收藏数 (0=不限) |
+| `/switchrecommend` | 切换推荐图源 |
+| `/groupsearch` | 在群组中搜索作品 |
+| `/downloadzip` | 打包下载回复图片 (zip) |
 | `/tagging` | 识别回复图片中的标签 |
+| `/follow` `/unfollow` `/followlist` | 关注画师 / 取消关注 / 查看关注（新作自动推送） |
+| `/sub` `/unsub` `/sublist` | 订阅标签 / 取消订阅 / 查看订阅（新作自动推送） |
+| `/status` | 查看机器人状态（作品数 / 队列 / 版本等） |
 
-**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck`
+**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post`（批量发布，支持画师主页展开）`/cancel` `/cd` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck` `/redescribe` `/update`
 
 ---
 
