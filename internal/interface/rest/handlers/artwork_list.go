@@ -107,6 +107,12 @@ func GetHandleListArtworks(serv *service.Service, cfg runtimecfg.RestConfig) fib
 			return err
 		}
 		if len(artworks) == 0 {
+			// 相似作品搜索无结果时返回 200 空数组而不是 404:
+			// 前端 useWaterfall 在第一页收到 404 会走错误分支, 导致页面显示错误/崩掉
+			if req.SimilarTarget != "" {
+				resp := common.NewSuccess([]ResponseArtworkItem{})
+				return ctx.JSON(resp)
+			}
 			return common.NewError(fiber.StatusNotFound, "no artworks found")
 		}
 		items := artworksResponseFromEntity(ctx, artworks, cfg, serv)
