@@ -76,7 +76,7 @@ useSeoMeta({
 }
 
 body {
-  background-image: url('https://manyacg.top/setu');
+  background-image: linear-gradient(180deg, hsla(var(--hsl-body), 0.99), hsla(var(--hsl-body), 0.99));
   background-size: cover;
   background-attachment: fixed;
   background-position: center;

@@ -85,3 +85,28 @@ func HandlePostArtworkToChannel(ctx fiber.Ctx) error {
 	}
 	return ctx.JSON(common.NewSuccess("ok"))
 }
+
+// HandleBotStatus 返回 Telegram bot 运行状态, 供设置页展示。
+func HandleBotStatus(ctx fiber.Ctx) error {
+	requestCtx := ctx.RequestCtx()
+	key := ctx.Get("X-API-KEY")
+	if key == "" {
+		return common.NewError(fiber.StatusUnauthorized, "api key is required")
+	}
+	serv := common.MustGetState[*service.Service](ctx, common.StateKeyService)
+	keyEnt, err := serv.GetApiKeyByKey(requestCtx, key)
+	if err != nil {
+		return common.NewError(fiber.StatusUnauthorized, "invalid api key")
+	}
+	if !keyEnt.HasPermission(shared.PermissionPostArtwork) {
+		return common.NewError(fiber.StatusForbidden, "api key does not have permission")
+	}
+	if !keyEnt.CanUse() {
+		return common.NewError(fiber.StatusForbidden, "api key quota exceeded")
+	}
+	bot, ok := common.GetState[common.TelegramBot](ctx, common.StateKeyTelegramBot)
+	if !ok {
+		return common.NewError(fiber.StatusNotFound, "telegram bot is not enabled")
+	}
+	return ctx.JSON(common.NewSuccess(bot.Status(requestCtx)))
+}

@@ -10,6 +10,7 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/gofiber/fiber/v3"
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
@@ -18,7 +19,6 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/strutil"
-	"github.com/unvgo/ouid"
 )
 
 type RequestListArtworks struct {

@@ -18,6 +18,9 @@
         <var-button text color="transparent" @click="handleRSSClick" title="RSS">
           <Icon name="i-line-md:rss" size="24" />
         </var-button>
+        <var-button text color="transparent" @click="navigateTo('/settings')" title="设置">
+          <Icon name="i-mdi:cog-outline" size="24" />
+        </var-button>
         <!-- <color-change-menu /> -->
         <var-button text color="transparent" @click="handleChangeTheme" title="切换主题">
           <Icon :name="themeIcon" size="24" />
@@ -139,6 +142,11 @@ const menuItems = computed(() => [
     iconName: 'i-mdi:information-outline',
     text: '关于',
     to: '/about'
+  },
+  {
+    iconName: 'i-mdi:cog-outline',
+    text: '设置',
+    to: '/settings'
   },
   ...(isNotCN.value
     ? [

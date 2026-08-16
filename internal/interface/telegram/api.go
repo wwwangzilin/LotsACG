@@ -6,10 +6,25 @@ import (
 	"github.com/mymmrac/telego"
 	"github.com/mymmrac/telego/telegoutil"
 	"github.com/samber/oops"
+	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 )
+
+// Status 返回 bot 运行状态 (用户名、频道/群信息), 供 REST 设置页展示。
+func (b *BotApp) Status(ctx context.Context) common.TelegramBotStatus {
+	channel := b.meta.ChannelChatID()
+	return common.TelegramBotStatus{
+		BotUsername:  b.meta.BotUsername(),
+		ChannelID:    channel.ID,
+		ChannelName:  channel.Username,
+		GroupID:      b.meta.GroupChatID().ID,
+		R18ChannelID: b.meta.R18ChannelChatID().ID,
+		Running:      true,
+		AllowedUsers: b.meta.AllowedUsers(),
+	}
+}
 
 func (b *BotApp) PostAndCreateArtwork(ctx context.Context, artwork *entity.CachedArtworkData) error {
 	var adminId telego.ChatID

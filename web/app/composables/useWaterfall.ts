@@ -18,17 +18,21 @@ const useWaterfall = ({
   hybrid?: boolean
   similarTarget?: string
 }) => {
+  const piniaStore = usePiniaStore()
   const waterfallOption = reactive({
     loading: false,
-    bottomDistance: 1000,
-    onlyImage: false,
-    preloadScreenCount: [1, 1] as [number, number],
+    bottomDistance: piniaStore.waterfall.bottomDistance,
+    onlyImage: piniaStore.waterfall.onlyImage,
+    preloadScreenCount: [
+      piniaStore.waterfall.preloadScreenCount,
+      piniaStore.waterfall.preloadScreenCount
+    ] as [number, number],
     virtual: true,
     gap: useWaterfallGap(),
     enableCache: true,
-    itemMinWidth: 320,
-    minColumnCount: 2,
-    maxColumnCount: 8
+    itemMinWidth: piniaStore.waterfall.itemMinWidth,
+    minColumnCount: piniaStore.waterfall.minColumnCount,
+    maxColumnCount: piniaStore.waterfall.maxColumnCount
   })
 
   const calcItemHeight = (item: WaterfallItem, itemWidth: number) => {
@@ -64,6 +68,8 @@ const useWaterfall = ({
   const { data, status, error } = useAcgapiData<ArtworkListResponse>(apiEndpoint, {
     method: 'GET',
     query: fetchParams,
+    // 仅在客户端请求: 避免静态预渲染 (nuxt generate) 时相对路径请求失败, 把错误状态写入 payload 导致页面崩
+    server: false,
     onResponse({ response }) {
       result.statusCode = response.status
     }

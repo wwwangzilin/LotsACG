@@ -1,10 +1,29 @@
 import { defineStore } from 'pinia'
 import type { Artwork } from '~/types/artwork'
 
+export interface WaterfallSettings {
+  itemMinWidth: number
+  minColumnCount: number
+  maxColumnCount: number
+  preloadScreenCount: number
+  bottomDistance: number
+  onlyImage: boolean
+}
+
+const defaultWaterfallSettings = (): WaterfallSettings => ({
+  itemMinWidth: 320,
+  minColumnCount: 2,
+  maxColumnCount: 8,
+  preloadScreenCount: 1,
+  bottomDistance: 1000,
+  onlyImage: false
+})
+
 export const usePiniaStore = defineStore('ManyACG', {
   state: () => ({
     preferLight: false,
-    r18: false
+    r18: false,
+    waterfall: defaultWaterfallSettings() as WaterfallSettings
   }),
   actions: {
     setpreferLight(preferLight: boolean) {
@@ -12,6 +31,12 @@ export const usePiniaStore = defineStore('ManyACG', {
     },
     setR18(r18: boolean) {
       this.r18 = r18
+    },
+    setWaterfall(partial: Partial<WaterfallSettings>) {
+      this.waterfall = { ...this.waterfall, ...partial }
+    },
+    resetWaterfall() {
+      this.waterfall = defaultWaterfallSettings()
     }
   },
   persist: true

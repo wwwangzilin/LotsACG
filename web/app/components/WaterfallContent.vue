@@ -6,7 +6,7 @@
       :max-column-count="waterfallOption.maxColumnCount" :min-column-count="waterfallOption.minColumnCount"
       :calc-item-height="calcItemHeight" :items="result.list" :enable-cache="waterfallOption.enableCache">
       <template #default="scope">
-        <WaterfallCard v-if="scope?.item" :item="scope.item" :only-image="isSmall" />
+        <WaterfallCard v-if="scope?.item" :item="scope.item" :only-image="isSmall || waterfallOption.onlyImage" />
       </template>
     </VirtualWaterfall>
     <div class="index-footer" v-if="result.list.length > 0">
