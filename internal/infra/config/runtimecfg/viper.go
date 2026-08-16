@@ -35,6 +35,9 @@ type Config struct {
 
 	// XP-Pusher (Python) 进程管理
 	XPPusher XPPusherConfig `toml:"xppusher" mapstructure:"xppusher" json:"xppusher" yaml:"xppusher"`
+
+	// kmua-bot (Python) 进程管理
+	KMua KMuaConfig `toml:"kmua" mapstructure:"kmua" json:"kmua" yaml:"kmua"`
 }
 
 type KVDBConfig struct {
@@ -146,6 +149,10 @@ func loadConfig() Config {
 		"xppusher.command":    "main.py",
 		"xppusher.args":       "--now",
 		"xppusher.auto_start": false,
+
+		"kmua.command":     "-m kmua",
+		"kmua.webapp_port": 8180,
+		"kmua.auto_start":  false,
 
 		"xpaiapi.enabled":              false,
 		"xpaiapi.provider":             "openai",

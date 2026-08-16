@@ -46,6 +46,17 @@ XP-Pusher (Python, 独立 bot) → 按你的 XP 个性化推荐
         └─ 点击 → 调 LotsACG REST /api/v1/bot/post_artwork → 发布到频道
 ```
 
+### 🐱 kmua-bot 内嵌管理（Telegram 群聊机器人）
+
+完整内嵌 [krau/kmua-bot](https://github.com/krau/kmua-bot)（Python, 群聊机器人: 语录/漂流瓶/AI/Waifu/词云/RSS 等）：
+
+- **完整源码内嵌进 exe**：内嵌在 `internal/kmua/project/`，通过 `go:embed` 打包进 exe。无需单独部署，exe 首次启动时自动提取到 `<exe>/kmua/`，自动生成 `settings.toml` 并用 uv 创建环境安装依赖
+- `/kmua` — 内置管理 kmua-bot 进程：`start` / `stop` / `restart` / `log [n]`
+- `[kmua] auto_start = true` 时 exe 一启动就自动拉起
+- 依赖复杂（Python 3.13 + git 源依赖），环境用 **uv** 安装（`uv sync`），首次需要几分钟联网安装
+- `[kmua]` 配置段的 `token` / `owners` / `webapp` 等会在首次启动时写入 `settings.toml`（已存在则不覆盖）
+- 日志统一：kmua-bot 的 stdout/stderr 写入 `<exe>/logs/kmua.log`
+
 ### 🤖 AI API 接入 `[aiapi]`
 
 - 支持任意 **OpenAI 兼容**接口（OpenAI / DeepSeek / Moonshot / 本地 Ollama 等）
@@ -371,6 +382,23 @@ auto_start = true                         # exe 启动时自动拉起 XP-Pusher
 # XP-Pusher 的 config.yaml 中可用:
 #   notifier.telegram.link_only: true  → 链接模式: 只推文本+链接, 不下载图片 (点击「推送到群」才由 LotsACG 下载)
 #   lotsacg.url / lotsacg.api_key      → 「推送到群」按钮调用的 LotsACG 地址与 API Key (用 /xppusher key 生成)
+
+# kmua-bot (Python, 群聊机器人) 进程管理: /kmua start|stop|restart|log
+# 源码内嵌进 exe, 首次启动自动提取到 <exe>/kmua 并用 uv 装依赖 (需联网, 首次较久)
+[kmua]
+# dir = "D:/projects/kmua-bot"          # 可选: 指定外部源码目录 (不填则用 exe 内嵌)
+# uv = ""                              # 可选: uv 路径; 默认在 PATH 中查找
+# python = ""                          # 可选: 指定解释器; 默认用 uv 管理 (自动下载 Python 3.13)
+# command = "-m kmua"
+# args = ""                            # 附加参数 (空格分隔)
+auto_start = false                     # exe 启动时自动拉起 kmua-bot
+# 以下字段在首次生成 settings.toml 时写入 (已存在则不覆盖):
+# token = ""                           # kmua-bot 的 bot token
+# owners = []                          # owner Telegram ID 列表
+# webapp = false                       # 启用管理面板 (Telegram Mini App)
+# webapp_port = 8180                   # 面板端口
+# webapp_url = "https://xxx.example.com"  # 面板公网 HTTPS 地址 (Telegram 不会打开 HTTP 的 Mini App)
+# webapp_short_name = "panel"          # BotFather /newapp 注册的 short name
 
 [log]
 level = "info"

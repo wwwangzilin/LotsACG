@@ -71,6 +71,7 @@ Inline 查询(在任意聊天框中@本bot)支持同样的参数格式
 /redescribe - 使用 AI 生成描述并追加到频道帖子下方
 /update - 检查并自动更新到最新版本
 /xppusher - 管理 XP-Pusher (Python) 进程: start/stop/restart/status/key
+/kmua - 管理 kmua-bot (Python) 进程: start/stop/restart/status/log
 `
 	}
 	commit := version.Commit

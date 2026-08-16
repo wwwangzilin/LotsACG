@@ -129,6 +129,14 @@ const friendLinks: Link[] = [
     avatar: 'https://www.chooiin.com/favicon.png',
     darkColor: undefined,
     desc: '以初音未来为主题的导航网站'
+  },
+  {
+    link: 'https://github.com/krau/kmua-bot',
+    name: 'kmua',
+    avatar: 'https://t.me/i/userpic/320/kmuav2bot.jpg',
+    lightColor: '#e0567a',
+    darkColor: '#ff9db8',
+    desc: 'Telegram 群聊机器人：语录、漂流瓶、AI 回复、Waifu、词云...'
   }
 ]
 
