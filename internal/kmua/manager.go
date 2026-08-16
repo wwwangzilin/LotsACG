@@ -217,8 +217,13 @@ func (m *Manager) PrepareEnv(ctx context.Context, progress func(string)) (string
 		"--no-install-package", "uvloop",
 		"--no-install-package", "pyturso"}
 	env := append(os.Environ(), "PYTHONUTF8=1")
+	// uv 不认 --proxy 命令行参数, 用环境变量设置代理
 	if proxy := runtimeProxy(); proxy != "" {
-		args = append(args, "--proxy", proxy)
+		env = append(env,
+			"HTTP_PROXY="+proxy,
+			"HTTPS_PROXY="+proxy,
+			"ALL_PROXY="+proxy,
+		)
 	}
 	if err := runCommandEnv(uv, dir, env, args...); err != nil {
 		// 部分失败 (如个别包无 wheel) 但环境可用时继续
