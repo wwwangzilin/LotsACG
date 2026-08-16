@@ -233,10 +233,12 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 	// 日志同时写入文件 (供 /xppusher log) 与 LotsACG 控制台 (实时滚动, 带 [xppusher] 前缀)
 	execCmd.Stdout = newTeeWriter("[xppusher] ", os.Stdout, logFile)
 	execCmd.Stderr = newTeeWriter("[xppusher] ", os.Stderr, logFile)
-	// 强制 Python 以 UTF-8 输出, 避免 Windows 默认 GBK 编码导致 /xppusher log 乱码
+	// 强制 Python 以 UTF-8 + 无缓冲输出: 避免 Windows 默认 GBK 编码乱码, 以及管道重定向下
+	// stdout/stderr 块缓冲导致日志不实时写入 (tee 到控制台/日志文件)
 	execCmd.Env = append(os.Environ(),
 		"PYTHONUTF8=1",
 		"PYTHONIOENCODING=utf-8",
+		"PYTHONUNBUFFERED=1",
 	)
 	if runtime.GOOS == "windows" {
 		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008} // DETACHED_PROCESS
@@ -245,7 +247,11 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 		_ = logFile.Close()
 		return 0, err
 	}
-	_ = logFile.Close()
+	// 注意: tee 持续引用 logFile, 不能立即关闭。进程退出后再由 goroutine 关闭。
+	go func() {
+		_ = execCmd.Wait()
+		_ = logFile.Close()
+	}()
 	_ = kvstor.Set(ctx, pidKey, execCmd.Process.Pid)
 	log.Info("xppusher: started", "pid", execCmd.Process.Pid, "dir", dir, "python", python, "log", m.LogPath())
 	return execCmd.Process.Pid, nil
@@ -373,11 +379,10 @@ func (w *teeWriter) Write(p []byte) (int, error) {
 		}
 		line := w.pending[:idx+1]
 		w.pending = w.pending[idx+1:]
-		if _, err := w.console.Write([]byte(w.prefix)); err != nil {
-			return n, err
-		}
-		if _, err := w.console.Write(line); err != nil {
-			return n, err
+		// 忽略控制台写入错误/空: 后台运行时 os.Stdout 可能无效, 不影响文件日志
+		if w.console != nil {
+			_, _ = w.console.Write([]byte(w.prefix))
+			_, _ = w.console.Write(line)
 		}
 	}
 	return n, nil

@@ -275,6 +275,7 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 	execCmd.Env = append(os.Environ(),
 		"PYTHONUTF8=1",
 		"PYTHONIOENCODING=utf-8",
+		"PYTHONUNBUFFERED=1",
 	)
 	if runtime.GOOS == "windows" {
 		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008} // DETACHED_PROCESS
@@ -283,7 +284,11 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 		_ = logFile.Close()
 		return 0, err
 	}
-	_ = logFile.Close()
+	// 注意: tee 持续引用 logFile, 不能立即关闭。进程退出后再由 goroutine 关闭。
+	go func() {
+		_ = execCmd.Wait()
+		_ = logFile.Close()
+	}()
 	_ = kvstor.Set(ctx, pidKey, execCmd.Process.Pid)
 	log.Info("kmua: started", "pid", execCmd.Process.Pid, "dir", dir, "python", python, "log", m.LogPath())
 	return execCmd.Process.Pid, nil
@@ -410,11 +415,10 @@ func (w *teeWriter) Write(p []byte) (int, error) {
 		}
 		line := w.pending[:idx+1]
 		w.pending = w.pending[idx+1:]
-		if _, err := w.console.Write([]byte(w.prefix)); err != nil {
-			return n, err
-		}
-		if _, err := w.console.Write(line); err != nil {
-			return n, err
+		// 忽略控制台写入错误/空: 后台运行时 os.Stdout 可能无效, 不影响文件日志
+		if w.console != nil {
+			_, _ = w.console.Write([]byte(w.prefix))
+			_, _ = w.console.Write(line)
 		}
 	}
 	return n, nil
