@@ -29,3 +29,6 @@ web/.nuxt/
 web/.env
 web-dist/
 
+
+__pycache__/
+*.pyc

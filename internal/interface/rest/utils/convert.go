@@ -88,7 +88,13 @@ func ResponseUrlForStoragePath(ctx fiber.Ctx, detail shared.StorageDetail, rules
 // 返回值一定不为空, 无可用配置时会回落到 pic.Thumbnail
 func PictureResponseUrl(ctx fiber.Ctx, pic *entity.Picture, cfg runtimecfg.RestConfig) (thumbnail, regular string) {
 	data := pic.StorageInfo.Data()
+	// 无存储信息时: 优先走本地 /picture/file/... 代理 (不依赖外部图床), 否则回落原外链
 	if data == shared.ZeroStorageInfo {
+		if cfg.Base != "" {
+			base := strings.TrimRight(cfg.Base, "/")
+			return fmt.Sprintf("%s/picture/file/thumb/%s", base, pic.ID.Hex()),
+				fmt.Sprintf("%s/picture/file/regular/%s", base, pic.ID.Hex())
+		}
 		thumbnail = pic.Thumbnail
 		regular = pic.Thumbnail
 		return
@@ -106,10 +112,18 @@ func PictureResponseUrl(ctx fiber.Ctx, pic *entity.Picture, cfg runtimecfg.RestC
 		}
 	}
 	if thumbnail == "" {
-		thumbnail = pic.Thumbnail
+		if cfg.Base != "" {
+			thumbnail = fmt.Sprintf("%s/picture/file/thumb/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+		} else {
+			thumbnail = pic.Thumbnail
+		}
 	}
 	if regular == "" {
-		regular = pic.Thumbnail
+		if cfg.Base != "" {
+			regular = fmt.Sprintf("%s/picture/file/regular/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+		} else {
+			regular = pic.Thumbnail
+		}
 	}
 	return
 }

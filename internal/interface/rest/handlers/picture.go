@@ -6,19 +6,23 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 	"slices"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gofiber/fiber/v3"
+	"github.com/imroc/req/v3"
+	"github.com/unvgo/ouid"
 	"github.com/wwwangzilin/LotsACG/internal/common/httpclient"
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
+	"github.com/wwwangzilin/LotsACG/internal/infra/source/impls/pixiv"
 	"github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
 	"github.com/wwwangzilin/LotsACG/internal/interface/rest/utils"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
 	"github.com/wwwangzilin/LotsACG/internal/shared/errs"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
-	"github.com/unvgo/ouid"
+	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 	"gorm.io/datatypes"
 )
 
@@ -159,7 +163,51 @@ func HandleGetSizedPictureFileByID(ctx fiber.Ctx) error {
 		fullReader := io.MultiReader(bytes.NewReader(buf), pr)
 		return ctx.SendStream(fullReader)
 	}
-	return ctx.Redirect().To(picture.Thumbnail)
+	// 无存储信息: 本地下载并返回 (避免依赖外部图床, 修复图片外链不可达时的加载失败)
+	// 按优先级尝试多个图源: 配置代理 -> pixiv.cat -> i.muxmus.com -> 官方 i.pximg.net
+	safeCtx := ctx.Context()
+	proxyHosts := runtimecfg.Get().Source.Pixiv.ImgProxyHosts()
+	candidates := pixiv.BuildPixivImageCandidates(picture.Original, proxyHosts)
+	client := buildPixivDownloadClient()
+	var file *osutil.File
+	var dlErr error
+	for _, candidate := range candidates {
+		file, dlErr = httpclient.DownloadWithCache(safeCtx, candidate, client)
+		if dlErr == nil {
+			break
+		}
+		log.Warnf("download picture %s via %s failed: %v", picture.ID, candidate, dlErr)
+	}
+	if dlErr != nil {
+		// 全部失败: 回退到缩略图外链
+		return ctx.Redirect().To(picture.Thumbnail)
+	}
+	defer file.Close()
+	ctx.Set(fiber.HeaderContentDisposition, "inline; filename=\""+serv.PrettyFileName(picture.Artwork, picture)+"\"")
+	return ctx.SendFile(file.Name(), fiber.SendFile{Compress: true})
+}
+
+// buildPixivDownloadClient 构建带 pixiv cookie/Referer/代理的下载客户端 (用于官方源兜底下载)。
+func buildPixivDownloadClient() *req.Client {
+	cfg := runtimecfg.Get()
+	cookies := make([]*http.Cookie, 0, len(cfg.Source.Pixiv.Cookies))
+	for _, ck := range cfg.Source.Pixiv.Cookies {
+		if ck.Name != "" && ck.Value != "" {
+			cookies = append(cookies, &http.Cookie{Name: ck.Name, Value: ck.Value})
+		}
+	}
+	client := req.C().ImpersonateChrome().
+		SetCommonCookies(cookies...).
+		SetCommonHeaders(map[string]string{"Referer": "https://www.pixiv.net/"}).
+		SetCommonRetryCount(1)
+	proxy := cfg.Source.Proxy
+	if proxy == "" {
+		proxy = cfg.Telegram.Proxy
+	}
+	if proxy != "" {
+		client.SetProxyURL(proxy)
+	}
+	return client
 }
 
 func HandleGetRandomPicture(ctx fiber.Ctx) error {

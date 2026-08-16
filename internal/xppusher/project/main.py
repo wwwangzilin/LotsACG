@@ -398,6 +398,7 @@ async def setup_notifiers(config: dict, client: PixivClient, profiler: XPProfile
                 batch_show_title=tg_cfg.get("batch_show_title", True),
                 batch_show_artist=tg_cfg.get("batch_show_artist", True),
                 batch_show_tags=tg_cfg.get("batch_show_tags", True),
+                link_only=tg_cfg.get("link_only", False),
             ))
             logger.info("已启用 Telegram 推送")
     

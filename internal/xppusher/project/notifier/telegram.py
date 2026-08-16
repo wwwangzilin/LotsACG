@@ -92,6 +92,7 @@ class TelegramNotifier(BaseNotifier):
         batch_show_title: bool = True,
         batch_show_artist: bool = True,
         batch_show_tags: bool = True,
+        link_only: bool = False,               # 链接模式: 只发文本链接, 不下载/上传图片 (省流量)
     ):
         # Auto-detect proxy if not provided
         if not proxy_url:
@@ -136,6 +137,7 @@ class TelegramNotifier(BaseNotifier):
         self.batch_show_title = batch_show_title
         self.batch_show_artist = batch_show_artist
         self.batch_show_tags = batch_show_tags
+        self.link_only = link_only
         self._telegraph = None  # Telegraph 客户端（延迟初始化）
         self._pending_input = None  # 等待用户输入的状态
         
@@ -147,6 +149,8 @@ class TelegramNotifier(BaseNotifier):
             logger.info(f"Topic 分流规则: {list(self.topic_rules.keys())}")
         if self.batch_mode == "telegraph":
             logger.info("批量模式: Telegraph")
+        if self.link_only:
+            logger.info("链接模式: 已启用 (只推送链接, 不下载图片)")
 
     def _resolve_topic_id(self, illust: Illust) -> int | None:
         """根据作品标签匹配 Topic ID"""
@@ -627,8 +631,28 @@ class TelegramNotifier(BaseNotifier):
                 except (IndexError, ValueError):
                     await query.answer("无效作品ID", show_alert=True)
                     return
+                # 立即应答, 避免触发 Telegram 48 秒回调查询过期限制
+                try:
+                    await query.answer("⏳ 正在推送到群...")
+                except Exception:
+                    pass
+                try:
+                    await query.edit_message_caption(
+                        caption=(query.message.caption or query.message.text or "") + "\n\n⏳ 正在推送到群..."
+                    )
+                except Exception:
+                    pass
                 ok, msg = await self._push_to_lotsacg(illust_id)
-                await query.answer(msg, show_alert=not ok)
+                # 用编辑消息展示结果 (query.answer 在耗时操作后必然超时, 不展示)
+                try:
+                    await query.edit_message_caption(
+                        caption=(query.message.caption or query.message.text or "") + "\n\n" + msg
+                    )
+                except Exception:
+                    try:
+                        await query.message.reply_text(msg)
+                    except Exception:
+                        pass
                 return
             
             # ===== 菜单回调处理 =====
@@ -1291,8 +1315,10 @@ class TelegramNotifier(BaseNotifier):
         if not illusts:
             return []
         
-        # Telegraph 批量模式
+        # Telegraph 批量模式 (链接模式下跳过图片上传, 走逐条链接发送)
         if self.batch_mode == "telegraph" and len(illusts) > 1:
+            if self.link_only:
+                return await self._send_batch_fallback(illusts)
             return await self._send_batch_telegraph(illusts)
         
         # 逐条发送模式
@@ -1584,6 +1610,33 @@ class TelegramNotifier(BaseNotifier):
                 keyboard = self._build_keyboard(illust.id)
                 topic_id = self._resolve_topic_id(illust)
                 
+                # 发送到第一个 chat_id（通常连锁推送只发给触发者所在的 chat）
+                # 如果需要广播给所有 chat，可以改为遍历
+                chat_id = self.chat_ids[0] if self.chat_ids else None
+                if not chat_id:
+                    continue
+                
+                # 链接模式: 只发文本, 不下载图片
+                if self.link_only:
+                    try:
+                        sent_message = await _retry_on_flood(lambda: self.bot.send_message(
+                            chat_id=chat_id,
+                            text=caption,
+                            reply_markup=keyboard,
+                            parse_mode="HTML",
+                            message_thread_id=topic_id,
+                            reply_to_message_id=reply_to_message_id,
+                            disable_web_page_preview=True,
+                        ))
+                        if sent_message:
+                            self._message_illust_map[sent_message.message_id] = illust.id
+                            result_map[illust.id] = sent_message.message_id
+                            logger.info(f"🔗 连锁推送成功(链接模式): {illust.id} -> msg_id={sent_message.message_id}")
+                    except Exception as e:
+                        logger.error(f"链接模式连锁推送到 {chat_id} 失败: {e}")
+                    await asyncio.sleep(1)
+                    continue
+                
                 # 下载图片
                 image_data = None
                 if self.client and illust.image_urls:
@@ -1593,12 +1646,6 @@ class TelegramNotifier(BaseNotifier):
                             image_data = self._compress_image(image_data)
                     except Exception as e:
                         logger.warning(f"下载图片失败: {e}")
-                
-                # 发送到第一个 chat_id（通常连锁推送只发给触发者所在的 chat）
-                # 如果需要广播给所有 chat，可以改为遍历
-                chat_id = self.chat_ids[0] if self.chat_ids else None
-                if not chat_id:
-                    continue
                 
                 sent_message = None
                 try:
@@ -1644,6 +1691,26 @@ class TelegramNotifier(BaseNotifier):
         
         return result_map
     
+    async def _send_link_only(self, illust: Illust, caption: str, keyboard: InlineKeyboardMarkup, topic_id: int | None = None) -> bool:
+        """链接模式: 只发文本+原图链接, 不下载/上传图片 (节约流量)。"""
+        any_success = False
+        for chat_id in self.chat_ids:
+            try:
+                sent_message = await _retry_on_flood(lambda: self.bot.send_message(
+                    chat_id=chat_id,
+                    text=caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML",
+                    message_thread_id=topic_id or self.thread_id,
+                    disable_web_page_preview=True,
+                ))
+                if sent_message:
+                    self._message_illust_map[sent_message.message_id] = illust.id
+                    any_success = True
+            except Exception as e:
+                logger.error(f"链接模式发送到 {chat_id} 失败: {e}")
+        return any_success
+
     async def _send_single(self, illust: Illust) -> bool:
         """发送单个作品"""
         caption = self.format_message(illust)
@@ -1651,6 +1718,10 @@ class TelegramNotifier(BaseNotifier):
         
         # 动态 Topic ID
         topic_id = self._resolve_topic_id(illust)
+        
+        # 链接模式: 不下载图片, 只推文本链接 (点「推送到群」才由 LotsACG 下载)
+        if self.link_only:
+            return await self._send_link_only(illust, caption, keyboard, topic_id)
         
         if getattr(illust, 'type', 'illust') == 'ugoira':
             return await self._send_video(illust, caption, keyboard, topic_id)
@@ -1932,6 +2003,10 @@ class TelegramNotifier(BaseNotifier):
             if resp.status_code == 200:
                 logger.info(f"已通过 LotsACG 推送作品到群: {illust_id}")
                 return True, "✅ 已推送到群"
+            # 已发布过也视为成功 (LotsACG 返回 500 + already posted)
+            if "already posted" in resp.text.lower():
+                logger.info(f"作品已在频道中, 跳过: {illust_id}")
+                return True, "✅ 已在频道中"
             logger.warning(f"LotsACG 推送失败: HTTP {resp.status_code} {resp.text[:200]}")
             return False, f"推送失败: HTTP {resp.status_code}"
         except Exception as e:

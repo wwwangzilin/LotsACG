@@ -35,8 +35,9 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
 - **完整源码内嵌进 exe**：XP-Pusher 的 Python 源码已内嵌在 `internal/xppusher/project/`，通过 `go:embed` 打包进 exe。无需单独部署，exe 首次启动时自动提取到 `<exe>/xppusher/`，自动创建 venv 并安装依赖
 - `/xppusher` — 内置管理 XP-Pusher 进程：`start` / `stop` / `restart` / `log [n]` / `key`
 - `[xppusher] auto_start = true` 时 exe 一启动就自动拉起 XP-Pusher（带 `--now`：启动立即跑一轮推荐，然后保持后台调度）
-- 日志统一：XP-Pusher 的 stdout/stderr 全部写入 `<exe>/logs/xppusher.log`，与 LotsACG 日志同目录
-- **📤 推送到群**：XP-Pusher 推荐消息上新增「推送到群」按钮，点击时才调用 LotsACG 把作品发布到主频道
+- 日志统一：XP-Pusher 的 stdout/stderr 全部写入 `<exe>/logs/xppusher.log`（强制 UTF-8，`/xppusher log` 自动兼容历史 GBK 日志，无乱码）
+- **📤 推送到群**：XP-Pusher 推荐消息上新增「推送到群」按钮，点击时才调用 LotsACG 把作品发布到主频道；推送过程会更新消息显示进度与结果（已推送过会提示「已在频道中」）
+- **链接模式（省流量）**：XP-Pusher 的 `config.yaml` 中 `notifier.telegram.link_only: true` 时，每次推送只发文本+原图链接（不下载/上传图片），只有点击「推送到群」才由 LotsACG 下载并入库
 - `/xppusher key` 生成 API Key 填入 XP-Pusher 的 `config.yaml`（`lotsacg.url` / `lotsacg.api_key`）即可打通
 
 ```text
@@ -341,6 +342,8 @@ tagnew = false                   # 是否自动为新作品打标签
 enable = false                   # 是否启用 Web 网站/API
 addr = ":8080"
 web_dir = "web-dist"              # 内置 Web 前端 (ManyACG/web 构建产物) 静态目录, 为空则不托管前端
+# base: 图片访问基地址。配置后 API 返回本地 /picture/file/... 代理地址(不依赖外部图床, 兼容图片外链不可达的部署环境)
+base = "http://127.0.0.1:8080"
 public_url = "http://127.0.0.1:8080"  # Web 前端对外访问地址 (用于启动日志打印)
 [rest.site]
 title = "LotsACG - Kawaii is all you need"
@@ -364,6 +367,10 @@ watch_interval = 600
 # command = "main.py"
 # args = "--now"                           # 默认 --now: 启动立即执行一轮推荐, 然后保持后台调度
 auto_start = true                         # exe 启动时自动拉起 XP-Pusher
+
+# XP-Pusher 的 config.yaml 中可用:
+#   notifier.telegram.link_only: true  → 链接模式: 只推文本+链接, 不下载图片 (点击「推送到群」才由 LotsACG 下载)
+#   lotsacg.url / lotsacg.api_key      → 「推送到群」按钮调用的 LotsACG 地址与 API Key (用 /xppusher key 生成)
 
 [log]
 level = "info"

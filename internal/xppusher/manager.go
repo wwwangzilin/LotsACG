@@ -15,13 +15,19 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	"github.com/wwwangzilin/LotsACG/internal/infra/config/runtimecfg"
 	"github.com/wwwangzilin/LotsACG/internal/infra/kvstor"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
+	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 const pidKey = "xppusher:pid"
+
+// xppusherCodeVersion 内嵌 XP-Pusher 源码版本标记。
+// 修改 internal/xppusher/project 下的源码时需同步递增, 触发重新提取覆盖。
+const xppusherCodeVersion = "20260816.1"
 
 // Manager 管理内嵌/外部部署的 Pixiv-XP-Pusher (Python) 进程。
 // 日志统一写入 <exe>/logs/xppusher.log, 与 LotsACG 日志同目录。
@@ -54,6 +60,7 @@ func (m *Manager) LogPath() string {
 
 // EnsureExtracted 确保 XP-Pusher 源码就绪:
 // 显式 dir -> 校验 main.py 存在; 否则把内嵌源码提取到 <exeDir>/xppusher。
+// 版本感知: 内嵌源码版本变化时重新覆盖源码, 但保留 config.yaml / data / logs。
 func (m *Manager) EnsureExtracted() error {
 	if m.cfg.Dir != "" {
 		if _, err := os.Stat(filepath.Join(m.cfg.Dir, "main.py")); err != nil {
@@ -62,8 +69,17 @@ func (m *Manager) EnsureExtracted() error {
 		return nil
 	}
 	dir := m.RunDir()
-	if _, err := os.Stat(filepath.Join(dir, "main.py")); err == nil {
-		return nil // 已提取
+	marker := filepath.Join(dir, ".xppusher_version")
+	needExtract := false
+	if _, err := os.Stat(filepath.Join(dir, "main.py")); err != nil {
+		needExtract = true
+	} else if data, err := os.ReadFile(marker); err != nil || strings.TrimSpace(string(data)) != xppusherCodeVersion {
+		// 已提取但源码版本过旧: 重新覆盖源码 (config.yaml/data/logs 不受影响)
+		needExtract = true
+		log.Info("xppusher: embedded source updated, re-extracting", "dir", dir)
+	}
+	if !needExtract {
+		return nil
 	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
@@ -89,7 +105,7 @@ func (m *Manager) EnsureExtracted() error {
 	if err != nil {
 		return err
 	}
-	// 初始化 config.yaml: 优先用 [xppusher] config 指定的外部配置, 否则用 example
+	// 初始化 config.yaml: 仅当不存在时 (升级时保留用户已有配置)
 	if _, err := os.Stat(filepath.Join(dir, "config.yaml")); os.IsNotExist(err) {
 		src := m.cfg.Config
 		if src == "" {
@@ -99,8 +115,9 @@ func (m *Manager) EnsureExtracted() error {
 			_ = os.WriteFile(filepath.Join(dir, "config.yaml"), data, 0644)
 		}
 	}
-	// 跳过交互式初始化向导
+	// 跳过交互式初始化向导 + 记录源码版本
 	_ = os.WriteFile(filepath.Join(dir, ".initialized"), []byte(""), 0644)
+	_ = os.WriteFile(marker, []byte(xppusherCodeVersion), 0644)
 	log.Info("xppusher: embedded source extracted", "dir", dir)
 	return nil
 }
@@ -214,6 +231,11 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 	execCmd.Dir = dir
 	execCmd.Stdout = logFile
 	execCmd.Stderr = logFile
+	// 强制 Python 以 UTF-8 输出, 避免 Windows 默认 GBK 编码导致 /xppusher log 乱码
+	execCmd.Env = append(os.Environ(),
+		"PYTHONUTF8=1",
+		"PYTHONIOENCODING=utf-8",
+	)
 	if runtime.GOOS == "windows" {
 		execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008} // DETACHED_PROCESS
 	}
@@ -270,11 +292,27 @@ func (m *Manager) LogTail(n int) string {
 	if n <= 0 {
 		n = 30
 	}
-	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+	rawLines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+	lines := make([]string, 0, len(rawLines))
+	for _, line := range rawLines {
+		lines = append(lines, decodeLogLine(line))
+	}
 	if len(lines) > n {
 		lines = lines[len(lines)-n:]
 	}
 	return strings.Join(lines, "\n")
+}
+
+// decodeLogLine 按行解码日志: 合法 UTF-8 直接用, 否则按 GB18030 转码。
+// 处理历史 GBK 日志与新 UTF-8 日志混合的情况。
+func decodeLogLine(line string) string {
+	if utf8.ValidString(line) {
+		return line
+	}
+	if s, err := simplifiedchinese.GB18030.NewDecoder().String(line); err == nil {
+		return s
+	}
+	return line
 }
 
 func processAlive(pid int) bool {

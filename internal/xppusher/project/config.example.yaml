@@ -200,6 +200,10 @@ notifier:
     image_quality: 85 # JPEG 压缩质量 (50-100)
     max_image_size: 2000 # 图片最大边长 (px)
 
+    # 链接模式: true 时每次推送只发文本+原图链接, 不下载/上传图片 (节约流量)
+    # 点击「📤 推送到群」按钮后才会由 LotsACG 下载图片并发布到主频道
+    link_only: false
+
     # Topic 智能分流 (可选，用于 Supergroup 话题自动分类)
     # topic_rules:
     #   default: null           # 默认 topic_id (null = 不使用 topic)

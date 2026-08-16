@@ -90,6 +90,15 @@ def setup_logging(log_dir: Path = Path("logs")):
     """配置日志（分级、文件轮转）"""
     log_dir.mkdir(exist_ok=True)
     
+    # 强制 stdout/stderr 使用 UTF-8, 避免重定向到文件时按 GBK 编码导致乱码
+    import sys
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+    
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
