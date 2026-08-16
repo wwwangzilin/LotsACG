@@ -3,16 +3,16 @@ chcp 65001 >nul
 setlocal
 
 REM ============================================================
-REM  LotsACG Release 打包脚本 (Windows)
+REM  LotsACG Release 鎵撳寘鑴氭湰 (Windows)
 REM
-REM  用法:
-REM    build_release.bat              -> 构建 + 打包 dist (默认版本 v26.0.0.4)
-REM    build_release.bat v26.0.0.4    -> 指定版本号
-REM    build_release.bat v26.0.0.4 publish  -> 构建 + 打包 + 用 gh CLI 发布到 GitHub
+REM  鐢ㄦ硶:
+REM    build_release.bat              -> 鏋勫缓 + 鎵撳寘 dist (榛樿鐗堟湰 v26.0.0.4)
+REM    build_release.bat v26.0.0.4    -> 鎸囧畾鐗堟湰鍙?
+REM    build_release.bat v26.0.0.4 publish  -> 鏋勫缓 + 鎵撳寘 + 鐢?gh CLI 鍙戝竷鍒?GitHub
 REM
-REM  产物:
-REM    dist\LotsACG.exe   (自更新 /update 下载的 Windows 可执行文件)
-REM    dist\LotsACG.zip   (完整压缩包)
+REM  浜х墿:
+REM    dist\LotsACG.exe   (鑷洿鏂?/update 涓嬭浇鐨?Windows 鍙墽琛屾枃浠?
+REM    dist\LotsACG.zip   (瀹屾暣鍘嬬缉鍖?
 REM ============================================================
 
 REM ---- Version: arg %1, default v26.0.0.4 ----
@@ -65,7 +65,7 @@ git tag %VERSION% origin/HEAD 2>nul
 if errorlevel 1 echo [release] tag %VERSION% already exists, reusing
 git push origin %VERSION%
 echo [release] creating GitHub release %VERSION% ...
-REM 必须显式 --repo (本地有 upstream 远程时 gh 会误判目标仓库)
+REM 蹇呴』鏄惧紡 --repo (鏈湴鏈?upstream 杩滅▼鏃?gh 浼氳鍒ょ洰鏍囦粨搴?
 gh release create %VERSION% "dist\LotsACG.exe" "dist\LotsACG.zip" --repo wwwangzilin/LotsACG --title "%VERSION%" --notes "Release %VERSION%"
 if errorlevel 1 goto :upload
 echo [release] published %VERSION%
