@@ -85,9 +85,16 @@ func checkLatestRelease(ctx context.Context) (*ghRelease, error) {
 	return &rel, nil
 }
 
-// parseVersion 解析版本号 (兼容 v 前缀)。
+// parseVersion 解析版本号 (兼容 v 前缀与 4 段版本号, 如 26.5.2.5)。
+// semver 标准只支持 major.minor.patch, 这里把第 4 段作为 prerelease 数字:
+// 26.5.2.5 -> 26.5.2-5 (同 patch 时按数值比较, 26.5.2.5 > 26.5.2.0 成立)。
 func parseVersion(s string) (semver.Version, error) {
-	return semver.Parse(strings.TrimPrefix(strings.TrimSpace(s), "v"))
+	s = strings.TrimPrefix(strings.TrimSpace(s), "v")
+	parts := strings.Split(s, ".")
+	if len(parts) == 4 {
+		s = strings.Join(parts[:3], ".") + "-" + parts[3]
+	}
+	return semver.Parse(s)
 }
 
 // latestVersionName 返回 release 的版本名 (优先 Name, 回退 TagName)。
