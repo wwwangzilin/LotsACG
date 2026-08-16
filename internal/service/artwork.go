@@ -278,10 +278,14 @@ func (s *Service) QueryArtworks(ctx context.Context, que query.ArtworksDB) ([]*e
 
 func (s *Service) FindSimilarArtworks(ctx context.Context, que *query.ArtworkSimilar) ([]*entity.Artwork, error) {
 	if s.searcher == nil {
-		return nil, search.ErrNotEnabled
+		// 搜索未启用时返回空列表 (Web 端点击「相似」不应报 500)
+		return []*entity.Artwork{}, nil
 	}
 	result, err := s.searcher.FindSimilarArtworks(ctx, que)
 	if err != nil {
+		if errors.Is(err, search.ErrNotEnabled) {
+			return []*entity.Artwork{}, nil
+		}
 		return nil, fmt.Errorf("find similar artworks failed: %w", err)
 	}
 	if len(result.IDs) == 0 {
@@ -296,10 +300,14 @@ func (s *Service) FindSimilarArtworks(ctx context.Context, que *query.ArtworkSim
 
 func (s *Service) SearchArtworks(ctx context.Context, que *query.ArtworkSearch) ([]*entity.Artwork, error) {
 	if s.searcher == nil {
-		return nil, search.ErrNotEnabled
+		// 搜索未启用时返回空列表, 避免 REST/Telegram 端报错
+		return []*entity.Artwork{}, nil
 	}
 	result, err := s.searcher.SearchArtworks(ctx, que)
 	if err != nil {
+		if errors.Is(err, search.ErrNotEnabled) {
+			return []*entity.Artwork{}, nil
+		}
 		return nil, fmt.Errorf("search artworks failed: %w", err)
 	}
 	if len(result.IDs) == 0 {
