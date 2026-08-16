@@ -87,7 +87,7 @@ def expand_search_query(tag: str) -> str:
 
 
 def setup_logging(log_dir: Path = Path("logs")):
-    """配置日志（分级、文件轮转）"""
+    """配置日志（分级、控制台输出）"""
     log_dir.mkdir(exist_ok=True)
     
     # 强制 stdout/stderr 使用 UTF-8, 避免重定向到文件时按 GBK 编码导致乱码
@@ -104,15 +104,8 @@ def setup_logging(log_dir: Path = Path("logs")):
         datefmt="%Y-%m-%d %H:%M:%S"
     )
     
-    # 文件Handler（轮转，最大5MB，保留3份）
-    file_handler = RotatingFileHandler(
-        log_dir / "pixiv_xp.log",
-        maxBytes=5 * 1024 * 1024,
-        backupCount=3,
-        encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.DEBUG)
+    # 日志统一由 LotsACG 管理器重定向 stdout/stderr 到控制台/日志文件 (带 [xppusher] 前缀),
+    # 不再单独写文件, 避免产生多个日志文件。
     
     # 控制台Handler
     console_handler = logging.StreamHandler()
@@ -122,7 +115,6 @@ def setup_logging(log_dir: Path = Path("logs")):
     # 根Logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
     # 屏蔽第三方库的废话

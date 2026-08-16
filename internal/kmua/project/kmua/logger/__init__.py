@@ -18,15 +18,8 @@ class InterceptHandler(logging.Handler):
 
 logger.remove()
 
-logger.add(
-    "logs/kmua.log",
-    rotation="04:00",
-    enqueue=True,
-    encoding="utf-8",
-    level="TRACE",
-    retention=timedelta(days=app_config.log_retention_days),
-)
-
+# 日志统一由 LotsACG 管理器重定向 stdout 到控制台/日志文件 (带 [kmua] 前缀),
+# 不再单独写文件, 避免产生多个日志文件。
 logger.add(sys.stdout, level=app_config.log_level)
 
 logging.basicConfig(

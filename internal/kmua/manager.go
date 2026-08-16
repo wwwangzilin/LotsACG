@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -268,8 +269,9 @@ func (m *Manager) Start(ctx context.Context, progress func(string)) (int, error)
 	}
 	execCmd := exec.Command(python, args...)
 	execCmd.Dir = dir
-	execCmd.Stdout = logFile
-	execCmd.Stderr = logFile
+	// 日志同时写入文件 (供 /kmua log) 与 LotsACG 控制台 (实时滚动, 带 [kmua] 前缀)
+	execCmd.Stdout = newTeeWriter("[kmua] ", os.Stdout, logFile)
+	execCmd.Stderr = newTeeWriter("[kmua] ", os.Stderr, logFile)
 	execCmd.Env = append(os.Environ(),
 		"PYTHONUTF8=1",
 		"PYTHONIOENCODING=utf-8",
@@ -375,6 +377,47 @@ func pythonCanImport(python, module string) bool {
 func commandExists(name string) bool {
 	_, err := exec.LookPath(name)
 	return err == nil
+}
+
+// newTeeWriter 返回同时写入日志文件与控制台的 writer。
+// 控制台输出按行加 prefix 前缀 (便于区分来源), 文件保持原样。
+func newTeeWriter(prefix string, console io.Writer, file io.Writer) io.Writer {
+	return &teeWriter{prefix: prefix, console: console, file: file}
+}
+
+type teeWriter struct {
+	prefix  string
+	console io.Writer
+	file    io.Writer
+	mu      sync.Mutex
+	pending []byte
+}
+
+func (w *teeWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	// 文件: 原样写入
+	n, err := w.file.Write(p)
+	if err != nil {
+		return n, err
+	}
+	// 控制台: 按行加前缀 (缓冲不完整行, 避免跨 Write 断行)
+	w.pending = append(w.pending, p...)
+	for {
+		idx := bytes.IndexByte(w.pending, '\n')
+		if idx < 0 {
+			break
+		}
+		line := w.pending[:idx+1]
+		w.pending = w.pending[idx+1:]
+		if _, err := w.console.Write([]byte(w.prefix)); err != nil {
+			return n, err
+		}
+		if _, err := w.console.Write(line); err != nil {
+			return n, err
+		}
+	}
+	return n, nil
 }
 
 // runCommandEnv 运行命令并记录输出到 LotsACG 日志。
