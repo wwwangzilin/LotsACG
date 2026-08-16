@@ -143,6 +143,10 @@ func loadConfig() Config {
 
 		"scheduler.watch_interval": 600,
 
+		"xppusher.command":    "main.py",
+		"xppusher.args":       "--now",
+		"xppusher.auto_start": false,
+
 		"xpaiapi.enabled":              false,
 		"xpaiapi.provider":             "openai",
 		"xpaiapi.base_url":             "https://api.openai.com/v1",

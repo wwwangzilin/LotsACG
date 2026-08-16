@@ -34,6 +34,14 @@ func ReplyMessage(ctx *telegohandler.Context, message telego.Message, text strin
 	))
 }
 
+// EditMessage 编辑一条已发送的消息 (HTML)。
+func EditMessage(ctx *telegohandler.Context, msg *telego.Message, text string) {
+	if msg == nil {
+		return
+	}
+	_, _ = ctx.Bot().EditMessageText(ctx, telegoutil.EditMessageText(msg.Chat.ChatID(), msg.MessageID, text).WithParseMode(telego.ModeHTML))
+}
+
 func FindSourceURLInMessage(serv *service.Service, message *telego.Message) string {
 	urls := FindSourceURLsInMessage(serv, message)
 	if len(urls) == 0 {

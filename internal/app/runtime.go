@@ -21,6 +21,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram"
 	"github.com/wwwangzilin/LotsACG/internal/repo"
 	"github.com/wwwangzilin/LotsACG/internal/service"
+	"github.com/wwwangzilin/LotsACG/internal/xppusher"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 )
@@ -153,6 +154,24 @@ func (r *Runtime) Start(ctx context.Context, stop func()) error {
 				stop()
 			}
 		}()
+	}
+
+	// XP-Pusher (Python) 进程: 自动启动 (源码内嵌进 exe, 无需单独部署)
+	if r.cfg.XPPusher.AutoStart {
+		mgr, err := xppusher.NewManager(r.cfg.XPPusher)
+		if err != nil {
+			log.Error("xppusher manager init failed", "err", err)
+		} else {
+			log.Info("XP-Pusher auto-start enabled", "dir", mgr.RunDir(), "log", mgr.LogPath())
+			go func() {
+				pid, err := mgr.Start(ctx, nil)
+				if err != nil {
+					log.Error("xppusher auto-start failed (use /xppusher start to retry)", "err", err)
+					return
+				}
+				log.Info("XP-Pusher auto-started", "pid", pid, "log", mgr.LogPath())
+			}()
+		}
 	}
 
 	return nil

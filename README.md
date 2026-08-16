@@ -32,8 +32,10 @@ Collect, Download, Organize and Share your Favorite Anime Pictures.
 
 推荐逻辑**不在此仓库重复实现**，100% 由原始 Python 项目负责，逻辑与上游完全一致、互不干扰：
 
-- `/xppusher` — 内置管理 XP-Pusher (Python) 进程：`start` / `stop` / `restart` / `status` / `key`
-- 两者完全分离：XP-Pusher 用自己的 bot 与配置独立运行推荐
+- **完整源码内嵌进 exe**：XP-Pusher 的 Python 源码已内嵌在 `internal/xppusher/project/`，通过 `go:embed` 打包进 exe。无需单独部署，exe 首次启动时自动提取到 `<exe>/xppusher/`，自动创建 venv 并安装依赖
+- `/xppusher` — 内置管理 XP-Pusher 进程：`start` / `stop` / `restart` / `log [n]` / `key`
+- `[xppusher] auto_start = true` 时 exe 一启动就自动拉起 XP-Pusher（带 `--now`：启动立即跑一轮推荐，然后保持后台调度）
+- 日志统一：XP-Pusher 的 stdout/stderr 全部写入 `<exe>/logs/xppusher.log`，与 LotsACG 日志同目录
 - **📤 推送到群**：XP-Pusher 推荐消息上新增「推送到群」按钮，点击时才调用 LotsACG 把作品发布到主频道
 - `/xppusher key` 生成 API Key 填入 XP-Pusher 的 `config.yaml`（`lotsacg.url` / `lotsacg.api_key`）即可打通
 
@@ -230,24 +232,21 @@ model = "gpt-4o-mini"
 recommend_tags = 12               # 每次推荐生成的关联 tag 数量
 auto_tag = false                  # 是否在新作品入库时用 AI 自动补充标签
 
-# ── XP 画像 AI API（可选，参考 Pixiv-XP-Pusher）──
-# 与 [aiapi] 二选一；若 [aiapi] 未启用会自动使用此配置
+# ── AI API 备用配置（可选）──
+# 若 [aiapi] 未启用会自动使用此配置; [xpaiapi.pixiv] 用于 Pixiv OAuth (画师作品抓取兜底)
 [xpaiapi]
 enabled = false
 provider = "openai"               # openai / local
 api_key = ""
 base_url = "https://api.openai.com/v1"
 model = "gpt-4o-mini"
-scan_limit = 2000                 # 构建画像时扫描的作品数量上限
-discovery_rate = 0.1              # 探索率 (0~1)：推荐中随机探索新风格的比例
 auto_tag = false                  # 是否在新作品入库时用 AI 自动补充标签（[aiapi] 未启用时生效）
 
 [xpaiapi.embedding]
 model = "text-embedding-3-small"
 dimensions = 1536
 
-# 配置 Pixiv refresh_token + user_id 后, /recommend 会通过 OAuth 访问你的
-# Pixiv 收藏夹, 用收藏作品的 tag 构建 XP 画像 (移植 XP-Pusher profiler)
+# Pixiv OAuth (refresh_token): 用于画师作品抓取的 app-api 兜底
 [xpaiapi.pixiv]
 refresh_token = ""
 user_id = ""
@@ -357,12 +356,14 @@ url = "https://example.com"
 [scheduler]
 watch_interval = 600
 
-# XP-Pusher (Python) 进程管理: /xppusher start|stop|restart|status|key
+# XP-Pusher (Python) 进程管理: /xppusher start|stop|restart|log|key
 [xppusher]
-dir = "D:/projects/xp/Pixiv-XP-Pusher"   # XP-Pusher 项目目录
-# python = ""                              # 可选: 指定解释器; 默认自动选可用的 venv/系统 python
+# dir = "D:/projects/xp/Pixiv-XP-Pusher"   # 可选: 指定外部部署目录 (不填则用 exe 内嵌, 自动提取到 <exe>/xppusher)
+# config = "D:/projects/xp/Pixiv-XP-Pusher/config.yaml"  # 可选: 首次提取时用此文件初始化 config.yaml (已有真实配置)
+# python = ""                              # 可选: 指定解释器; 默认自动选可用的 venv/系统 python, 缺失时自动建 venv 装依赖
 # command = "main.py"
-# args = ""                                # 可选附加参数, 如 "--once"
+# args = "--now"                           # 默认 --now: 启动立即执行一轮推荐, 然后保持后台调度
+auto_start = true                         # exe 启动时自动拉起 XP-Pusher
 
 [log]
 level = "info"
@@ -393,7 +394,7 @@ file = "logs/lotsacg.log"
 | `/sub` `/unsub` `/sublist` | 订阅标签 / 取消订阅 / 查看订阅（新作自动推送） |
 | `/status` | 查看机器人状态（作品数 / 队列 / 版本等） |
 
-**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post`（批量发布，支持画师主页展开）`/cancel` `/cd` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck` `/redescribe` `/update` `/xppusher`（管理 XP-Pusher 进程）
+**管理员指令**：`/addadmin` `/deladmin` `/delete` `/r18` `/title` `/tags` `/addtags` `/deltags` `/post`（批量发布，支持画师主页展开）`/cancel` `/cd` `/refresh` `/tagalias` `/autotag` `/dump` `/recaption` `/reindex` `/dupcheck` `/redescribe` `/update` `/xppusher`（管理内嵌的 XP-Pusher 进程：`start`/`stop`/`restart`/`log`/`key`）
 
 ---
 
