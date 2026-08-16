@@ -258,14 +258,19 @@ func UpdateConfirmCallback(ctx *telegohandler.Context, query telego.CallbackQuer
 			edit("生成更新脚本失败: " + err.Error())
 			return nil
 		}
-		// 启动更新脚本 (detached), 脚本等待当前进程退出后替换并重启
+		// 启动更新脚本 (detached), 脚本等待当前进程退出后替换并重启。
+		// 注意: 不用 `start /min "" "path"` 嵌套 (Go 拼命令行时的引号转义会让
+		// start 解析错乱, 导致 "Windows 找不到文件"), 直接用 cmd /c 执行 bat,
+		// DETACHED_PROCESS 分离 + Release 不阻塞当前进程。
 		batPath := filepath.Join(exeDir, "update.bat")
-		cmd := exec.Command("cmd.exe", "/c", `start /min "" "`+batPath+`"`)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		cmd := exec.Command("cmd.exe", "/c", batPath)
+		cmd.Dir = exeDir
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008} // DETACHED_PROCESS
 		if err := cmd.Start(); err != nil {
 			edit("启动更新脚本失败: " + err.Error())
 			return nil
 		}
+		_ = cmd.Process.Release()
 		edit("✅ 更新已开始, bot 即将自动重启 (几秒后)")
 		// 给 Telegram 一点时间发出消息, 然后退出自身让脚本接管
 		go func() {
@@ -362,7 +367,7 @@ func writeUpdateBat(exeDir, exeName string) error {
 	newName := exeBase + "_new.exe"
 	bat := `@echo off
 chcp 65001 >nul
-rem 切到 bat 所在目录 (即 exe 目录), 避免相对路径受工作目录影响
+rem cd to exe dir so relative paths work regardless of cwd
 cd /d "%~dp0"
 timeout /t 3 /nobreak >nul
 :kill
