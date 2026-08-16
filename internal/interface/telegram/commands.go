@@ -166,6 +166,10 @@ var (
 			Command:     "update",
 			Description: "检查并自动更新到最新版本",
 		},
+		{
+			Command:     "channel",
+			Description: "管理发送频道 (add/list/remove/rule)",
+		},
 	}
 )
 

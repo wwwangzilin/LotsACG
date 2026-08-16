@@ -200,7 +200,46 @@ func Init(ctx context.Context, serv *service.Service, cfg runtimecfg.TelegramCon
 
 	go app.processArtworkInfoTasks(ctx)
 
+	// 导入配置文件中的发送频道 (仅新增, 不覆盖已通过 /channel 命令管理的频道)
+	app.importSendChannelsFromConfig(ctx)
+
 	return app, nil
+}
+
+// importSendChannelsFromConfig 把 config.toml [telegram.send_channels] 中定义的
+// 发送频道导入 KV。已存在 (chat_id 相同) 的频道会被跳过, 保留运行时修改。
+func (app *BotApp) importSendChannelsFromConfig(ctx context.Context) {
+	for _, cc := range app.cfg.SendChannels {
+		if cc.ChatID == 0 {
+			continue
+		}
+		enabled := true
+		if cc.Enabled != nil {
+			enabled = *cc.Enabled
+		}
+		ch := &service.SendChannel{
+			ChatID:         cc.ChatID,
+			Title:          cc.Title,
+			Enabled:        enabled,
+			R18Mode:        cc.R18Mode,
+			LinkOnly:       cc.LinkOnly,
+			IncludeTags:    cc.IncludeTags,
+			ExcludeTags:    cc.ExcludeTags,
+			IncludeArtists: cc.IncludeArtists,
+			ExcludeArtists: cc.ExcludeArtists,
+		}
+		if _, err := app.serv.GetSendChannel(ctx, cc.ChatID); err == nil {
+			continue // 已存在 (含运行时修改), 跳过
+		} else if !errors.Is(err, errs.ErrRecordNotFound) {
+			log.Warnf("failed to check send channel %d: %s", cc.ChatID, err)
+			continue
+		}
+		if err := app.serv.AddSendChannel(ctx, ch); err != nil {
+			log.Warnf("failed to import send channel %d: %s", cc.ChatID, err)
+			continue
+		}
+		log.Infof("imported send channel %d (%s) from config", cc.ChatID, ch.Title)
+	}
 }
 
 func setCommands(ctx context.Context, bot *telego.Bot, commands []telego.BotCommand, scope telego.BotCommandScope) {

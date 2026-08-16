@@ -10,6 +10,7 @@ import (
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram/handlers/utils"
 	"github.com/wwwangzilin/LotsACG/internal/model/entity"
 	"github.com/wwwangzilin/LotsACG/internal/shared"
+	"github.com/wwwangzilin/LotsACG/pkg/log"
 )
 
 // Status 返回 bot 运行状态 (用户名、频道/群信息), 供 REST 设置页展示。
@@ -38,6 +39,10 @@ func (b *BotApp) PostAndCreateArtwork(ctx context.Context, artwork *entity.Cache
 	}
 	if err := utils.PostAndCreateArtwork(ctx, b.Bot(), b.serv, b.meta, artwork, adminId, b.meta.ChannelChatID(), 0); err != nil {
 		return oops.Wrapf(err, "posting and creating artwork %s", artwork.SourceURL)
+	}
+	// 多频道: 按规则发布到自定义发送频道 (不落库)
+	if err := b.publishToCustomChannels(ctx, artwork); err != nil {
+		log.Warn("failed to publish to custom send channels", "err", err)
 	}
 	return nil
 }
@@ -73,6 +78,36 @@ func (b *BotApp) PostArtworkToChannel(ctx context.Context, sourceURL string) err
 	}
 	if err := utils.PostAndCreateArtwork(ctx, b.Bot(), b.serv, b.meta, artwork, telego.ChatID{}, b.meta.ChannelChatID(), 0); err != nil {
 		return oops.Wrapf(err, "failed to post artwork to channel")
+	}
+	// 多频道: 按规则发布到自定义发送频道 (不落库)
+	if err := b.publishToCustomChannels(ctx, artwork); err != nil {
+		log.Warn("failed to publish to custom send channels", "err", err)
+	}
+	return nil
+}
+
+// publishToCustomChannels 把作品按各发送频道的规则发布到匹配的自定义频道 (不落库)。
+// link_only 频道只发链接文本; 其他频道发送图片组。
+func (b *BotApp) publishToCustomChannels(ctx context.Context, artwork *entity.CachedArtworkData) error {
+	chs, err := b.serv.MatchSendChannels(ctx, artwork)
+	if err != nil {
+		return oops.Wrapf(err, "matching send channels")
+	}
+	for _, ch := range chs {
+		chatID := telegoutil.ID(ch.ChatID)
+		if ch.LinkOnly {
+			if err := utils.SendArtworkLinkOnly(ctx, b.Bot(), b.serv, b.meta, chatID, artwork); err != nil {
+				log.Warn("failed to send link-only to send channel", "chat_id", ch.ChatID, "title", ch.Title, "err", err)
+				continue
+			}
+			log.Info("sent link-only to send channel", "chat_id", ch.ChatID, "title", ch.Title)
+			continue
+		}
+		if _, err := utils.SendArtworkMediaGroup(ctx, b.Bot(), b.serv, b.meta, chatID, artwork); err != nil {
+			log.Warn("failed to send media group to send channel", "chat_id", ch.ChatID, "title", ch.Title, "err", err)
+			continue
+		}
+		log.Info("sent artwork to send channel", "chat_id", ch.ChatID, "title", ch.Title)
 	}
 	return nil
 }

@@ -11,6 +11,9 @@ type TelegramConfig struct {
 	// 未登记的用户(游客)只允许 /start /help 和 /files(获取原图)。
 	AllowedUsers []int64                     `toml:"allowed_users" mapstructure:"allowed_users" json:"allowed_users" yaml:"allowed_users"`
 	ExtraTarget  []TelegramExtraTargetConfig `toml:"extra_target" mapstructure:"extra_target" json:"extra_target" yaml:"extra_target"`
+	// SendChannels 除主频道外的额外发送频道 (配置文件方式), 首次启动时导入 KV。
+	// 之后可用 /channel 命令管理; 每个频道可配置发布规则 (R18/标签/画师/仅链接)。
+	SendChannels []TelegramSendChannelConfig `toml:"send_channels" mapstructure:"send_channels" json:"send_channels" yaml:"send_channels"`
 	Retry        BotRetryConfig              `toml:"retry" mapstructure:"retry" json:"retry" yaml:"retry"`
 	// Channel  bool    `toml:"channel" mapstructure:"channel" json:"channel" yaml:"channel"`
 	ChatID  int64 `toml:"chat_id" mapstructure:"chat_id" json:"chat_id" yaml:"chat_id"`
@@ -22,6 +25,20 @@ type TelegramConfig struct {
 type TelegramExtraTargetConfig struct {
 	Title  string `toml:"title" mapstructure:"title" json:"title" yaml:"title"` // 在按钮上显示的标题
 	ChatID int64  `toml:"chat_id" mapstructure:"chat_id" json:"chat_id" yaml:"chat_id"`
+}
+
+// TelegramSendChannelConfig 是配置文件方式定义的发送频道。
+// 与 /channel 命令添加的频道等价, 首次启动时导入 KV; enabled 缺省为 true。
+type TelegramSendChannelConfig struct {
+	ChatID         int64    `toml:"chat_id" mapstructure:"chat_id" json:"chat_id" yaml:"chat_id"`
+	Title          string   `toml:"title" mapstructure:"title" json:"title" yaml:"title"`
+	Enabled        *bool    `toml:"enabled" mapstructure:"enabled" json:"enabled" yaml:"enabled"`
+	R18Mode        string   `toml:"r18_mode" mapstructure:"r18_mode" json:"r18_mode" yaml:"r18_mode"` // follow|allow|deny|only
+	LinkOnly       bool     `toml:"link_only" mapstructure:"link_only" json:"link_only" yaml:"link_only"`
+	IncludeTags    []string `toml:"include_tags" mapstructure:"include_tags" json:"include_tags" yaml:"include_tags"`
+	ExcludeTags    []string `toml:"exclude_tags" mapstructure:"exclude_tags" json:"exclude_tags" yaml:"exclude_tags"`
+	IncludeArtists []string `toml:"include_artists" mapstructure:"include_artists" json:"include_artists" yaml:"include_artists"`
+	ExcludeArtists []string `toml:"exclude_artists" mapstructure:"exclude_artists" json:"exclude_artists" yaml:"exclude_artists"`
 }
 
 type BotRetryConfig struct {

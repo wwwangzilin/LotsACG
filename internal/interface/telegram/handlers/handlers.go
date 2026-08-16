@@ -78,6 +78,7 @@ func (m HandlerManager) Register(hg *telegohandler.HandlerGroup) {
 	mg.HandleMessage(UpdateCmd, telegohandler.CommandEqual("update"))
 	mg.HandleMessage(XPPusher, telegohandler.CommandEqual("xppusher"))
 	mg.HandleMessage(KMua, telegohandler.CommandEqual("kmua"))
+	mg.HandleMessage(Channel, telegohandler.CommandEqual("channel"))
 
 	hg.HandleCallbackQuery(PostArtworkCallbackQuery, telegohandler.CallbackDataContains("post_artwork"))
 	hg.HandleCallbackQuery(SearchPictureCallbackQuery, telegohandler.CallbackDataPrefix("search_picture"))

@@ -17,6 +17,25 @@ chat_id = -1001111111111              # 主频道 (普通作品)
 # title = "R18频道"
 # chat_id = -1002222222222
 
+# 除主频道外的更多发送频道 (配置文件方式, 等价于 /channel add)。
+# 作品发布时会按各频道规则自动推送 (不落库)。也可在 bot 里用 /channel 命令动态添加/修改。
+# 规则说明:
+#   r18_mode: follow=跟随(默认) / allow=允许R18 / deny=拒绝R18 / only=仅R18
+#   link_only: true 时只发文本+原图链接 (不下载/上传图片, 节约流量)
+#   include_tags: 标签白名单, 作品标签任一命中即发布 (空=不限制)
+#   exclude_tags: 标签黑名单, 任一命中即拒绝
+#   include_artists / exclude_artists: 画师白名单/黑名单
+# [[telegram.send_channels]]
+# chat_id = -1004444444444
+# title = "安全频道"
+# enabled = true
+# r18_mode = "deny"
+# link_only = false
+# include_tags = []
+# exclude_tags = ["scat", "gore"]
+# include_artists = []
+# exclude_artists = []
+
 # ────────────────────────── 数据库 ──────────────────────────
 [database]
 type = "sqlite"                       # sqlite / postgres / mysql
