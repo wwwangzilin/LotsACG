@@ -92,8 +92,8 @@ func PictureResponseUrl(ctx fiber.Ctx, pic *entity.Picture, cfg runtimecfg.RestC
 	if data == shared.ZeroStorageInfo {
 		if cfg.Base != "" {
 			base := strings.TrimRight(cfg.Base, "/")
-			return fmt.Sprintf("%s/picture/file/thumb/%s", base, pic.ID.Hex()),
-				fmt.Sprintf("%s/picture/file/regular/%s", base, pic.ID.Hex())
+			return fmt.Sprintf("%s/api/v1/picture/file/thumb/%s", base, pic.ID.Hex()),
+				fmt.Sprintf("%s/api/v1/picture/file/regular/%s", base, pic.ID.Hex())
 		}
 		thumbnail = pic.Thumbnail
 		regular = pic.Thumbnail
@@ -102,25 +102,25 @@ func PictureResponseUrl(ctx fiber.Ctx, pic *entity.Picture, cfg runtimecfg.RestC
 	if data.Thumb != nil {
 		thumbnail = ResponseUrlForStoragePath(ctx, *data.Thumb, cfg.StoragePathRules)
 		if thumbnail == "" && cfg.Base != "" {
-			thumbnail = fmt.Sprintf("%s/picture/file/thumb/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+			thumbnail = fmt.Sprintf("%s/api/v1/picture/file/thumb/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
 		}
 	}
 	if data.Regular != nil {
 		regular = ResponseUrlForStoragePath(ctx, *data.Regular, cfg.StoragePathRules)
 		if regular == "" && cfg.Base != "" {
-			regular = fmt.Sprintf("%s/picture/file/regular/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+			regular = fmt.Sprintf("%s/api/v1/picture/file/regular/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
 		}
 	}
 	if thumbnail == "" {
 		if cfg.Base != "" {
-			thumbnail = fmt.Sprintf("%s/picture/file/thumb/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+			thumbnail = fmt.Sprintf("%s/api/v1/picture/file/thumb/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
 		} else {
 			thumbnail = pic.Thumbnail
 		}
 	}
 	if regular == "" {
 		if cfg.Base != "" {
-			regular = fmt.Sprintf("%s/picture/file/regular/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
+			regular = fmt.Sprintf("%s/api/v1/picture/file/regular/%s", strings.TrimRight(cfg.Base, "/"), pic.ID.Hex())
 		} else {
 			regular = pic.Thumbnail
 		}
