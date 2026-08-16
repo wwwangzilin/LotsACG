@@ -54,7 +54,8 @@ XP-Pusher (Python, 独立 bot) → 按你的 XP 个性化推荐
 - `/kmua` — 内置管理 kmua-bot 进程：`start` / `stop` / `restart` / `log [n]`
 - `[kmua] auto_start = true` 时 exe 一启动就自动拉起
 - 依赖复杂（Python 3.13 + git 源依赖），环境用 **uv** 安装（`uv sync`），首次需要几分钟联网安装
-- `[kmua]` 配置段的 `token` / `owners` / `webapp` 等会在首次启动时写入 `settings.toml`（已存在则不覆盖）
+- `[kmua]` 配置段的 `token` / `owners` / `proxy` / `webapp` 等会在首次启动时写入 `settings.toml`（已存在则不覆盖）
+- `[kmua] proxy`（如 `http://127.0.0.1:7899`）用于 GFW 环境连接 Telegram（MTProto 不走环境变量代理, 需显式配置）
 - 日志统一：kmua-bot 的 stdout/stderr 写入 `<exe>/logs/kmua.log`
 
 ### 🤖 AI API 接入 `[aiapi]`
@@ -182,6 +183,8 @@ chmod +x lotsacg
 ---
 
 ## 完整配置实例
+
+> 完整可用的示例配置见仓库根目录 [`config.example.toml`](config.example.toml)。
 
 ```toml
 [telegram]
@@ -393,8 +396,9 @@ auto_start = true                         # exe 启动时自动拉起 XP-Pusher
 # args = ""                            # 附加参数 (空格分隔)
 auto_start = false                     # exe 启动时自动拉起 kmua-bot
 # 以下字段在首次生成 settings.toml 时写入 (已存在则不覆盖):
-# token = ""                           # kmua-bot 的 bot token
+# token = ""                           # kmua-bot 的 bot token (需独立 bot, 不能与 LotsACG 共用)
 # owners = []                          # owner Telegram ID 列表
+# proxy = ""                           # Telegram 连接代理 (GFW 环境需要), 如 http://127.0.0.1:7899
 # webapp = false                       # 启用管理面板 (Telegram Mini App)
 # webapp_port = 8180                   # 面板端口
 # webapp_url = "https://xxx.example.com"  # 面板公网 HTTPS 地址 (Telegram 不会打开 HTTP 的 Mini App)

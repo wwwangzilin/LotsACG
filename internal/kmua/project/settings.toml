@@ -5,6 +5,7 @@ session_name = "kmua"
 api_id = 1025907
 api_hash = "452b0359b988148995f22ff0f4229750"
 use_ipv6 = false
+proxy = ""
 log_retention_days = 30
 log_level = "INFO"
 lang = "zh-CN"

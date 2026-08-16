@@ -141,6 +141,9 @@ func (m *Manager) EnsureSettings() error {
 	if len(m.cfg.Owners) > 0 {
 		s["owners"] = m.cfg.Owners
 	}
+	if m.cfg.Proxy != "" {
+		s["proxy"] = m.cfg.Proxy
+	}
 	if m.cfg.Webapp {
 		s["webapp"] = true
 	}

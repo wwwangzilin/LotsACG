@@ -19,10 +19,10 @@ import (
 	restcommon "github.com/wwwangzilin/LotsACG/internal/interface/rest/common"
 	"github.com/wwwangzilin/LotsACG/internal/interface/scheduler"
 	"github.com/wwwangzilin/LotsACG/internal/interface/telegram"
+	"github.com/wwwangzilin/LotsACG/internal/kmua"
 	"github.com/wwwangzilin/LotsACG/internal/repo"
 	"github.com/wwwangzilin/LotsACG/internal/service"
 	"github.com/wwwangzilin/LotsACG/internal/xppusher"
-	"github.com/wwwangzilin/LotsACG/internal/kmua"
 	"github.com/wwwangzilin/LotsACG/pkg/log"
 	"github.com/wwwangzilin/LotsACG/pkg/osutil"
 )

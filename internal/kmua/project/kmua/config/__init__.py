@@ -32,6 +32,7 @@ class _AppConfig(pydantic.BaseModel):
     api_id: int = 1025907
     api_hash: str = "452b0359b988148995f22ff0f4229750"
     use_ipv6: bool = False
+    proxy: str = ""  # Telegram 连接代理, 如 "http://127.0.0.1:7899" / "socks5://127.0.0.1:7899" (GFW 环境需要)
     log_retention_days: int = 30
     log_level: str = "INFO"
     lang: str = "zh-CN"

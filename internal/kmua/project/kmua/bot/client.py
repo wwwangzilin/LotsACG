@@ -54,6 +54,27 @@ def _build_plugins_config() -> dict[str, object]:
     return {"root": root, "include": include}
 
 
+def _build_proxy() -> dict | None:
+    """从配置解析 Telegram 连接代理 (GFW 环境需要)。
+
+    支持 "http://host:port" / "socks5://host:port" / "socks4://host:port" 格式。
+    """
+    raw = app_config.proxy
+    if not raw:
+        return None
+    scheme = "socks5"
+    host = raw
+    if "://" in raw:
+        scheme, host = raw.split("://", 1)
+    hostname, _, port = host.rpartition(":")
+    if not hostname or not port:
+        return None
+    try:
+        return {"scheme": scheme, "hostname": hostname, "port": int(port)}
+    except ValueError:
+        return None
+
+
 client = Client(
     name=app_config.session_name,
     api_id=app_config.api_id,
@@ -64,4 +85,5 @@ client = Client(
     ipv6=app_config.use_ipv6,
     sleep_threshold=300,
     max_concurrent_transmissions=min(32, (cpu_count() or 0) + 4),
+    proxy=_build_proxy(),
 )

@@ -19,6 +19,8 @@ type KMuaConfig struct {
 	Token string `toml:"token" mapstructure:"token" json:"token" yaml:"token"`
 	// Owners kmua-bot 的 owner IDs (首次生成 settings.toml 时写入)
 	Owners []int64 `toml:"owners" mapstructure:"owners" json:"owners" yaml:"owners"`
+	// Proxy Telegram 连接代理 (GFW 环境需要), 如 http://127.0.0.1:7899; 写入 settings.toml
+	Proxy string `toml:"proxy" mapstructure:"proxy" json:"proxy" yaml:"proxy"`
 	// Webapp 是否启用 kmua 管理面板 (Telegram Mini App)
 	Webapp bool `toml:"webapp" mapstructure:"webapp" json:"webapp" yaml:"webapp"`
 	// WebappPort 面板监听端口, 默认 8180
