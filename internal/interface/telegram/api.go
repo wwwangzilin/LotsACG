@@ -48,19 +48,27 @@ func (b *BotApp) PostAndCreateArtwork(ctx context.Context, artwork *entity.Cache
 }
 
 type artworkInfoTask struct {
-	ctx           context.Context
-	sourceUrl     string
-	chatID        int64
-	appendCaption string
+	ctx           context.Context `msgpack:"-"`
+	SourceURL     string          `msgpack:"source_url"`
+	ChatID        int64           `msgpack:"chat_id"`
+	AppendCaption string          `msgpack:"append_caption"`
+}
+
+// matches 判断两个任务是否表示同一请求 (用于从持久化队列精确移除)。
+func (t artworkInfoTask) matches(o artworkInfoTask) bool {
+	return t.SourceURL == o.SourceURL && t.ChatID == o.ChatID && t.AppendCaption == o.AppendCaption
 }
 
 func (b *BotApp) SendArtworkInfo(ctx context.Context, sourceUrl string, chatID int64, appendCaption string) {
-	b.artworkInfoQueue <- artworkInfoTask{
+	task := artworkInfoTask{
 		ctx:           ctx,
-		sourceUrl:     sourceUrl,
-		chatID:        chatID,
-		appendCaption: appendCaption,
+		SourceURL:     sourceUrl,
+		ChatID:        chatID,
+		AppendCaption: appendCaption,
 	}
+	// 先持久化到 KV (意外退出后重启可恢复), 再入内存队列
+	b.persistArtworkInfoTask(context.Background(), task)
+	b.artworkInfoQueue <- task
 }
 
 // PostArtworkToChannel 将指定来源链接的作品发布到主频道 (供 XP-Pusher 等外部调用)。

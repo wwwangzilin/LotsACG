@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mymmrac/telego"
@@ -32,6 +33,7 @@ type BotApp struct {
 	cfg              runtimecfg.TelegramConfig
 	debug            bool
 	artworkInfoQueue chan artworkInfoTask
+	queueMu          sync.Mutex // 保护持久化队列 (KV) 的读写
 }
 
 func (app *BotApp) Bot() *telego.Bot {
@@ -200,6 +202,9 @@ func Init(ctx context.Context, serv *service.Service, cfg runtimecfg.TelegramCon
 
 	go app.processArtworkInfoTasks(ctx)
 
+	// 恢复持久化队列中未完成的任务 (意外退出后重启继续)
+	go app.restoreArtworkInfoQueue(ctx)
+
 	// 导入配置文件中的发送频道 (仅新增, 不覆盖已通过 /channel 命令管理的频道)
 	app.importSendChannelsFromConfig(ctx)
 
@@ -272,12 +277,86 @@ func (app *BotApp) processArtworkInfoTasks(ctx context.Context) {
 			log.Info("Stopping artwork info task processor")
 			return
 		case task := <-app.artworkInfoQueue:
-			err := utils.SendArtworkInfo(task.ctx, app.bot, app.meta, app.serv, task.sourceUrl, telegoutil.ID(task.chatID), utils.SendArtworkInfoOptions{AppendCaption: task.appendCaption, HasPermission: true})
+			// 从持久化队列移除 (视为开始处理)
+			app.removeArtworkInfoTask(ctx, task)
+			err := utils.SendArtworkInfo(task.ctx, app.bot, app.meta, app.serv, task.SourceURL, telegoutil.ID(task.ChatID), utils.SendArtworkInfoOptions{AppendCaption: task.AppendCaption, HasPermission: true})
 			if err != nil {
 				log.Errorf("Error when sending artwork info: %s", err)
+				// 失败则写回持久化队列, 意外退出后重启可重试
+				app.persistArtworkInfoTask(context.Background(), task)
 			}
 		}
 	}
+}
+
+// artworkInfoQueueKey 是持久化队列在 KV 中的 key。
+const artworkInfoQueueKey = "telegram:artworkinfo:queue"
+
+// persistArtworkInfoTask 把任务追加到持久化队列 (KV)。
+// 每次入队都会先写入 KV, 因此即使进程在发送前意外退出, 重启后仍可恢复。
+func (app *BotApp) persistArtworkInfoTask(ctx context.Context, task artworkInfoTask) {
+	app.queueMu.Lock()
+	defer app.queueMu.Unlock()
+	tasks, err := kvstor.Get[[]artworkInfoTask](ctx, artworkInfoQueueKey)
+	if err != nil && !errors.Is(err, errs.ErrRecordNotFound) {
+		log.Warnf("failed to load artwork info queue: %s", err)
+	}
+	tasks = append(tasks, task)
+	if err := kvstor.Set(ctx, artworkInfoQueueKey, tasks); err != nil {
+		log.Warnf("failed to persist artwork info queue: %s", err)
+	}
+}
+
+// removeArtworkInfoTask 从持久化队列移除指定任务 (按 sourceUrl+chatID+appendCaption 匹配第一个)。
+func (app *BotApp) removeArtworkInfoTask(ctx context.Context, task artworkInfoTask) {
+	app.queueMu.Lock()
+	defer app.queueMu.Unlock()
+	tasks, err := kvstor.Get[[]artworkInfoTask](ctx, artworkInfoQueueKey)
+	if err != nil {
+		if !errors.Is(err, errs.ErrRecordNotFound) {
+			log.Warnf("failed to load artwork info queue: %s", err)
+		}
+		return
+	}
+	for i, t := range tasks {
+		if t.matches(task) {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			break
+		}
+	}
+	if err := kvstor.Set(ctx, artworkInfoQueueKey, tasks); err != nil {
+		log.Warnf("failed to save artwork info queue: %s", err)
+	}
+}
+
+// restoreArtworkInfoQueue 启动时把持久化队列中未完成的任务重新入队。
+// 在独立 goroutine 中执行, 避免阻塞初始化; 入队会因 channel 空间而自然限流。
+func (app *BotApp) restoreArtworkInfoQueue(ctx context.Context) {
+	app.queueMu.Lock()
+	tasks, err := kvstor.Get[[]artworkInfoTask](ctx, artworkInfoQueueKey)
+	if err != nil {
+		app.queueMu.Unlock()
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			_ = kvstor.Set(ctx, artworkInfoQueueKey, []artworkInfoTask{})
+		} else {
+			log.Warnf("failed to load artwork info queue: %s", err)
+		}
+		return
+	}
+	// 先清空 KV, 恢复的任务后续处理时会重新移除/写回
+	if err := kvstor.Set(ctx, artworkInfoQueueKey, []artworkInfoTask{}); err != nil {
+		log.Warnf("failed to clear artwork info queue: %s", err)
+	}
+	app.queueMu.Unlock()
+
+	if len(tasks) == 0 {
+		return
+	}
+	for _, t := range tasks {
+		t.ctx = context.Background()
+		app.artworkInfoQueue <- t
+	}
+	log.Infof("restored %d pending artwork info tasks from persistent queue", len(tasks))
 }
 
 func (app *BotApp) Run(ctx context.Context, serv *service.Service) {
